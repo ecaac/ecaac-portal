@@ -451,6 +451,18 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 /* toast */
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--deep);color:#fff;font-size:13px;font-weight:600;padding:12px 20px;border-radius:12px;box-shadow:0 18px 36px -14px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:200}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.badge-pop{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(24px);display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#171B3D,#0D1026);border:1px solid rgba(143,217,161,0.35);color:#fff;padding:14px 20px 14px 14px;border-radius:16px;box-shadow:0 24px 50px -18px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.04) inset;opacity:0;pointer-events:none;transition:opacity .3s cubic-bezier(.2,.8,.2,1),transform .3s cubic-bezier(.2,.8,.2,1);z-index:210;max-width:min(380px,92vw)}
+.badge-pop.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.badge-pop .bp-ring{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--leaf),var(--leaf-dark));color:#fff;box-shadow:0 6px 16px -6px rgba(53,173,81,0.7);animation:bpPop .4s cubic-bezier(.2,1.4,.4,1)}
+.badge-pop .bp-ring svg{width:24px;height:24px}
+@keyframes bpPop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+.badge-pop .bp-text{min-width:0}
+.badge-pop .bp-kicker{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--leaf-light);margin-bottom:2px}
+.badge-pop .bp-title{font-family:'Fraunces',Georgia,serif;font-size:15.5px;font-weight:600;line-height:1.25}
+.badge-pop .bp-close{flex:none;width:26px;height:26px;border-radius:8px;border:none;background:rgba(255,255,255,0.08);color:#B9C1D6;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:2px}
+.badge-pop .bp-close:hover{background:rgba(255,255,255,0.16);color:#fff}
+.badge-pop .bp-close svg{width:13px;height:13px}
+@media (prefers-reduced-motion:reduce){.badge-pop .bp-ring{animation:none}}
 
 /* future placeholder */
 .future{border:2px dashed var(--sand-line);border-radius:18px;padding:22px;text-align:center;background:rgba(255,255,255,0.5)}
@@ -487,8 +499,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 </head>
 <body>
 
-<div id="auth-gate" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#F6F1E6;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <div style="background:#fff;border-radius:20px;padding:40px;max-width:380px;width:90%;box-shadow:0 20px 40px -16px rgba(11,59,76,0.25);text-align:center;">
+<div id="auth-gate" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;background:radial-gradient(120% 130% at 20% 0%, #1B2E6B 0%, #0D1026 55%, #06070F 100%);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <img src="https://www.ecaac.co.za/images/logo.png" alt="ECAAC logo" style="width:96px;height:96px;object-fit:contain;margin-bottom:22px;filter:drop-shadow(0 10px 24px rgba(0,0,0,0.45));" onerror="this.style.display='none'">
+  <div style="background:#fff;border-radius:20px;padding:40px;max-width:380px;width:100%;box-shadow:0 30px 60px -20px rgba(0,0,0,0.55);text-align:center;">
     <h2 style="font-family:'Fraunces',Georgia,serif;color:#0D1026;margin-bottom:8px;">ECAAC Members Portal</h2>
     <p style="font-size:13.5px;color:#565A72;margin-bottom:20px;">Sign in with the email and password given to you by the committee.</p>
     <form id="auth-form">
@@ -1709,6 +1722,11 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="badge-pop" id="badge-pop" role="status" aria-live="polite">
+  <div class="bp-ring" id="bp-ring"></div>
+  <div class="bp-text"><div class="bp-kicker" id="bp-kicker">Badge earned</div><div class="bp-title" id="bp-title"></div></div>
+  <button class="bp-close" id="bp-close" aria-label="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</div>
 
 </div><!-- /#portal-root -->
 
@@ -1810,6 +1828,30 @@ window.initPortal = function(){
     var t = e.target.closest('.toastable');
     if (t) popToast(t.getAttribute('data-toast') || 'Done');
   });
+
+  // badge-earned notification bar
+  var badgePop = document.getElementById('badge-pop'), badgePopTimer, badgeQueue = [], badgeShowing = false;
+  document.getElementById('bp-close').addEventListener('click', hideBadgePop);
+  function hideBadgePop(){
+    badgePop.classList.remove('show');
+    clearTimeout(badgePopTimer);
+    badgeShowing = false;
+    if (badgeQueue.length) setTimeout(nextBadgePop, 350);
+  }
+  function nextBadgePop(){
+    if (badgeShowing || !badgeQueue.length) return;
+    var b = badgeQueue.shift();
+    badgeShowing = true;
+    document.getElementById('bp-ring').innerHTML = b.icon;
+    document.getElementById('bp-ring').style.background = b.ringBg || 'linear-gradient(135deg,var(--leaf),var(--leaf-dark))';
+    document.getElementById('bp-kicker').textContent = b.kicker || 'Badge earned';
+    document.getElementById('bp-title').textContent = b.title;
+    badgePop.classList.add('show');
+    clearTimeout(badgePopTimer);
+    badgePopTimer = setTimeout(hideBadgePop, 5000);
+  }
+  function notifyBadge(b){ badgeQueue.push(b); if (!badgeShowing) nextBadgePop(); }
+  window.notifyBadge = notifyBadge;
 
   document.getElementById('logout-link').addEventListener('click', function(){
     supabase.auth.signOut();
@@ -2026,6 +2068,7 @@ window.initPortal = function(){
       document.body.appendChild(a); a.click(); a.remove();
       cardDownloaded = true;
       popToast('Membership card downloaded (' + a.download + ')');
+      if (window.checkBadgeChanges) window.checkBadgeChanges();
     };
     var fontsReady = (document.fonts && document.fonts.ready)
       ? Promise.all([document.fonts.load('600 54px Fraunces'), document.fonts.load('700 22px Inter')]).catch(function(){})
@@ -2292,6 +2335,7 @@ window.initPortal = function(){
     }
     closeAwardModal();
     popToast(category + ' entry for ' + program + ' submitted for judging');
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
   });
 
   // ===== My Auctions =====
@@ -2912,6 +2956,7 @@ window.initPortal = function(){
     closeTankModal();
     renderTanks();
     if (editingIdx < 0){ openTank(tanks.length - 1); }
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
   });
 
   // delete tank (two-step confirm in the button itself)
@@ -3222,6 +3267,46 @@ window.initPortal = function(){
     }).join('');
   }
 
+  // ===== Detect newly-earned badges and raise the notification bar =====
+  var TIER_RING_GRADS = ['linear-gradient(135deg,#C98A4B,#8B5A2B)','linear-gradient(135deg,#C7CEDC,#8892A6)','linear-gradient(135deg,var(--gold),var(--gold-dark))','linear-gradient(135deg,#8FE3E8,#2E7D8C)'];
+  var earnedBadgeSnapshot = null; // null until first baseline is taken
+
+  function currentEarnedBadges(){
+    var earned = {}; // key -> {title, icon, ringBg, kicker}
+    getBadgeCategories().forEach(function(cat){
+      var prog = tierProgress(cat);
+      for (var i = 0; i < prog.achieved; i++){
+        earned['tier:' + cat.id + ':' + i] = {
+          title: TIER_NAMES[i] + ' — ' + cat.label,
+          icon: TIER_ICONS[cat.icon],
+          ringBg: TIER_RING_GRADS[i],
+          kicker: 'Tier reached'
+        };
+      }
+    });
+    getMilestoneBadges().forEach(function(m){
+      if (m.earned) earned['ms:' + m.label] = {
+        title: m.label,
+        icon: MILESTONE_ICONS[m.icon],
+        ringBg: 'linear-gradient(135deg,var(--leaf),var(--leaf-dark))',
+        kicker: 'Badge earned'
+      };
+    });
+    return earned;
+  }
+
+  // Call after any action that could change badge state. First call sets the
+  // baseline silently (so we don't announce everything the member already had).
+  function checkBadgeChanges(){
+    var now = currentEarnedBadges();
+    if (earnedBadgeSnapshot === null){ earnedBadgeSnapshot = now; return; }
+    Object.keys(now).forEach(function(key){
+      if (!earnedBadgeSnapshot[key]) notifyBadge(now[key]);
+    });
+    earnedBadgeSnapshot = now;
+  }
+  window.checkBadgeChanges = checkBadgeChanges;
+
   // ===== Member Aquariums (club-wide directory) =====
   var MA_AVATAR_GRADS = ['linear-gradient(135deg,var(--deep),var(--leaf))','linear-gradient(135deg,var(--leaf),var(--leaf-dark))','linear-gradient(135deg,var(--deep-2),var(--deep))','linear-gradient(135deg,var(--leaf-dark),var(--deep))','linear-gradient(135deg,var(--deep),var(--deep-3))','linear-gradient(135deg,var(--coral),var(--coral-dark))'];
   function maInitials(n){ return n.split(/\s+/).map(function(w){return w[0];}).slice(0,2).join('').toUpperCase(); }
@@ -3525,6 +3610,7 @@ window.initPortal = function(){
     applyLiveMember();
     popToast('Profile saved');
     loadLiveMembers();
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
   });
 
   if (window.currentMember) { loadNews(); loadLiveMembers(); }
@@ -3532,6 +3618,10 @@ window.initPortal = function(){
   applyLiveMember();
 
   renderTanks();
+
+  // Establish the badge baseline once everything's rendered, so the notification
+  // bar only fires for badges earned *after* this point in the session.
+  if (window.checkBadgeChanges) window.checkBadgeChanges();
 };
 </script>
 </body>
