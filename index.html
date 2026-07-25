@@ -427,6 +427,15 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 .param-edit-actions .param-cancel:hover{color:var(--ink);border-color:var(--sand-line)}
 .param-edit-actions .param-remove:hover{color:var(--coral-dark);border-color:var(--coral)}
 .param.editing{box-shadow:0 16px 28px -14px rgba(11,59,76,0.28)}
+.aw-review-row{align-items:center;flex-wrap:wrap;gap:10px}
+.aw-review-actions{display:flex;align-items:center;gap:8px;flex:none}
+.aw-points-input{width:64px;padding:8px 6px;border-radius:8px;border:1px solid var(--sand-line);background:var(--sand);font:inherit;font-size:13px;text-align:center}
+.aw-points-input:focus{outline:none;border-color:var(--leaf)}
+.aw-btn{padding:8px 14px;border-radius:9px;border:none;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.aw-btn.approve{background:#EAF3DE;color:var(--leaf-dark)}
+.aw-btn.approve:hover{background:var(--leaf);color:#fff}
+.aw-btn.reject{background:#FCEBDD;color:var(--coral-dark)}
+.aw-btn.reject:hover{background:var(--coral);color:#fff}
 .param-add{background:transparent;border:1.5px dashed var(--sand-line);border-radius:14px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--ink-soft);transition:border-color .15s,color .15s,background .15s;min-height:104px}
 .param-add:hover{border-color:var(--leaf-light);color:var(--leaf-dark);background:#FBF8F0}
 .param-add svg{width:18px;height:18px}
@@ -1159,7 +1168,6 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <tr>
           <th data-akey="date">Auction <span class="arr">▲</span></th>
           <th data-akey="item">Item <span class="arr">▲</span></th>
-          <th data-akey="category">Category <span class="arr">▲</span></th>
           <th data-akey="role">Role <span class="arr">▲</span></th>
           <th data-akey="amount">Amount <span class="arr">▲</span></th>
         </tr>
@@ -1461,10 +1469,8 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   <div class="rows" id="events-rows"></div>
 
   <div class="sec-title"><h3>Your attendance</h3></div>
-  <div class="grid g3">
+  <div style="max-width:280px">
     <div class="card t-leaf"><div class="stat-num" data-live="ev-meetings">11 / 12</div><div class="stat-label">Meetings attended, last 12 months</div></div>
-    <div class="card t-deep"><div class="stat-num" data-live="ev-workshops">4</div><div class="stat-label">Workshops attended in 2026</div></div>
-    <div class="card t-gold"><div class="stat-num" data-live="ev-auctions">2</div><div class="stat-label">Auctions participated in</div></div>
   </div>
 </section>
 
@@ -1500,10 +1506,72 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     </div>
   </div>
 
+  <div class="sec-title" style="margin-top:26px"><h3>Manage events</h3></div>
+  <div class="grid" style="grid-template-columns:1fr 1.2fr">
+    <div class="panel">
+      <h3>Post an event</h3>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="field"><label for="ae-title">Title *</label><input id="ae-title" placeholder="e.g. September monthly meeting"></div>
+        <div class="field"><label for="ae-category">Category</label>
+          <select id="ae-category"><option value="meeting">Monthly meeting</option><option value="workshop">Workshop</option><option value="auction">Auction</option><option value="other">Other</option></select>
+        </div>
+        <div class="grid g2">
+          <div class="field"><label for="ae-date">Date *</label><input id="ae-date" type="date"></div>
+          <div class="field"><label for="ae-time">Start time</label><input id="ae-time" type="time" value="14:00"></div>
+        </div>
+        <div class="field"><label for="ae-hours">Duration (hours)</label><input id="ae-hours" type="number" min="1" step="0.5" value="4"></div>
+        <div class="field"><label for="ae-location">Location</label><input id="ae-location" placeholder="e.g. The Italian Club, Broadwood"></div>
+        <div class="field"><label for="ae-desc">Description</label><textarea id="ae-desc" rows="3" placeholder="What's happening at this event?"></textarea></div>
+      </div>
+      <p id="ae-error" style="display:none;font-size:12.5px;font-weight:700;color:var(--coral-dark);margin:12px 0 0">Add a title and a date before posting.</p>
+      <div style="margin-top:16px"><button class="btn btn-primary" id="ae-post-btn">Post event</button></div>
+    </div>
+    <div class="panel">
+      <h3>Posted events</h3>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Mark attendance on any event so it counts toward a member's badge progress.</p>
+      <div class="rows" style="box-shadow:none;border:1px solid #F0EADB" id="admin-event-list">
+        <div class="reg-empty" style="padding:20px">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-title" style="margin-top:26px"><h3>Award entries awaiting review</h3><span style="font-size:12.5px;color:var(--ink-soft)" id="admin-aw-count"></span></div>
+  <div class="panel">
+    <div class="rows" style="box-shadow:none;border:1px solid #F0EADB" id="admin-aw-list">
+      <div class="reg-empty" style="padding:20px">Loading…</div>
+    </div>
+  </div>
+
+  <div class="sec-title" style="margin-top:26px"><h3>Auction lots</h3></div>
+  <div class="grid" style="grid-template-columns:1fr 1.2fr">
+    <div class="panel">
+      <h3>Log a lot</h3>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Recording an auction on someone's behalf. For bulk imports from a spreadsheet, use Supabase's Table Editor → auction_lots → Import data instead.</p>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="field"><label for="al-member">Member *</label><select id="al-member"><option value="">— Select a member —</option></select></div>
+        <div class="grid g2">
+          <div class="field"><label for="al-date">Auction date *</label><input id="al-date" type="date"></div>
+          <div class="field"><label for="al-role">Role *</label><select id="al-role"><option value="Bought">Bought</option><option value="Sold">Sold</option></select></div>
+        </div>
+        <div class="field"><label for="al-item">Item *</label><input id="al-item" placeholder="e.g. Pair of Apistogramma cacatuoides"></div>
+        <div class="field"><label for="al-amount">Amount (R) *</label><input id="al-amount" type="number" min="0" step="5"></div>
+      </div>
+      <p id="al-error" style="display:none;font-size:12.5px;font-weight:700;color:var(--coral-dark);margin:12px 0 0">Fill in the member, item and amount before saving.</p>
+      <div style="margin-top:16px"><button class="btn btn-primary" id="al-post-btn">Log lot</button></div>
+    </div>
+    <div class="panel">
+      <h3>Recently logged</h3>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Last 25 lots across all members, newest first.</p>
+      <div class="rows" style="box-shadow:none;border:1px solid #F0EADB" id="admin-auction-list">
+        <div class="reg-empty" style="padding:20px">Loading…</div>
+      </div>
+    </div>
+  </div>
+
   <div class="future" style="margin-top:24px">
     <span class="badge info">Coming soon</span>
-    <h4>Approve award entries · Confirm renewals · Manage events</h4>
-    <p>These arrive as award entries, payments and the events calendar are moved into the database — the same pattern as news posting.</p>
+    <h4>Confirm renewals</h4>
+    <p>Arrives once membership payments move into the database — the same pattern as news, award entries, events and auction lots.</p>
   </div>
 </section>
 
@@ -1802,6 +1870,9 @@ window.initPortal = function(){
     }
     if (id === 'badges' && typeof renderBadgeCategories === 'function') renderBadgeCategories();
     if (id === 'member-aquariums' && typeof renderMemberAquariums === 'function') renderMemberAquariums();
+    if (id === 'admin' && typeof loadAdminAwardQueue === 'function') loadAdminAwardQueue();
+    if (id === 'admin' && typeof loadEvents === 'function') loadEvents();
+    if (id === 'admin' && typeof loadAdminAuctionList === 'function') loadAdminAuctionList();
     sidebar.classList.remove('open'); scrim.classList.remove('show');
     window.scrollTo({top:0, behavior:'smooth'});
   }
@@ -2115,7 +2186,8 @@ window.initPortal = function(){
     setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
   }
 
-  var MEETINGS = [
+  var IS_LIVE = !!window.currentMember;
+  var MEETINGS = IS_LIVE ? [] : [
     { uid:'ecaac-2026-08-01', title:'ECAAC Monthly Club Meeting', date:new Date(2026,7,1,14,0), hours:4,
       location:'The Italian Club, 17 Harold Road, Broadwood, Gqeberha',
       desc:'Talks, braai & refreshments, raffle and club auction — anyone may bid.',
@@ -2146,6 +2218,10 @@ window.initPortal = function(){
   function renderEvents(){
     var el = document.getElementById('events-rows');
     if (!el) return;
+    if (!MEETINGS.length){
+      el.innerHTML = '<div class="reg-empty" style="padding:22px">' + (IS_LIVE ? 'No events on the calendar yet — the committee will post the next one soon.' : 'No events yet.') + '</div>';
+      return;
+    }
     el.innerHTML = MEETINGS.map(function(m, i){
       var action = m.rsvp
         ? '<button class="btn btn-primary btn-sm toastable" data-toast="RSVP confirmed — see you on ' + m.dateLabel[0] + ' ' + m.dateLabel[1] + '!">RSVP</button>'
@@ -2259,7 +2335,6 @@ window.initPortal = function(){
   if (resSearch) resSearch.addEventListener('input', function(){ renderGuides(this.value); });
 
   // ===== Award entry submission =====
-  var IS_LIVE = !!window.currentMember;
   var ENTRIES = IS_LIVE ? [] : [
     { title:"HAP — Bucephalandra 'Kedagang' (division)", meta:'Emerald Valley · submitted 19 Jul 2026 · awaiting judge photos check', status:'pend', icon:'plant' },
     { title:'BAP — Julidochromis ornatus (spawn)', meta:'Rift Lake Reef · submitted 11 Jul 2026 · fry at 30-day mark 10 Aug', status:'pend', icon:'fish' },
@@ -2276,9 +2351,12 @@ window.initPortal = function(){
     var el = document.getElementById('entries-rows');
     if (!el) return;
     el.innerHTML = ENTRIES.length ? ENTRIES.map(function(e){
-      return '<div class="row"><div class="row-icon' + (e.status==='ok' ? '' : ' gold') + '">' + ENTRY_ICONS[e.icon] + '</div>' +
+      var badgeClass = e.status === 'ok' ? 'ok' : (e.status === 'rej' ? 'warn' : 'pend');
+      var badgeLabel = e.status === 'ok' ? 'Approved' : (e.status === 'rej' ? 'Not approved' : 'Pending');
+      var iconClass = e.status === 'ok' ? '' : (e.status === 'rej' ? ' warn' : ' gold');
+      return '<div class="row"><div class="row-icon' + iconClass + '">' + ENTRY_ICONS[e.icon] + '</div>' +
         '<div class="row-body"><b>' + escT(e.title) + '</b><span>' + escT(e.meta) + '</span></div>' +
-        '<span class="badge ' + (e.status==='ok' ? 'ok' : 'pend') + '">' + (e.status==='ok' ? 'Approved' : 'Pending') + '</span></div>';
+        '<span class="badge ' + badgeClass + '">' + badgeLabel + '</span></div>';
     }).join('') : '<div class="reg-empty" style="padding:22px">No award entries yet — submit your first entry when you have a spawn, plant division or aquascape to show.</div>';
     document.getElementById('aw-approved-count').textContent = ENTRIES.filter(function(e){ return e.status==='ok'; }).length;
     document.getElementById('aw-pending-count').textContent = ENTRIES.filter(function(e){ return e.status==='pend'; }).length;
@@ -2314,43 +2392,61 @@ window.initPortal = function(){
     document.getElementById('af-file-text').textContent = n ? (n + ' photo' + (n===1?'':'s') + ' selected') : 'Tap to choose photos of your entry';
     document.getElementById('af-file-label').classList.toggle('has-file', n > 0);
   });
-  document.getElementById('af-submit').addEventListener('click', function(){
+  document.getElementById('af-submit').addEventListener('click', async function(){
     var species = document.getElementById('af-species').value.trim();
     if (!species){ document.getElementById('af-error').style.display = 'block'; return; }
     var program = document.getElementById('af-program').value;
     var category = document.getElementById('af-category').value;
     var tankIdx = document.getElementById('af-tank').value;
-    var tankName = tankIdx !== '' ? tanks[parseInt(tankIdx,10)].name : null;
-    var metaParts = [];
-    if (tankName) metaParts.push(tankName);
-    metaParts.push('submitted ' + todayShort() + ' 2026');
-    metaParts.push('awaiting judge review');
-    var entry = { title: program + ' — ' + species, meta: metaParts.join(' · '), status:'pend',
-      icon: program === 'HAP' ? 'plant' : (program === 'AAP' ? 'scape' : 'fish') };
-    ENTRIES.unshift(entry);
-    renderEntries();
-    if (tankIdx !== ''){
-      tanks[parseInt(tankIdx,10)].awards.unshift([program + ' — ' + species, 'Submitted ' + todayShort() + ' 2026', 'pend']);
-      if (currentTank === parseInt(tankIdx,10)) renderDetail();
+    var tankObj = tankIdx !== '' ? tanks[parseInt(tankIdx,10)] : null;
+    var submitBtn = document.getElementById('af-submit');
+    submitBtn.disabled = true; submitBtn.textContent = 'Submitting…';
+
+    if (sb && window.currentMember){
+      var res = await dbInsertRow('award_entries', {
+        member_id: window.currentMember.id,
+        tank_id: tankObj ? tankObj.id : null,
+        program: program, category: category, species: species,
+        notes: document.getElementById('af-notes').value.trim() || null
+      });
+      submitBtn.disabled = false; submitBtn.textContent = 'Submit for judging';
+      if (res.error){ popToast('Could not submit — try again'); return; }
+      closeAwardModal();
+      popToast(category + ' entry for ' + program + ' submitted for judging');
+      loadMyEntries();
+    } else {
+      submitBtn.disabled = false; submitBtn.textContent = 'Submit for judging';
+      var metaParts = [];
+      if (tankObj) metaParts.push(tankObj.name);
+      metaParts.push('submitted ' + todayShort() + ' 2026');
+      metaParts.push('awaiting judge review');
+      var entry = { title: program + ' — ' + species, meta: metaParts.join(' · '), status:'pend',
+        icon: program === 'HAP' ? 'plant' : (program === 'AAP' ? 'scape' : 'fish') };
+      ENTRIES.unshift(entry);
+      renderEntries();
+      if (tankObj){
+        tankObj.awards.unshift([program + ' — ' + species, 'Submitted ' + todayShort() + ' 2026', 'pend']);
+        if (currentTank === parseInt(tankIdx,10)) renderDetail();
+      }
+      closeAwardModal();
+      popToast(category + ' entry for ' + program + ' submitted for judging');
     }
-    closeAwardModal();
-    popToast(category + ' entry for ' + program + ' submitted for judging');
     if (window.checkBadgeChanges) window.checkBadgeChanges();
   });
 
   // ===== My Auctions =====
   var AUCTIONS = IS_LIVE ? [] : [
-    { date:'5 September 2025', item:'Pair of Apistogramma cacatuoides', category:'Fish', role:'Bought', amount:180 },
-    { date:'5 September 2025', item:'Java fern on driftwood', category:'Plant', role:'Bought', amount:60 },
-    { date:'4 October 2025', item:'Trio of Corydoras sterbai', category:'Fish', role:'Sold', amount:150 },
-    { date:'1 November 2025', item:'Fluval canister filter (used)', category:'Equipment', role:'Bought', amount:420 },
-    { date:'6 December 2025', item:'Neolamprologus multifasciatus colony (12)', category:'Fish', role:'Sold', amount:360 },
-    { date:'7 February 2026', item:'CO₂ regulator with bubble counter', category:'Equipment', role:'Bought', amount:350 },
-    { date:'7 March 2026', item:'Bucephalandra \u2018Kedagang\u2019 clumps (3)', category:'Plant', role:'Sold', amount:210 },
-    { date:'4 April 2026', item:'Bag of aqua soil, 9L', category:'Dry goods', role:'Bought', amount:145 },
-    { date:'2 May 2026', item:'Julidochromis ornatus fry (8)', category:'Fish', role:'Sold', amount:240 },
-    { date:'6 June 2026', item:'Amazon frogbit, large clump', category:'Plant', role:'Bought', amount:35 },
-    { date:'4 July 2026', item:'Blue Bolt shrimp (10)', category:'Invertebrate', role:'Sold', amount:400 }
+    { date:'5 September 2025', item:'Pair of Apistogramma cacatuoides', role:'Bought', amount:180 },
+    { date:'5 September 2025', item:'Java fern on driftwood', role:'Bought', amount:60 },
+    { date:'4 October 2025', item:'Trio of Corydoras sterbai', role:'Sold', amount:150 },
+    { date:'1 November 2025', item:'Fluval canister filter (used)', role:'Bought', amount:420 },
+    { date:'6 December 2025', item:'Neolamprologus multifasciatus colony (12)', role:'Sold', amount:360 },
+    { date:'7 February 2026', item:'CO₂ regulator with bubble counter', role:'Bought', amount:350 },
+    { date:'7 March 2026', item:'Bucephalandra \u2018Kedagang\u2019 clumps (3)', role:'Sold', amount:210 },
+    { date:'4 April 2026', item:'Bag of aqua soil, 9L', role:'Bought', amount:145 },
+    { date:'2 May 2026', item:'Julidochromis ornatus fry (8)', role:'Sold', amount:240 },
+    { date:'6 June 2026', item:'Amazon frogbit, large clump', role:'Bought', amount:35 },
+    { date:'4 July 2026', item:'Blue Bolt shrimp (10)', role:'Sold', amount:400 }
   ];
   var aucFilter = 'All', aucSortKey = 'date', aucSortAsc = false;
 
@@ -2395,7 +2491,7 @@ window.initPortal = function(){
       var roleBadge = a.role === 'Sold' ? '<span class="badge ok">Sold</span>' : '<span class="badge warn">Bought</span>';
       var amountDisplay = (a.role === 'Sold' ? '+' : '−') + money2(a.amount);
       return '<tr><td class="reg-member">' + escT(a.date) + '</td><td class="reg-species" style="font-style:normal">' + escT(a.item) + '</td>' +
-        '<td>' + escT(a.category) + '</td><td>' + roleBadge + '</td>' +
+        '<td>' + roleBadge + '</td>' +
         '<td style="font-weight:700;color:' + (a.role==='Sold' ? 'var(--leaf-dark)' : 'var(--coral-dark)') + '">' + amountDisplay + '</td></tr>';
     }).join('');
     document.getElementById('auction-empty').style.display = rows.length ? 'none' : 'block';
@@ -3283,8 +3379,8 @@ window.initPortal = function(){
     var auctionValue = AUCTIONS.reduce(function(sum, a){ return sum + a.amount; }, 0);
     var stats = window.currentMember
       ? {
-          meetings: 0, // committee will record attendance later
-          awardPoints: 0,
+          meetings: window.myTotalMeetingsAttended || 0,
+          awardPoints: myApprovedPoints,
           tenureYears: Math.max(0, new Date().getFullYear() - (window.currentMember.join_date ? new Date(window.currentMember.join_date).getFullYear() : new Date().getFullYear()))
         }
       : { meetings: 71, awardPoints: 245, tenureYears: 8 };
@@ -3615,9 +3711,7 @@ window.initPortal = function(){
       'award-points': '0',
       'award-points-label': 'Award points',
       'aw-badges': '0',
-      'ev-meetings': '0 / 12',
-      'ev-workshops': '0',
-      'ev-auctions': '0',
+      'ev-meetings': '0 / 0',
       'notif-heading': '1 unread'
     };
     document.querySelectorAll('[data-live]').forEach(function(el){
@@ -3697,6 +3791,316 @@ window.initPortal = function(){
     }
   }
 
+  // ===== Events: real committee-managed calendar + attendance tracking =====
+  var MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function eventRowToMeeting(row){
+    var start = new Date(row.start_at);
+    var end = row.end_at ? new Date(row.end_at) : new Date(start.getTime() + 4*3600000);
+    var hours = (end - start) / 3600000;
+    var timeStr = start.toLocaleTimeString('en-ZA', { hour:'2-digit', minute:'2-digit', hour12:false });
+    var metaParts = [timeStr];
+    if (row.location) metaParts.push(row.location);
+    if (row.description) metaParts.push(row.description);
+    return {
+      uid: row.id, title: row.title, date: start, hours: hours,
+      location: row.location || '', desc: row.description || '',
+      dateLabel: [start.getDate(), MONTH_ABBR[start.getMonth()]],
+      name: row.title, meta: metaParts.join(' · '),
+      rsvp: false, category: row.category || 'meeting'
+    };
+  }
+
+  async function loadEvents(){
+    if (!sb || !window.currentMember) return;
+    var res = await sb.from('events').select('*').order('start_at', { ascending: true });
+    var rows = res.data || [];
+    MEETINGS.length = 0;
+    rows.forEach(function(r){ MEETINGS.push(eventRowToMeeting(r)); });
+    renderEvents();
+    renderAdminEventList(rows);
+    loadMyAttendance();
+  }
+
+  async function loadMyAttendance(){
+    if (!sb || !window.currentMember) return;
+    var res = await sb.from('event_attendance')
+      .select('*, events(start_at, category)')
+      .eq('member_id', window.currentMember.id);
+    var rows = res.data || [];
+    var oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    var now = new Date();
+    var attendedMeetings = rows.filter(function(r){
+      return r.events && r.events.category === 'meeting' && new Date(r.events.start_at) >= oneYearAgo && new Date(r.events.start_at) <= now;
+    }).length;
+    var totalMeetingsHeld = MEETINGS.filter(function(m){ return m.category === 'meeting' && m.date >= oneYearAgo && m.date <= now; }).length;
+    var el = document.querySelector('[data-live="ev-meetings"]');
+    if (el) el.textContent = attendedMeetings + ' / ' + totalMeetingsHeld;
+    window.myTotalMeetingsAttended = rows.filter(function(r){ return r.events && r.events.category === 'meeting'; }).length;
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
+  }
+
+  // ----- Admin: create events + mark attendance -----
+  var anEventBtn = document.getElementById('ae-post-btn');
+  if (anEventBtn) anEventBtn.addEventListener('click', async function(){
+    if (!sb || !IS_ADMIN) return;
+    var title = document.getElementById('ae-title').value.trim();
+    var dateVal = document.getElementById('ae-date').value;
+    var timeVal = document.getElementById('ae-time').value || '14:00';
+    var errEl = document.getElementById('ae-error');
+    if (!title || !dateVal){ errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    var start = new Date(dateVal + 'T' + timeVal);
+    var hours = parseFloat(document.getElementById('ae-hours').value) || 4;
+    var end = new Date(start.getTime() + hours * 3600000);
+    anEventBtn.disabled = true; anEventBtn.textContent = 'Posting…';
+    var res = await dbInsertRow('events', {
+      title: title, category: document.getElementById('ae-category').value,
+      location: document.getElementById('ae-location').value.trim() || null,
+      description: document.getElementById('ae-desc').value.trim() || null,
+      start_at: start.toISOString(), end_at: end.toISOString(),
+      created_by: window.currentMember.id
+    });
+    anEventBtn.disabled = false; anEventBtn.textContent = 'Post event';
+    if (res.error){ popToast('Could not post — try again'); return; }
+    document.getElementById('ae-title').value = '';
+    document.getElementById('ae-location').value = '';
+    document.getElementById('ae-desc').value = '';
+    popToast(title + ' added to the calendar');
+    loadEvents();
+  });
+
+  function renderAdminEventList(rows){
+    var list = document.getElementById('admin-event-list');
+    if (!list || !IS_ADMIN) return;
+    if (!rows.length){ list.innerHTML = '<div class="reg-empty" style="padding:20px">No events posted yet.</div>'; return; }
+    list.innerHTML = rows.map(function(r){
+      var when = new Date(r.start_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short', year:'numeric' });
+      return '<div class="row" style="flex-wrap:wrap;align-items:flex-start"><div class="row-body"><b>' + escT(r.title) + '</b><span>' + escT(when) + (r.location ? ' · ' + escT(r.location) : '') + '</span></div>' +
+        '<button class="rm-btn" data-event-id="' + r.id + '" aria-label="Delete event"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+        '<div style="flex-basis:100%;order:3;margin-top:10px" class="ev-attendance" data-event-id2="' + r.id + '"></div></div>';
+    }).join('');
+    list.querySelectorAll('[data-event-id]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        await sb.from('events').delete().eq('id', b.getAttribute('data-event-id'));
+        popToast('Event deleted');
+        loadEvents();
+      });
+    });
+    list.querySelectorAll('.ev-attendance').forEach(function(box){ renderAttendanceBox(box, box.getAttribute('data-event-id2')); });
+  }
+
+  async function renderAttendanceBox(box, eventId){
+    var res = await sb.from('event_attendance').select('*, members(first_name,last_name)').eq('event_id', eventId);
+    var rows = res.data || [];
+    var memberOptions = (window.__liveMemberList || []).map(function(m){
+      return '<option value="' + m.id + '">' + escT(((m.first_name||'') + ' ' + (m.last_name||'')).trim() || 'Member') + '</option>';
+    }).join('');
+    box.innerHTML =
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
+        '<select class="att-select" style="max-width:220px"><option value="">Mark a member as attended…</option>' + memberOptions + '</select>' +
+        '<button class="aw-btn approve att-add">Add</button>' +
+        '<span style="font-size:12px;color:var(--ink-soft)">' + rows.length + ' attended</span>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">' + rows.map(function(a){
+        var nm = a.members ? ((a.members.first_name||'') + ' ' + (a.members.last_name||'')).trim() : 'Member';
+        return '<span class="tag" style="display:inline-flex;align-items:center;gap:6px">' + escT(nm) + '<button class="att-remove" data-att-id="' + a.id + '" aria-label="Remove ' + escT(nm) + '" style="background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:0;font-size:14px;line-height:1">×</button></span>';
+      }).join('') + '</div>';
+    box.querySelector('.att-add').addEventListener('click', async function(){
+      var sel = box.querySelector('.att-select');
+      var memberId = sel.value;
+      if (!memberId) return;
+      this.disabled = true;
+      var r = await dbInsertRow('event_attendance', { event_id: eventId, member_id: memberId, marked_by: window.currentMember.id });
+      this.disabled = false;
+      if (r.error){ popToast('Could not mark attendance — try again'); return; }
+      renderAttendanceBox(box, eventId);
+    });
+    box.querySelectorAll('.att-remove').forEach(function(x){
+      x.addEventListener('click', async function(){
+        await dbDeleteRow('event_attendance', x.getAttribute('data-att-id'));
+        renderAttendanceBox(box, eventId);
+      });
+    });
+  }
+
+  // ===== Auction lots: member's own read-only history + admin logging =====
+  function fmtAuctionDate(iso){
+    var d = new Date(iso + 'T00:00:00');
+    return d.getDate() + ' ' + MONTH_ABBR_LONG[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  var MONTH_ABBR_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  async function loadMyAuctionLots(){
+    if (!sb || !window.currentMember) return;
+    var res = await sb.from('auction_lots')
+      .select('*')
+      .eq('member_id', window.currentMember.id)
+      .order('auction_date', { ascending: false });
+    var rows = res.data || [];
+    AUCTIONS.length = 0;
+    rows.forEach(function(r){
+      AUCTIONS.push({ date: fmtAuctionDate(r.auction_date), item: r.item, role: r.role, amount: parseFloat(r.amount) });
+    });
+    if (typeof renderAuctions === 'function') renderAuctions();
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
+  }
+
+  function populateMemberSelect(){
+    var sel = document.getElementById('al-member');
+    if (!sel) return;
+    var list = window.__liveMemberList || [];
+    sel.innerHTML = '<option value="">— Select a member —</option>' + list.map(function(m){
+      var nm = ((m.first_name||'') + ' ' + (m.last_name||'')).trim() || 'New member';
+      return '<option value="' + m.id + '">' + escT(nm) + '</option>';
+    }).join('');
+  }
+
+  var alPostBtn = document.getElementById('al-post-btn');
+  if (alPostBtn) alPostBtn.addEventListener('click', async function(){
+    if (!sb || !IS_ADMIN) return;
+    var memberId = document.getElementById('al-member').value;
+    var dateVal = document.getElementById('al-date').value;
+    var item = document.getElementById('al-item').value.trim();
+    var amount = parseFloat(document.getElementById('al-amount').value);
+    var errEl = document.getElementById('al-error');
+    if (!memberId || !dateVal || !item || !amount || amount <= 0){ errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    alPostBtn.disabled = true; alPostBtn.textContent = 'Saving…';
+    var res = await dbInsertRow('auction_lots', {
+      member_id: memberId, auction_date: dateVal, item: item,
+      role: document.getElementById('al-role').value, amount: amount,
+      created_by: window.currentMember.id
+    });
+    alPostBtn.disabled = false; alPostBtn.textContent = 'Log lot';
+    if (res.error){ popToast('Could not save — try again'); return; }
+    document.getElementById('al-item').value = '';
+    document.getElementById('al-amount').value = '';
+    popToast('Lot logged for that member');
+    loadAdminAuctionList();
+    if (memberId === window.currentMember.id) loadMyAuctionLots();
+  });
+
+  async function loadAdminAuctionList(){
+    if (!sb || !IS_ADMIN) return;
+    populateMemberSelect();
+    var res = await sb.from('auction_lots')
+      .select('*, members(first_name,last_name)')
+      .order('created_at', { ascending: false })
+      .limit(25);
+    var rows = res.data || [];
+    var list = document.getElementById('admin-auction-list');
+    if (!list) return;
+    if (!rows.length){ list.innerHTML = '<div class="reg-empty" style="padding:20px">No auction lots logged yet.</div>'; return; }
+    list.innerHTML = rows.map(function(r){
+      var nm = r.members ? ((r.members.first_name||'') + ' ' + (r.members.last_name||'')).trim() : 'Member';
+      var roleBadge = r.role === 'Sold' ? '<span class="badge ok">Sold</span>' : '<span class="badge warn">Bought</span>';
+      return '<div class="row"><div class="row-body"><b>' + escT(r.item) + '</b><span>' + escT(nm) + ' · ' + escT(fmtAuctionDate(r.auction_date)) + ' · R' + Number(r.amount).toFixed(2) + '</span></div>' +
+        roleBadge +
+        '<button class="rm-btn" data-lot-id="' + r.id + '" aria-label="Delete lot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>';
+    }).join('');
+    list.querySelectorAll('[data-lot-id]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        await dbDeleteRow('auction_lots', b.getAttribute('data-lot-id'));
+        popToast('Lot deleted');
+        loadAdminAuctionList();
+      });
+    });
+  }
+
+  // ===== Award entries: member's own list + admin approval queue =====
+  var myApprovedPoints = 0;
+  var ENTRY_STATUS_MAP = { pending:'pend', approved:'ok', rejected:'rej' };
+
+  async function loadMyEntries(){
+    if (!sb || !window.currentMember) return;
+    var res = await sb.from('award_entries')
+      .select('*, tanks(name)')
+      .eq('member_id', window.currentMember.id)
+      .order('submitted_at', { ascending: false });
+    var rows = res.data || [];
+    myApprovedPoints = rows.reduce(function(sum, r){ return sum + (r.status === 'approved' ? (r.points || 0) : 0); }, 0);
+
+    ENTRIES.length = 0;
+    rows.forEach(function(r){
+      var metaParts = [];
+      if (r.tanks && r.tanks.name) metaParts.push(r.tanks.name);
+      if (r.status === 'approved'){
+        if (r.points) metaParts.push('+' + r.points + ' points');
+        if (r.judge_comment) metaParts.push('judge: "' + r.judge_comment + '"');
+      } else if (r.status === 'rejected'){
+        metaParts.push(r.judge_comment ? 'judge: "' + r.judge_comment + '"' : 'not approved this round');
+      } else {
+        metaParts.push('submitted ' + new Date(r.submitted_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short', year:'numeric' }));
+        metaParts.push('awaiting judge review');
+      }
+      ENTRIES.push({
+        title: r.program + ' — ' + r.species,
+        meta: metaParts.join(' · '),
+        status: ENTRY_STATUS_MAP[r.status] || 'pend',
+        icon: r.program === 'HAP' ? 'plant' : (r.program === 'AAP' ? 'scape' : 'fish')
+      });
+    });
+    renderEntries();
+
+    // attach each tank's own entries for its "Award entries from this tank" panel
+    tanks.forEach(function(t){
+      t.awards = rows.filter(function(r){ return r.tank_id === t.id; }).map(function(r){
+        return [r.program + ' — ' + r.species, r.status === 'approved' ? ('+' + (r.points||0) + ' points · approved') : (r.status === 'rejected' ? 'Not approved' : 'Submitted ' + new Date(r.submitted_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short' })), r.status === 'approved' ? 'ok' : 'pend'];
+      });
+    });
+    if (currentTank >= 0 && currentTank < tanks.length) renderDetail();
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
+  }
+
+  async function loadAdminAwardQueue(){
+    if (!sb || !IS_ADMIN) return;
+    var res = await sb.from('award_entries')
+      .select('*, members(first_name,last_name), tanks(name)')
+      .eq('status', 'pending')
+      .order('submitted_at', { ascending: true });
+    var rows = res.data || [];
+    var list = document.getElementById('admin-aw-list');
+    var countEl = document.getElementById('admin-aw-count');
+    if (countEl) countEl.textContent = rows.length + ' pending';
+    if (!list) return;
+    if (!rows.length){ list.innerHTML = '<div class="reg-empty" style="padding:20px">Nothing waiting for judging right now.</div>'; return; }
+    list.innerHTML = rows.map(function(r){
+      var memberName = r.members ? ((r.members.first_name||'') + ' ' + (r.members.last_name||'')).trim() : 'Unknown member';
+      var sub = (memberName || 'Member') + ' · ' + r.category + (r.tanks && r.tanks.name ? ' · ' + r.tanks.name : '') + ' · submitted ' + new Date(r.submitted_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short' });
+      return '<div class="row aw-review-row" data-entry-id="' + r.id + '">' +
+        '<div class="row-body"><b>' + escT(r.program + ' — ' + r.species) + '</b><span>' + escT(sub) + '</span>' + (r.notes ? '<span style="display:block;margin-top:2px;font-style:italic">' + escT(r.notes) + '</span>' : '') + '</div>' +
+        '<div class="aw-review-actions">' +
+          '<input type="number" class="aw-points-input" min="0" placeholder="Pts" aria-label="Points to award">' +
+          '<button class="aw-btn approve" data-action="approve">Approve</button>' +
+          '<button class="aw-btn reject" data-action="reject">Reject</button>' +
+        '</div></div>';
+    }).join('');
+    list.querySelectorAll('.aw-review-row').forEach(function(row){
+      var entryId = row.getAttribute('data-entry-id');
+      var ptsInput = row.querySelector('.aw-points-input');
+      row.querySelector('[data-action="approve"]').addEventListener('click', async function(){
+        var pts = parseInt(ptsInput.value, 10);
+        if (!pts || pts <= 0){ ptsInput.focus(); popToast('Enter points before approving'); return; }
+        this.disabled = true;
+        var res2 = await sb.from('award_entries').update({
+          status: 'approved', points: pts, reviewed_at: new Date().toISOString(), reviewed_by: window.currentMember.id
+        }).eq('id', entryId);
+        if (res2.error){ popToast('Could not approve — try again'); this.disabled = false; return; }
+        popToast('Entry approved — +' + pts + ' points awarded');
+        loadAdminAwardQueue();
+      });
+      row.querySelector('[data-action="reject"]').addEventListener('click', async function(){
+        this.disabled = true;
+        var res3 = await sb.from('award_entries').update({
+          status: 'rejected', reviewed_at: new Date().toISOString(), reviewed_by: window.currentMember.id
+        }).eq('id', entryId);
+        if (res3.error){ popToast('Could not update — try again'); this.disabled = false; return; }
+        popToast('Entry marked not approved');
+        loadAdminAwardQueue();
+      });
+    });
+  }
+
   var anPostBtn = document.getElementById('an-post-btn');
   if (anPostBtn) anPostBtn.addEventListener('click', async function(){
     if (!sb) return;
@@ -3720,6 +4124,7 @@ window.initPortal = function(){
     var res = await sb.from('members').select('*').order('created_at', { ascending: true });
     var rows = res.data || [];
     if (!rows.length) return;
+    window.__liveMemberList = rows;
     DIR.length = 0;
     rows.sort(function(a, b){ return (b.role === 'admin') - (a.role === 'admin'); });
     rows.forEach(function(m){
@@ -3761,7 +4166,7 @@ window.initPortal = function(){
     if (window.checkBadgeChanges) window.checkBadgeChanges();
   });
 
-  if (window.currentMember) { loadNews(); loadLiveMembers(); loadTanksFromDB(); loadOtherMemberTanks(); }
+  if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); }
 
   applyLiveMember();
 
