@@ -600,8 +600,8 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <div class="side-user">
       <div class="avatar">JN</div>
       <div>
-        <b>Judy Nel</b>
-        <span>Club President · ECAAC-0002</span>
+        <b data-live="fullname">Judy Nel</b>
+        <span data-live="side-sub">Club President · ECAAC-0002</span>
       </div>
     </div>
   </div>
@@ -615,7 +615,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
   </button>
   <div class="welcome">
-    <b>Welcome back, Judy 🌿</b>
+    <b data-live="welcome">Welcome back, Judy 🌿</b>
     <span>Friday, 24 July 2026</span>
   </div>
   <span class="status-chip">Membership active</span>
@@ -629,7 +629,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
       <span class="dot"></span>
     </button>
-    <button class="top-avatar" data-view-jump="profile" aria-label="My profile">JN</button>
+    <button class="top-avatar" data-view-jump="profile" aria-label="My profile" data-live="initials">JN</button>
   </div>
 </header>
 
@@ -662,8 +662,8 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     </div>
     <div class="card t-gold">
       <div class="card-icon bg-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/></svg></div>
-      <div class="stat-num">245</div>
-      <div class="stat-label">Award points · 2 entries pending review</div>
+      <div class="stat-num" data-live="award-points">245</div>
+      <div class="stat-label" data-live="award-points-label">Award points · 2 entries pending review</div>
     </div>
     <div class="card t-coral">
       <div class="card-icon bg-coral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
@@ -683,10 +683,10 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <div class="brand-badge"><img src="https://www.ecaac.co.za/images/logo.png" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:inherit" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg></div>
         <div><b>Eastern Cape Aquarium &amp; Aquascaping Club</b><span>Official member card</span></div>
       </div>
-      <div class="mc-name">Judy Nel</div>
-      <div class="mc-role">Club President · Full member</div>
+      <div class="mc-name" data-live="fullname">Judy Nel</div>
+      <div class="mc-role" data-live="role-line">Club President · Full member</div>
       <div class="mc-meta">
-        <div><span>Member No.</span><b>ECAAC-0002</b></div>
+        <div><span>Member No.</span><b data-live="member-number">ECAAC-0002</b></div>
         <div><span>Type</span><b>Annual · Full</b></div>
         <div><span>Issued</span><b>01 Feb 2026</b></div>
         <div><span>Expires</span><b>28 Feb 2027</b></div>
@@ -741,9 +741,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <div>
       <div class="sec-title" style="margin-top:0">
         <h3>Recent activity</h3>
-        <button class="linkish" data-view-jump="notifications">Notifications <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
+        <button class="linkish" data-view-jump="notifications" id="dash-activity-link">Notifications <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
       </div>
-      <div class="rows">
+      <div class="rows" id="dash-activity">
         <div class="row">
           <div class="row-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/></svg></div>
           <div class="row-body"><b>BAP entry approved — Neolamprologus multifasciatus</b><span>+15 points awarded</span></div>
@@ -799,10 +799,10 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </div>
   <div class="grid" style="grid-template-columns:300px 1fr">
     <div class="panel" style="text-align:center">
-      <div class="top-avatar" style="width:110px;height:110px;font-size:32px;margin:6px auto 16px">JN</div>
-      <h3 style="margin-bottom:4px">Judy Nel</h3>
-      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 6px">Club President · Member since 2018</p>
-      <span class="badge ok">8 years a member</span>
+      <div class="top-avatar" style="width:110px;height:110px;font-size:32px;margin:6px auto 16px" data-live="initials">JN</div>
+      <h3 style="margin-bottom:4px" data-live="fullname">Judy Nel</h3>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 6px" data-live="profile-sub">Club President · Member since 2018</p>
+      <span class="badge ok" data-live="years-badge">8 years a member</span>
       <div style="margin-top:18px"><button class="btn btn-outline btn-sm toastable" data-toast="Photo upload is a demo placeholder">Change photo</button></div>
     </div>
     <div class="panel">
@@ -843,9 +843,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </div>
 
   <div class="grid g4">
-    <div class="card t-leaf"><div class="stat-num">ECAAC-0002</div><div class="stat-label">Membership number</div></div>
+    <div class="card t-leaf"><div class="stat-num" data-live="member-number" style="font-size:22px">ECAAC-0002</div><div class="stat-label">Membership number</div></div>
     <div class="card t-deep"><div class="stat-num">Full</div><div class="stat-label">Annual membership type</div></div>
-    <div class="card t-gold"><div class="stat-num">8</div><div class="stat-label">Years as member · joined 2018</div></div>
+    <div class="card t-gold"><div class="stat-num" data-live="years-num">8</div><div class="stat-label" data-live="joined-label">Years as member · joined 2018</div></div>
     <div class="card t-coral"><div class="stat-num">219</div><div class="stat-label">Days until renewal · fees due end Feb 2027</div></div>
   </div>
 
@@ -856,10 +856,10 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <div class="brand-badge"><img src="https://www.ecaac.co.za/images/logo.png" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:inherit" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg></div>
         <div><b>Eastern Cape Aquarium &amp; Aquascaping Club</b><span>Official member card</span></div>
       </div>
-      <div class="mc-name">Judy Nel</div>
-      <div class="mc-role">Club President · Full member</div>
+      <div class="mc-name" data-live="fullname">Judy Nel</div>
+      <div class="mc-role" data-live="role-line">Club President · Full member</div>
       <div class="mc-meta">
-        <div><span>Member No.</span><b>ECAAC-0002</b></div>
+        <div><span>Member No.</span><b data-live="member-number">ECAAC-0002</b></div>
         <div><span>Type</span><b>Annual · Full</b></div>
         <div><span>Issued</span><b>01 Feb 2026</b></div>
         <div><span>Expires</span><b>28 Feb 2027</b></div>
@@ -1033,10 +1033,10 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </div>
 
   <div class="grid g4">
-    <div class="card t-gold"><div class="stat-num">245</div><div class="stat-label">Total points earned</div></div>
+    <div class="card t-gold"><div class="stat-num" data-live="award-points">245</div><div class="stat-label">Total points earned</div></div>
     <div class="card t-leaf"><div class="stat-num" id="aw-approved-count">12</div><div class="stat-label">Approved entries</div></div>
     <div class="card t-coral"><div class="stat-num" id="aw-pending-count">2</div><div class="stat-label">Pending judge review</div></div>
-    <div class="card t-deep"><div class="stat-num">5</div><div class="stat-label">Badges earned</div></div>
+    <div class="card t-deep"><div class="stat-num" data-live="aw-badges">5</div><div class="stat-label">Badges earned</div></div>
   </div>
 
   <div class="grid g2" style="margin-top:24px">
@@ -1443,9 +1443,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 
   <div class="sec-title"><h3>Your attendance</h3></div>
   <div class="grid g3">
-    <div class="card t-leaf"><div class="stat-num">11 / 12</div><div class="stat-label">Meetings attended, last 12 months</div></div>
-    <div class="card t-deep"><div class="stat-num">4</div><div class="stat-label">Workshops attended in 2026</div></div>
-    <div class="card t-gold"><div class="stat-num">2</div><div class="stat-label">Auctions participated in</div></div>
+    <div class="card t-leaf"><div class="stat-num" data-live="ev-meetings">11 / 12</div><div class="stat-label">Meetings attended, last 12 months</div></div>
+    <div class="card t-deep"><div class="stat-num" data-live="ev-workshops">4</div><div class="stat-label">Workshops attended in 2026</div></div>
+    <div class="card t-gold"><div class="stat-num" data-live="ev-auctions">2</div><div class="stat-label">Auctions participated in</div></div>
   </div>
 </section>
 
@@ -1454,12 +1454,12 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   <div class="view-head">
     <div>
       <span class="kicker">Notifications</span>
-      <h2>4 unread</h2>
+      <h2 data-live="notif-heading">4 unread</h2>
       <p>Award updates, committee announcements, renewals and event reminders.</p>
     </div>
     <button class="btn btn-outline toastable" data-toast="All notifications marked as read">Mark all as read</button>
   </div>
-  <div class="rows">
+  <div class="rows" id="notif-rows">
     <div class="row"><div class="row-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/></svg></div><div class="row-body"><b>BAP entry approved 🎉</b><span>Neolamprologus multifasciatus — +15 points. Certificate available in Documents.</span></div><div class="row-end"><span class="badge warn">New</span><div style="margin-top:4px">2 days ago</div></div></div>
     <div class="row"><div class="row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><div class="row-body"><b>Reminder: August meeting RSVP</b><span>Saturday 1 August, 14:00 at The Italian Club — confirm your seat.</span></div><div class="row-end"><span class="badge warn">New</span><div style="margin-top:4px">3 days ago</div></div></div>
     <div class="row"><div class="row-icon deep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg></div><div class="row-body"><b>New resource: Caridina water remineralisation guide</b><span>Added to Club Resources by the committee.</span></div><div class="row-end"><span class="badge warn">New</span><div style="margin-top:4px">6 days ago</div></div></div>
@@ -1681,9 +1681,17 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     var res = await supabase.auth.getSession();
     var session = res.data.session;
     if (session) {
+      window.currentUser = session.user;
+      // fetch this member's profile row (auto-created by the signup trigger)
+      try {
+        var m = await supabase.from('members').select('*').eq('id', session.user.id).single();
+        window.currentMember = m.data || { id: session.user.id, email: session.user.email };
+      } catch (e) {
+        window.currentMember = { id: session.user.id, email: session.user.email };
+      }
+      if (window.currentMember && !window.currentMember.email) window.currentMember.email = session.user.email;
       gate.style.display = 'none';
       root.style.display = 'block';
-      window.currentUser = session.user;
       if (window.initPortal) window.initPortal();
     } else {
       gate.style.display = 'flex';
@@ -1764,10 +1772,42 @@ window.initPortal = function(){
   });
 
   // ===== membership card: view + download =====
-  var member = {
-    name:'Judy Nel', role:'CLUB PRESIDENT · FULL MEMBER', number:'ECAAC-0002',
-    type:'Annual · Full', issued:'01 Feb 2026', expires:'28 Feb 2027'
-  };
+  function liveName(cm){
+    var n = ((cm.first_name || '') + ' ' + (cm.last_name || '')).trim();
+    return n || (cm.email ? cm.email.split('@')[0] : 'Member');
+  }
+  function liveInitials(cm){
+    var n = liveName(cm);
+    return n.split(/\s+/).map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase();
+  }
+  function nextRenewalDate(){
+    // fees due end Feb — next 28 Feb from today
+    var now = new Date();
+    var y = now.getFullYear() + (now.getMonth() >= 2 ? 1 : 0); // after Feb -> next year
+    return new Date(y, 1, 28);
+  }
+  function fmtShortDate(d){
+    return ('0' + d.getDate()).slice(-2) + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  var member;
+  if (window.currentMember) {
+    var cm = window.currentMember;
+    var joined = cm.join_date ? new Date(cm.join_date) : new Date();
+    member = {
+      name: liveName(cm),
+      role: (cm.role === 'admin' ? 'COMMITTEE' : 'MEMBER') + ' · ' + (cm.membership_type || 'Full').toUpperCase() + ' MEMBER',
+      number: cm.membership_number || 'ECAAC-' + String(cm.id || '').substr(0, 6).toUpperCase(),
+      type: 'Annual · ' + (cm.membership_type || 'Full'),
+      issued: fmtShortDate(joined),
+      expires: fmtShortDate(nextRenewalDate())
+    };
+  } else {
+    member = {
+      name:'Judy Nel', role:'CLUB PRESIDENT · FULL MEMBER', number:'ECAAC-0002',
+      type:'Annual · Full', issued:'01 Feb 2026', expires:'28 Feb 2027'
+    };
+  }
   var modal = document.getElementById('card-modal');
   var modalSlot = document.getElementById('modal-card-slot');
 
@@ -2131,7 +2171,8 @@ window.initPortal = function(){
   if (resSearch) resSearch.addEventListener('input', function(){ renderGuides(this.value); });
 
   // ===== Award entry submission =====
-  var ENTRIES = [
+  var IS_LIVE = !!window.currentMember;
+  var ENTRIES = IS_LIVE ? [] : [
     { title:"HAP — Bucephalandra 'Kedagang' (division)", meta:'Emerald Valley · submitted 19 Jul 2026 · awaiting judge photos check', status:'pend', icon:'plant' },
     { title:'BAP — Julidochromis ornatus (spawn)', meta:'Rift Lake Reef · submitted 11 Jul 2026 · fry at 30-day mark 10 Aug', status:'pend', icon:'fish' },
     { title:'BAP — Neolamprologus multifasciatus (spawn)', meta:'Rift Lake Reef · +15 points · judge: "Textbook shell-dweller colony — lovely documentation."', status:'ok', icon:'fish' },
@@ -2146,11 +2187,11 @@ window.initPortal = function(){
   function renderEntries(){
     var el = document.getElementById('entries-rows');
     if (!el) return;
-    el.innerHTML = ENTRIES.map(function(e){
+    el.innerHTML = ENTRIES.length ? ENTRIES.map(function(e){
       return '<div class="row"><div class="row-icon' + (e.status==='ok' ? '' : ' gold') + '">' + ENTRY_ICONS[e.icon] + '</div>' +
         '<div class="row-body"><b>' + escT(e.title) + '</b><span>' + escT(e.meta) + '</span></div>' +
         '<span class="badge ' + (e.status==='ok' ? 'ok' : 'pend') + '">' + (e.status==='ok' ? 'Approved' : 'Pending') + '</span></div>';
-    }).join('');
+    }).join('') : '<div class="reg-empty" style="padding:22px">No award entries yet — submit your first entry when you have a spawn, plant division or aquascape to show.</div>';
     document.getElementById('aw-approved-count').textContent = ENTRIES.filter(function(e){ return e.status==='ok'; }).length;
     document.getElementById('aw-pending-count').textContent = ENTRIES.filter(function(e){ return e.status==='pend'; }).length;
   }
@@ -2209,7 +2250,7 @@ window.initPortal = function(){
   });
 
   // ===== My Auctions =====
-  var AUCTIONS = [
+  var AUCTIONS = IS_LIVE ? [] : [
     { date:'5 September 2025', item:'Pair of Apistogramma cacatuoides', category:'Fish', role:'Bought', amount:180 },
     { date:'5 September 2025', item:'Java fern on driftwood', category:'Plant', role:'Bought', amount:60 },
     { date:'4 October 2025', item:'Trio of Corydoras sterbai', category:'Fish', role:'Sold', amount:150 },
@@ -2514,7 +2555,7 @@ window.initPortal = function(){
   var checkRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>';
   var trophyRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/></svg>';
 
-  var tanks = [
+  var tanks = IS_LIVE ? [] : [
     { name:'Rift Lake Reef', type:'Freshwater', subtitle:'Tanganyika biotope', volume:450, dims:'150 × 50 × 60', started:'Mar 2021',
       notes:'Aragonite sand, three ocean-rock towers, FX6 filtration.',
       tags:['Tanganyika biotope','Aragonite sand','Rockwork','FX6 filtration'],
@@ -2987,16 +3028,23 @@ window.initPortal = function(){
 
   function getBadgeCategories(){
     var auctionValue = AUCTIONS.reduce(function(sum, a){ return sum + a.amount; }, 0);
+    var stats = window.currentMember
+      ? {
+          meetings: 0, // committee will record attendance later
+          awardPoints: 0,
+          tenureYears: Math.max(0, new Date().getFullYear() - (window.currentMember.join_date ? new Date(window.currentMember.join_date).getFullYear() : new Date().getFullYear()))
+        }
+      : { meetings: 71, awardPoints: 245, tenureYears: 8 };
     return [
-      { id:'meetings', label:'Meeting Attendance', icon:'calendar', unit:'meetings attended', value:71,
+      { id:'meetings', label:'Meeting Attendance', icon:'calendar', unit:'meetings attended', value:stats.meetings,
         tiers:[10, 25, 50, 100] },
       { id:'auctions', label:'Auction Trading', icon:'gavel', unit:'traded at auctions', value:auctionValue, isMoney:true,
         tiers:[500, 1500, 3000, 6000] },
-      { id:'awards', label:'Award Program Points', icon:'trophy', unit:'points earned', value:245,
+      { id:'awards', label:'Award Program Points', icon:'trophy', unit:'points earned', value:stats.awardPoints,
         tiers:[50, 100, 200, 400] },
       { id:'aquariums', label:'Aquarium Collection', icon:'fish', unit:'active aquariums', value:tanks.length,
         tiers:[1, 3, 5, 8] },
-      { id:'tenure', label:'Membership Tenure', icon:'star', unit:'years as a member', value:8,
+      { id:'tenure', label:'Membership Tenure', icon:'star', unit:'years as a member', value:stats.tenureYears,
         tiers:[1, 3, 5, 10] }
     ];
   }
@@ -3094,6 +3142,11 @@ window.initPortal = function(){
     var hasBAP = ENTRIES.some(function(e){ return /^BAP/.test(e.title); });
     var hasHAP = ENTRIES.some(function(e){ return /^HAP/.test(e.title); });
     var hasAAP = ENTRIES.some(function(e){ return /^AAP/.test(e.title); });
+    var cm = window.currentMember;
+    var isLiveUser = !!cm;
+    var hasFullProfile = isLiveUser ? !!(cm.first_name && cm.bio) : true;
+    var isCommittee = isLiveUser ? cm.role === 'admin' : true;
+    var isFoundingYear = isLiveUser ? (cm.join_date && new Date(cm.join_date).getFullYear() <= 2018) : true;
     return [
       { label:'First Spawn', icon:'spawn', earned: hasBAP, hint:'Log a BAP entry for a spawn' },
       { label:'First Bloom', icon:'bloom', earned: hasHAP, hint:'Log a HAP plant entry' },
@@ -3102,9 +3155,9 @@ window.initPortal = function(){
       { label:'Auction Regular', icon:'gavel', earned: AUCTIONS.length > 0, hint:'Buy or sell your first lot' },
       { label:'Portal Pioneer', icon:'portal', earned: true, hint:'Log in to the members portal' },
       { label:'Card Carrier', icon:'card', earned: cardDownloaded, hint:'Download your membership card' },
-      { label:'Full Profile', icon:'profile', earned: true, hint:'Complete your member profile' },
-      { label:'Committee Circle', icon:'gavel2', earned: true, hint:'Join the club committee' },
-      { label:'Founding-Year Member', icon:'seedling', earned: true, hint:'Have joined in 2018' }
+      { label:'Full Profile', icon:'profile', earned: hasFullProfile, hint:'Complete your member profile' },
+      { label:'Committee Circle', icon:'gavel2', earned: isCommittee, hint:'Join the club committee' },
+      { label:'Founding-Year Member', icon:'seedling', earned: isFoundingYear, hint:'Have joined in 2018' }
     ];
   }
 
@@ -3173,7 +3226,7 @@ window.initPortal = function(){
 
   function getAllMemberTanks(){
     var mine = tanks.map(function(t, i){
-      return Object.assign({}, t, { owner:'Judy Nel', mine:true, myIndex:i });
+      return Object.assign({}, t, { owner: member.name, mine:true, myIndex:i });
     });
     var others = MEMBER_TANKS.map(function(t){ return Object.assign({}, t, { mine:false }); });
     return mine.concat(others);
@@ -3192,7 +3245,7 @@ window.initPortal = function(){
     var grid = document.getElementById('ma-grid');
     grid.innerHTML = filtered.map(function(t, idx){
       var st = TYPE_STYLE[t.type] || TYPE_STYLE['Freshwater'];
-      var initials = t.mine ? 'JN' : maInitials(t.owner);
+      var initials = maInitials(t.owner);
       var gradIdx = t.mine ? 0 : (Math.abs(t.owner.split('').reduce(function(a,c){return a+c.charCodeAt(0);},0)) % MA_AVATAR_GRADS.length);
       var liveCount = t.livestock.reduce(function(a, l){ var n = parseInt(l[2],10); return a + (isNaN(n) ? (l[2] ? 1 : 0) : n); }, 0);
       return '<button class="tank-card" data-ma="' + idx + '">' +
@@ -3226,10 +3279,10 @@ window.initPortal = function(){
   var maCurrent = null;
   function openMaPreview(t){
     maCurrent = t;
-    document.getElementById('ma-preview-avatar').textContent = t.mine ? 'JN' : maInitials(t.owner);
+    document.getElementById('ma-preview-avatar').textContent = maInitials(t.owner);
     document.getElementById('ma-preview-avatar').style.background = t.mine ? 'linear-gradient(135deg,var(--leaf),var(--deep-2))' : 'linear-gradient(135deg,var(--deep),var(--leaf))';
     document.getElementById('ma-preview-owner').textContent = t.owner + (t.mine ? ' (You)' : '');
-    document.getElementById('ma-preview-owner-sub').textContent = t.mine ? 'Club President' : 'ECAAC member';
+    document.getElementById('ma-preview-owner-sub').textContent = t.mine ? (window.currentMember && window.currentMember.role === 'admin' ? 'Committee member' : 'ECAAC member') : 'ECAAC member';
     document.getElementById('ma-preview-name').textContent = t.name;
     document.getElementById('ma-preview-meta').textContent = (t.volume ? t.volume + ' ℓ · ' : '') + t.dims + ' cm · ' + t.type + (t.subtitle ? ' — ' + t.subtitle : '') + ' · started ' + t.started;
     document.getElementById('ma-preview-tags').innerHTML = t.tags.map(function(x){ return '<span class="tag" style="background:#EAF3DE;border:none;color:var(--leaf-dark)">' + escT(x) + '</span>'; }).join('');
@@ -3256,6 +3309,72 @@ window.initPortal = function(){
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeMaPreview(); });
 
   renderMemberAquariums();
+
+  // ===== Live member: patch all personal content for real logged-in users =====
+  function applyLiveMember(){
+    var cm = window.currentMember;
+    if (!cm) return; // demo mode — leave everything as-is
+
+    var name = member.name;
+    var initials = liveInitials(cm);
+    var firstName = cm.first_name || name.split(' ')[0];
+    var joinYear = cm.join_date ? new Date(cm.join_date).getFullYear() : new Date().getFullYear();
+    var years = Math.max(0, new Date().getFullYear() - joinYear);
+    var roleLine = (cm.role === 'admin' ? 'Committee' : 'Member') + ' · ' + (cm.membership_type || 'Full') + ' member';
+    var daysLeft = Math.max(0, Math.ceil((nextRenewalDate() - new Date()) / 86400000));
+
+    var LIVE = {
+      'fullname': name,
+      'initials': initials,
+      'welcome': 'Welcome back, ' + firstName + ' 🌿',
+      'side-sub': roleLine.replace(' member','') + ' · ' + member.number,
+      'role-line': roleLine,
+      'member-number': member.number,
+      'profile-sub': (cm.role === 'admin' ? 'Committee member' : 'Club member') + ' · Member since ' + joinYear,
+      'years-badge': years + ' year' + (years===1?'':'s') + ' a member',
+      'years-num': String(years),
+      'joined-label': 'Years as member · joined ' + joinYear,
+      'award-points': '0',
+      'award-points-label': 'Award points',
+      'aw-badges': '0',
+      'ev-meetings': '0 / 12',
+      'ev-workshops': '0',
+      'ev-auctions': '0',
+      'notif-heading': '1 unread'
+    };
+    document.querySelectorAll('[data-live]').forEach(function(el){
+      var key = el.getAttribute('data-live');
+      if (LIVE[key] !== undefined) el.textContent = LIVE[key];
+    });
+
+    // profile form: real values (blank where the member hasn't filled anything in yet)
+    var setVal = function(id, v){ var el = document.getElementById(id); if (el) el.value = v || ''; };
+    setVal('f-name', cm.first_name);
+    setVal('f-surname', cm.last_name);
+    setVal('f-email', cm.email);
+    setVal('f-phone', cm.phone);
+    setVal('f-city', '');
+    setVal('f-emergency', '');
+    setVal('f-interests', '');
+    var bioEl = document.getElementById('f-bio'); if (bioEl) bioEl.value = cm.bio || '';
+
+    // dashboard recent activity: single welcome entry
+    var act = document.getElementById('dash-activity');
+    if (act) act.innerHTML = '<div class="row"><div class="row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg></div>' +
+      '<div class="row-body"><b>Welcome to the members portal!</b><span>Your account is set up — start by completing your profile and adding your first aquarium.</span></div>' +
+      '<div class="row-end">Today</div></div>';
+
+    // notifications: single welcome notification
+    var notif = document.getElementById('notif-rows');
+    if (notif) notif.innerHTML = '<div class="row"><div class="row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg></div>' +
+      '<div class="row-body"><b>Welcome to ECAAC 🎉</b><span>Your portal account is active. Add your aquariums, browse the club resources, and see you at the next meeting!</span></div>' +
+      '<div class="row-end"><span class="badge warn">New</span></div></div>';
+
+    // renewal EFT reference uses the real member number
+    var ref = document.getElementById('renew-ref');
+    if (ref) ref.textContent = member.number;
+  }
+  applyLiveMember();
 
   renderTanks();
 };
