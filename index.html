@@ -957,9 +957,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 
   <div class="tank-grid" id="tank-grid"></div>
   <div class="future" id="tank-empty" style="display:none;margin-top:8px">
-    <h4>No aquariums yet</h4>
-    <p>Add your first tank to start logging maintenance, parameters and award entries.</p>
-    <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="document.getElementById('tank-add-btn').click()">Add your first aquarium</button>
+    <h4 id="tank-empty-h4">No aquariums yet</h4>
+    <p id="tank-empty-p">Add your first tank to start logging maintenance, parameters and award entries.</p>
+    <button class="btn btn-primary btn-sm" id="tank-empty-btn" style="margin-top:12px" onclick="document.getElementById('tank-add-btn').click()">Add your first aquarium</button>
   </div>
 
   <div class="future" style="margin-top:24px">
@@ -2695,6 +2695,55 @@ window.initPortal = function(){
       awards:[] }
   ];
   var currentTank = -1;
+  var tanksLoading = IS_LIVE; // true until the first live fetch resolves
+
+  // ===== Supabase helpers for My Aquariums (no-ops in demo mode, where sb is null) =====
+  async function dbInsertRow(table, row){
+    if (!sb) return { data: null, error: null };
+    return await sb.from(table).insert(row).select().single();
+  }
+  async function dbUpdateRow(table, id, patch){
+    if (!sb) return { error: null };
+    return await sb.from(table).update(patch).eq('id', id);
+  }
+  async function dbDeleteRow(table, id){
+    if (!sb) return { error: null };
+    return await sb.from(table).delete().eq('id', id);
+  }
+
+  function fmtLogDate(iso){
+    var d = new Date(iso);
+    return d.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+  }
+
+  async function loadTanksFromDB(){
+    if (!sb || !window.currentMember) { tanksLoading = false; return; }
+    var res = await sb.from('tanks')
+      .select('*, tank_tags(*), tank_params(*), tank_livestock(*), tank_plants(*), tank_log(*)')
+      .eq('owner_id', window.currentMember.id)
+      .order('created_at', { ascending: true });
+    tanksLoading = false;
+    if (res.error || !res.data) { renderTanks(); return; }
+    tanks.length = 0;
+    res.data.forEach(function(row){
+      var params = (row.tank_params || []).slice().sort(function(a,b){ return (a.sort_order||0) - (b.sort_order||0); })
+        .map(function(p){ var arr = [p.value, p.label]; arr._id = p.id; return arr; });
+      var livestock = (row.tank_livestock || []).map(function(l){ var arr = [l.name, l.note || '', l.qty || '']; arr._id = l.id; return arr; });
+      var plants = (row.tank_plants || []).map(function(p){ var arr = [p.name, p.note || '', p.qty || '']; arr._id = p.id; return arr; });
+      var log = (row.tank_log || []).slice().sort(function(a,b){ return new Date(b.logged_at) - new Date(a.logged_at); })
+        .map(function(l){ var arr = [l.entry, l.note || '', fmtLogDate(l.logged_at)]; arr._id = l.id; return arr; });
+      tanks.push({
+        id: row.id, name: row.name, type: row.type, subtitle: row.subtitle || '',
+        volume: row.volume || 0, dims: row.dims || '—', started: row.started || '', notes: row.notes || '',
+        tags: (row.tank_tags || []).map(function(t){ return t.label; }),
+        params: params, livestock: livestock, plants: plants, log: log, awards: []
+      });
+    });
+    renderTanks();
+    if (currentTank >= 0 && currentTank < tanks.length) renderDetail();
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
+  }
+
 
   function escT(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function numberWord(n){
@@ -2732,11 +2781,17 @@ window.initPortal = function(){
     });
     document.getElementById('tank-empty').style.display = tanks.length ? 'none' : 'block';
     grid.style.display = tanks.length ? 'grid' : 'none';
-    document.getElementById('tanks-title').textContent = tanks.length ? numberWord(tanks.length) + ' tank' + (tanks.length===1?'':'s') + ' and counting' : 'Start your collection';
+    if (!tanks.length){
+      document.getElementById('tank-empty-h4').textContent = tanksLoading ? 'Loading your aquariums…' : 'No aquariums yet';
+      document.getElementById('tank-empty-p').textContent = tanksLoading ? 'Fetching your tanks from your account.' : 'Add your first tank to start logging maintenance, parameters and award entries.';
+      document.getElementById('tank-empty-btn').style.display = tanksLoading ? 'none' : 'inline-flex';
+    }
+    document.getElementById('tanks-title').textContent = tanksLoading ? 'Loading…' : (tanks.length ? numberWord(tanks.length) + ' tank' + (tanks.length===1?'':'s') + ' and counting' : 'Start your collection');
     document.getElementById('dash-tank-count').textContent = tanks.length;
     document.getElementById('dash-tank-label').textContent = 'Aquariums · ' + (tanks.length ? tankSummary() : 'none yet');
   }
 
+  var CHILD_TABLE = { livestock:'tank_livestock', plants:'tank_plants', log:'tank_log' };
   function editableRows(items, icon, containerId, listKey){
     var el = document.getElementById(containerId);
     if (!items.length){
@@ -2750,8 +2805,15 @@ window.initPortal = function(){
         '<button class="rm-btn" data-idx="' + idx + '" aria-label="Remove ' + escT(it[0]) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>';
     }).join('');
     el.querySelectorAll('.rm-btn').forEach(function(b){
-      b.addEventListener('click', function(){
-        var it = tanks[currentTank][listKey].splice(parseInt(b.getAttribute('data-idx'),10), 1)[0];
+      b.addEventListener('click', async function(){
+        var idx = parseInt(b.getAttribute('data-idx'), 10);
+        var it = tanks[currentTank][listKey][idx];
+        if (sb && it._id){
+          b.disabled = true;
+          var res = await dbDeleteRow(CHILD_TABLE[listKey], it._id);
+          if (res.error){ popToast('Could not remove — try again'); b.disabled = false; return; }
+        }
+        tanks[currentTank][listKey].splice(idx, 1);
         popToast('Removed ' + it[0]);
         renderDetail(); renderTanks();
       });
@@ -2801,20 +2863,40 @@ window.initPortal = function(){
       function saveEdit(){
         var p = tanks[currentTank].params[i];
         var v = input.value.trim();
-        if (v && v !== p[0]){
+        if (!v || v === p[0]){ cancelEdit(); return; }
+        var t = tanks[currentTank];
+        var doSave = async function(){
+          if (sb && p._id){
+            var res = await dbUpdateRow('tank_params', p._id, { value: v });
+            if (res.error){ popToast('Could not save — try again'); return; }
+            var logRes = await dbInsertRow('tank_log', { tank_id: t.id, entry: 'Logged ' + p[1] + ': ' + v, note: 'Parameter update' });
+            if (!logRes.error && logRes.data){
+              var la = [logRes.data.entry, logRes.data.note || '', fmtLogDate(logRes.data.logged_at)];
+              la._id = logRes.data.id;
+              t.log.unshift(la);
+            }
+          } else {
+            t.log.unshift(['Logged ' + p[1] + ': ' + v, 'Parameter update', todayShort()]);
+          }
           p[0] = v;
-          tanks[currentTank].log.unshift(['Logged ' + p[1] + ': ' + v, 'Parameter update', todayShort()]);
           popToast(p[1] + ' updated to ' + v);
           renderDetail(); renderTanks();
-        } else {
-          cancelEdit();
-        }
+        };
+        doSave();
       }
       function removeParam(){
-        var label = tanks[currentTank].params[i][1];
-        tanks[currentTank].params.splice(i, 1);
-        popToast(label + ' removed from this tank');
-        renderDetail(); renderTanks();
+        var p = tanks[currentTank].params[i];
+        var label = p[1];
+        var doRemove = async function(){
+          if (sb && p._id){
+            var res = await dbDeleteRow('tank_params', p._id);
+            if (res.error){ popToast('Could not remove — try again'); return; }
+          }
+          tanks[currentTank].params.splice(i, 1);
+          popToast(label + ' removed from this tank');
+          renderDetail(); renderTanks();
+        };
+        doRemove();
       }
 
       viewEl.addEventListener('click', enterEdit);
@@ -2848,10 +2930,26 @@ window.initPortal = function(){
         var label = labelInput.value.trim();
         var value = valueInput.value.trim();
         if (!label || !value){ (label ? valueInput : labelInput).focus(); return; }
-        tanks[currentTank].params.push([value, label.toUpperCase()]);
-        tanks[currentTank].log.unshift(['Added parameter ' + label.toUpperCase() + ': ' + value, 'Parameter added', todayShort()]);
-        popToast(label.toUpperCase() + ' added to this tank');
-        renderDetail(); renderTanks();
+        var t = tanks[currentTank];
+        var doCreate = async function(){
+          if (sb && t.id){
+            var res = await dbInsertRow('tank_params', { tank_id: t.id, label: label.toUpperCase(), value: value, sort_order: t.params.length });
+            if (res.error){ popToast('Could not save — try again'); return; }
+            var arr = [res.data.value, res.data.label]; arr._id = res.data.id;
+            t.params.push(arr);
+            var logRes = await dbInsertRow('tank_log', { tank_id: t.id, entry: 'Added parameter ' + label.toUpperCase() + ': ' + value, note: 'Parameter added' });
+            if (!logRes.error && logRes.data){
+              var la = [logRes.data.entry, logRes.data.note || '', fmtLogDate(logRes.data.logged_at)]; la._id = logRes.data.id;
+              t.log.unshift(la);
+            }
+          } else {
+            t.params.push([value, label.toUpperCase()]);
+            t.log.unshift(['Added parameter ' + label.toUpperCase() + ': ' + value, 'Parameter added', todayShort()]);
+          }
+          popToast(label.toUpperCase() + ' added to this tank');
+          renderDetail(); renderTanks();
+        };
+        doCreate();
       }
       form.querySelector('.param-save').addEventListener('click', commitNew);
       form.querySelector('.param-cancel').addEventListener('click', function(){ renderDetail(); });
@@ -2878,16 +2976,39 @@ window.initPortal = function(){
 
   // add livestock / plants / log
   function wireAdd(btnId, nameId, qtyId, listKey, label){
-    document.getElementById(btnId).addEventListener('click', function(){
+    document.getElementById(btnId).addEventListener('click', async function(){
       var nameEl = document.getElementById(nameId);
       var name = nameEl.value.trim();
       if (!name){ nameEl.focus(); return; }
       var qty = qtyId ? document.getElementById(qtyId).value.trim() : '';
-      if (listKey === 'log') tanks[currentTank].log.unshift([name, 'Logged by you', todayShort()]);
-      else tanks[currentTank][listKey].push([name, 'Added ' + todayShort(), qty]);
+      var btn = document.getElementById(btnId);
+      var t = tanks[currentTank];
+
+      if (sb && t.id){
+        btn.disabled = true;
+        var row = listKey === 'log'
+          ? { tank_id: t.id, entry: name, note: 'Logged by you' }
+          : { tank_id: t.id, name: name, note: 'Added ' + todayShort(), qty: qty };
+        var res = await dbInsertRow(CHILD_TABLE[listKey], row);
+        btn.disabled = false;
+        if (res.error){ popToast('Could not save — try again'); return; }
+        if (listKey === 'log'){
+          var arr = [res.data.entry, res.data.note || '', fmtLogDate(res.data.logged_at)];
+          arr._id = res.data.id;
+          t.log.unshift(arr);
+        } else {
+          var arr2 = [res.data.name, res.data.note || '', res.data.qty || ''];
+          arr2._id = res.data.id;
+          t[listKey].push(arr2);
+        }
+      } else {
+        if (listKey === 'log') t.log.unshift([name, 'Logged by you', todayShort()]);
+        else t[listKey].push([name, 'Added ' + todayShort(), qty]);
+      }
       nameEl.value = ''; if (qtyId) document.getElementById(qtyId).value = '';
       popToast(label + ' added');
       renderDetail(); renderTanks();
+      if (window.checkBadgeChanges) window.checkBadgeChanges();
     });
   }
   wireAdd('ls-add', 'ls-name', 'ls-qty', 'livestock', 'Livestock');
@@ -2926,7 +3047,7 @@ window.initPortal = function(){
   document.getElementById('tf-cancel').addEventListener('click', closeTankModal);
   tankModal.addEventListener('click', function(e){ if (e.target === tankModal) closeTankModal(); });
 
-  document.getElementById('tf-save').addEventListener('click', function(){
+  document.getElementById('tf-save').addEventListener('click', async function(){
     var name = document.getElementById('tf-name').value.trim();
     if (!name){ document.getElementById('tf-error').style.display = 'block'; return; }
     var data = {
@@ -2939,17 +3060,52 @@ window.initPortal = function(){
       light: document.getElementById('tf-light').value.trim(),
       notes: document.getElementById('tf-notes').value.trim()
     };
+    var saveBtn = document.getElementById('tf-save');
+    saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+
+    var newTags = [data.type].concat(data.filter ? [data.filter] : []).concat(data.light ? [data.light] : []);
+    var dbFields = { name: data.name, type: data.type, volume: data.volume, dims: data.dims, started: data.started, notes: data.notes };
+
     if (editingIdx >= 0){
       var t = tanks[editingIdx];
+      if (sb && t.id){
+        var res = await dbUpdateRow('tanks', t.id, dbFields);
+        if (res.error){ saveBtn.disabled = false; saveBtn.textContent = 'Save aquarium'; popToast('Could not save — try again'); return; }
+        // simplest correct tag sync: wipe and reinsert
+        await sb.from('tank_tags').delete().eq('tank_id', t.id);
+        for (var ti = 0; ti < newTags.length; ti++){ await sb.from('tank_tags').insert({ tank_id: t.id, label: newTags[ti] }); }
+      }
       Object.assign(t, data);
-      t.tags = [t.type].concat(t.filter ? [t.filter] : []).concat(t.light ? [t.light] : []);
+      t.tags = newTags;
+      saveBtn.disabled = false; saveBtn.textContent = 'Save aquarium';
       popToast(t.name + ' updated');
       if (currentTank === editingIdx) renderDetail();
     } else {
-      var nt = Object.assign({ subtitle:'', tags:[data.type].concat(data.filter ? [data.filter] : []).concat(data.light ? [data.light] : []),
+      var nt = Object.assign({ subtitle:'', tags:newTags,
         params:[['—','pH'],['—','Temp'],['—','TDS']],
         livestock:[], plants:[], awards:[],
         log:[['Tank set up', 'Welcome to the fishroom', todayShort()]] }, data);
+
+      if (sb && window.currentMember){
+        var res2 = await dbInsertRow('tanks', Object.assign({ owner_id: window.currentMember.id }, dbFields));
+        saveBtn.disabled = false; saveBtn.textContent = 'Save aquarium';
+        if (res2.error){ popToast('Could not save — try again'); return; }
+        nt.id = res2.data.id;
+        // default tags
+        for (var tj = 0; tj < newTags.length; tj++){ await sb.from('tank_tags').insert({ tank_id: nt.id, label: newTags[tj] }); }
+        // default params
+        var defaultParams = [['—','pH'],['—','Temp'],['—','TDS']];
+        nt.params = [];
+        for (var pi = 0; pi < defaultParams.length; pi++){
+          var pr = await dbInsertRow('tank_params', { tank_id: nt.id, label: defaultParams[pi][1], value: defaultParams[pi][0], sort_order: pi });
+          if (!pr.error && pr.data){ var pa = [pr.data.value, pr.data.label]; pa._id = pr.data.id; nt.params.push(pa); }
+        }
+        // welcome log entry
+        var lr = await dbInsertRow('tank_log', { tank_id: nt.id, entry: 'Tank set up', note: 'Welcome to the fishroom' });
+        if (!lr.error && lr.data){ var la2 = [lr.data.entry, lr.data.note || '', fmtLogDate(lr.data.logged_at)]; la2._id = lr.data.id; nt.log = [la2]; }
+      } else {
+        saveBtn.disabled = false; saveBtn.textContent = 'Save aquarium';
+      }
       tanks.push(nt);
       popToast(nt.name + ' added to your aquariums');
     }
@@ -2962,7 +3118,7 @@ window.initPortal = function(){
   // delete tank (two-step confirm in the button itself)
   var deleteArmed = false, deleteTimer;
   var delBtn2 = document.getElementById('td-delete-btn');
-  delBtn2.addEventListener('click', function(){
+  delBtn2.addEventListener('click', async function(){
     if (!deleteArmed){
       deleteArmed = true;
       delBtn2.textContent = 'Tap again to delete';
@@ -2971,7 +3127,14 @@ window.initPortal = function(){
       return;
     }
     clearTimeout(deleteTimer); deleteArmed = false;
-    var t = tanks.splice(currentTank, 1)[0];
+    var t = tanks[currentTank];
+    if (sb && t.id){
+      delBtn2.disabled = true; delBtn2.textContent = 'Deleting…';
+      var res = await dbDeleteRow('tanks', t.id);
+      delBtn2.disabled = false;
+      if (res.error){ resetDelBtn(); popToast('Could not delete — try again'); return; }
+    }
+    tanks.splice(currentTank, 1);
     resetDelBtn();
     popToast(t.name + ' deleted');
     renderTanks();
@@ -3613,7 +3776,7 @@ window.initPortal = function(){
     if (window.checkBadgeChanges) window.checkBadgeChanges();
   });
 
-  if (window.currentMember) { loadNews(); loadLiveMembers(); }
+  if (window.currentMember) { loadNews(); loadLiveMembers(); loadTanksFromDB(); }
 
   applyLiveMember();
 
