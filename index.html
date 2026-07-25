@@ -280,6 +280,19 @@ button{font-family:inherit}
 .reg-dot.cur{background:var(--leaf)}
 .reg-dot.fut{background:var(--gold)}
 .reg-empty{padding:40px;text-align:center;font-size:13.5px;color:var(--ink-soft)}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.photo-tile{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--sand);box-shadow:0 8px 18px -12px rgba(11,59,76,0.25)}
+.photo-tile img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;transition:transform .3s ease}
+.photo-tile:hover img{transform:scale(1.05)}
+.photo-tile .photo-rm{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:8px;border:none;background:rgba(13,16,38,0.65);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.photo-tile:hover .photo-rm{opacity:1}
+.photo-tile .photo-rm svg{width:13px;height:13px}
+.photo-tile .photo-uploading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(246,241,230,0.7);font-size:11px;font-weight:700;color:var(--ink-soft)}
+.photo-lightbox{position:fixed;inset:0;background:rgba(6,7,15,0.88);z-index:300;display:none;align-items:center;justify-content:center;padding:30px}
+.photo-lightbox.show{display:flex}
+.photo-lightbox img{max-width:min(900px,90vw);max-height:85vh;border-radius:14px;box-shadow:0 30px 60px -20px rgba(0,0,0,0.6)}
+.photo-lightbox .pl-close{position:absolute;top:24px;right:24px;width:38px;height:38px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.photo-lightbox .pl-close svg{width:16px;height:16px}
 .reg-count{font-size:12.5px;color:var(--ink-soft);margin:12px 4px 0}
 @media (max-width:1080px){.dir-grid{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:860px){.dir-grid{grid-template-columns:1fr}}
@@ -1040,12 +1053,21 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <div class="panel">
       <h3>Award entries from this tank</h3>
       <div class="rows" style="box-shadow:none;border:1px solid #F0EADB" id="td-awards"></div>
-      <div class="future" style="margin-top:14px">
-        <span class="badge info">Coming soon</span>
-        <h4>Photo gallery &amp; timeline</h4>
-        <p>Upload progress photos and build a visual timeline of this tank's evolution.</p>
-      </div>
     </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <h3 style="margin:0">Photos</h3>
+      <label class="btn btn-primary btn-sm" id="photo-upload-label" for="photo-upload-input" style="cursor:pointer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M7 9l5-5 5 5"/><path d="M12 4v13"/></svg>
+        Add photos
+        <input type="file" id="photo-upload-input" accept="image/*" multiple style="display:none">
+      </label>
+    </div>
+    <div class="photo-grid" id="td-photo-grid"></div>
+    <div class="reg-empty" id="td-photo-empty" style="display:none">No photos yet — add the first one above.</div>
+    <p id="photo-upload-status" style="font-size:12px;color:var(--ink-soft);margin:10px 0 0;min-height:16px"></p>
   </div>
 </section>
 
@@ -1513,7 +1535,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       <div class="form-grid" style="grid-template-columns:1fr">
         <div class="field"><label for="ae-title">Title *</label><input id="ae-title" placeholder="e.g. September monthly meeting"></div>
         <div class="field"><label for="ae-category">Category</label>
-          <select id="ae-category"><option value="meeting">Monthly meeting</option><option value="workshop">Workshop</option><option value="auction">Auction</option><option value="other">Other</option></select>
+          <select id="ae-category"><option value="meeting">Monthly meeting</option><option value="agm">Annual General Meeting</option><option value="workshop">Workshop</option><option value="auction">Auction</option><option value="yearend">Year End Function</option><option value="fieldtrip">Field Trip</option><option value="other">Other</option></select>
         </div>
         <div class="grid g2">
           <div class="field"><label for="ae-date">Date *</label><input id="ae-date" type="date"></div>
@@ -1790,6 +1812,11 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="photo-lightbox" id="photo-lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <button class="pl-close" id="photo-lightbox-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  <img id="photo-lightbox-img" src="" alt="Tank photo">
+</div>
 <div class="badge-pop" id="badge-pop" role="status" aria-live="polite">
   <div class="bp-ring" id="bp-ring"></div>
   <div class="bp-text"><div class="bp-kicker" id="bp-kicker">Badge earned</div><div class="bp-title" id="bp-title"></div></div>
@@ -2815,7 +2842,7 @@ window.initPortal = function(){
   async function loadTanksFromDB(){
     if (!sb || !window.currentMember) { tanksLoading = false; return; }
     var res = await sb.from('tanks')
-      .select('*, tank_tags(*), tank_params(*), tank_livestock(*), tank_plants(*), tank_log(*)')
+      .select('*, tank_tags(*), tank_params(*), tank_livestock(*), tank_plants(*), tank_log(*), tank_photos(*)')
       .eq('owner_id', window.currentMember.id)
       .order('created_at', { ascending: true });
     tanksLoading = false;
@@ -2828,11 +2855,13 @@ window.initPortal = function(){
       var plants = (row.tank_plants || []).map(function(p){ var arr = [p.name, p.note || '', p.qty || '']; arr._id = p.id; return arr; });
       var log = (row.tank_log || []).slice().sort(function(a,b){ return new Date(b.logged_at) - new Date(a.logged_at); })
         .map(function(l){ var arr = [l.entry, l.note || '', fmtLogDate(l.logged_at)]; arr._id = l.id; return arr; });
+      var photos = (row.tank_photos || []).slice().sort(function(a,b){ return new Date(b.created_at) - new Date(a.created_at); })
+        .map(function(p){ return { id: p.id, url: p.url, path: p.path }; });
       tanks.push({
         id: row.id, name: row.name, type: row.type, subtitle: row.subtitle || '',
         volume: row.volume || 0, dims: row.dims || '—', started: row.started || '', notes: row.notes || '',
         tags: (row.tank_tags || []).map(function(t){ return t.label; }),
-        params: params, livestock: livestock, plants: plants, log: log, awards: []
+        params: params, livestock: livestock, plants: plants, log: log, awards: [], photos: photos
       });
     });
     renderTanks();
@@ -3066,7 +3095,104 @@ window.initPortal = function(){
         '<div class="row-body"><b>' + escT(a[0]) + '</b><span>' + escT(a[1]) + '</span></div>' +
         '<span class="badge ' + (a[2] === 'ok' ? 'ok' : 'pend') + '">' + (a[2] === 'ok' ? 'Approved' : 'Pending') + '</span></div>';
     }).join('') : '<div class="reg-empty" style="padding:22px">No entries from this tank yet — submit one from the Awards Program.</div>';
+
+    renderPhotoGrid(t);
   }
+
+  function renderPhotoGrid(t){
+    var grid = document.getElementById('td-photo-grid');
+    var empty = document.getElementById('td-photo-empty');
+    if (!grid) return;
+    var photos = t.photos || [];
+    grid.innerHTML = photos.map(function(p){
+      return '<div class="photo-tile" data-photo-id="' + p.id + '">' +
+        '<img src="' + escT(p.url) + '" alt="Photo of ' + escT(t.name) + '" loading="lazy">' +
+        '<button class="photo-rm" data-photo-id2="' + p.id + '" aria-label="Delete photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+      '</div>';
+    }).join('');
+    empty.style.display = photos.length ? 'none' : 'block';
+    grid.querySelectorAll('img').forEach(function(img){
+      img.addEventListener('click', function(){ openLightbox(img.src); });
+    });
+    grid.querySelectorAll('.photo-rm').forEach(function(btn){
+      btn.addEventListener('click', async function(e){
+        e.stopPropagation();
+        var photoId = btn.getAttribute('data-photo-id2');
+        var photo = (t.photos || []).find(function(p){ return String(p.id) === photoId; });
+        if (!photo) return;
+        btn.disabled = true;
+        if (sb && photo.path){
+          await sb.storage.from('tank-photos').remove([photo.path]);
+          await dbDeleteRow('tank_photos', photo.id);
+        }
+        t.photos = t.photos.filter(function(p){ return p.id !== photo.id; });
+        renderPhotoGrid(t);
+        popToast('Photo removed');
+      });
+    });
+  }
+
+  function openLightbox(src){
+    document.getElementById('photo-lightbox-img').src = src;
+    document.getElementById('photo-lightbox').classList.add('show');
+  }
+  function closeLightbox(){ document.getElementById('photo-lightbox').classList.remove('show'); }
+  var lightboxEl = document.getElementById('photo-lightbox');
+  if (lightboxEl){
+    document.getElementById('photo-lightbox-close').addEventListener('click', closeLightbox);
+    lightboxEl.addEventListener('click', function(e){ if (e.target === lightboxEl) closeLightbox(); });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeLightbox(); });
+  }
+
+  var MAX_PHOTO_MB = 8;
+  var photoUploadInput = document.getElementById('photo-upload-input');
+  if (photoUploadInput) photoUploadInput.addEventListener('change', async function(){
+    var files = Array.prototype.slice.call(this.files || []);
+    this.value = ''; // allow re-selecting the same file later
+    if (!files.length) return;
+    var t = tanks[currentTank];
+    var statusEl = document.getElementById('photo-upload-status');
+
+    if (!sb || !window.currentMember){
+      popToast('Photo uploads need a live account — this is demo mode');
+      return;
+    }
+    if (!t.id){
+      popToast('Save this tank before adding photos');
+      return;
+    }
+
+    for (var i = 0; i < files.length; i++){
+      var file = files[i];
+      if (!file.type || file.type.indexOf('image/') !== 0){
+        popToast(file.name + ' skipped — not an image');
+        continue;
+      }
+      if (file.size > MAX_PHOTO_MB * 1024 * 1024){
+        popToast(file.name + ' skipped — over ' + MAX_PHOTO_MB + 'MB');
+        continue;
+      }
+      statusEl.textContent = 'Uploading ' + (i + 1) + ' of ' + files.length + '…';
+      var safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      var path = window.currentMember.id + '/' + t.id + '/' + Date.now() + '-' + safeName;
+      try {
+        var upRes = await sb.storage.from('tank-photos').upload(path, file);
+        if (upRes.error){ popToast('Could not upload ' + file.name); continue; }
+        var pub = sb.storage.from('tank-photos').getPublicUrl(path);
+        var publicUrl = pub.data ? pub.data.publicUrl : '';
+        var dbRes = await dbInsertRow('tank_photos', { tank_id: t.id, path: path, url: publicUrl, uploaded_by: window.currentMember.id });
+        if (!dbRes.error && dbRes.data){
+          t.photos = t.photos || [];
+          t.photos.unshift({ id: dbRes.data.id, url: dbRes.data.url, path: dbRes.data.path });
+          renderPhotoGrid(t);
+        }
+      } catch (err){
+        popToast('Could not upload ' + file.name);
+      }
+    }
+    statusEl.textContent = '';
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
+  });
 
   function openTank(i){ currentTank = i; renderDetail(); show('tank-detail'); }
 
@@ -3179,7 +3305,7 @@ window.initPortal = function(){
     } else {
       var nt = Object.assign({ subtitle:'', tags:newTags,
         params:[['—','pH'],['—','Temp'],['—','TDS']],
-        livestock:[], plants:[], awards:[],
+        livestock:[], plants:[], awards:[], photos:[],
         log:[['Tank set up', 'Welcome to the fishroom', todayShort()]] }, data);
 
       if (sb && window.currentMember){
@@ -3876,8 +4002,9 @@ window.initPortal = function(){
     list.innerHTML = rows.map(function(r){
       var when = new Date(r.start_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short', year:'numeric' });
       return '<div class="row" style="flex-wrap:wrap;align-items:flex-start"><div class="row-body"><b>' + escT(r.title) + '</b><span>' + escT(when) + (r.location ? ' · ' + escT(r.location) : '') + '</span></div>' +
+        '<button class="aw-btn approve att-toggle" data-toggle-id="' + r.id + '">Attendance</button>' +
         '<button class="rm-btn" data-event-id="' + r.id + '" aria-label="Delete event"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
-        '<div style="flex-basis:100%;order:3;margin-top:10px" class="ev-attendance" data-event-id2="' + r.id + '"></div></div>';
+        '<div style="flex-basis:100%;order:3;margin-top:10px;display:none" class="ev-attendance" data-event-id2="' + r.id + '"></div></div>';
     }).join('');
     list.querySelectorAll('[data-event-id]').forEach(function(b){
       b.addEventListener('click', async function(){
@@ -3886,39 +4013,51 @@ window.initPortal = function(){
         loadEvents();
       });
     });
-    list.querySelectorAll('.ev-attendance').forEach(function(box){ renderAttendanceBox(box, box.getAttribute('data-event-id2')); });
+    list.querySelectorAll('.att-toggle').forEach(function(b){
+      b.addEventListener('click', function(){
+        var box = list.querySelector('.ev-attendance[data-event-id2="' + b.getAttribute('data-toggle-id') + '"]');
+        var opening = box.style.display === 'none';
+        box.style.display = opening ? 'block' : 'none';
+        b.textContent = opening ? 'Hide attendance' : 'Attendance';
+        if (opening) renderAttendanceBox(box, b.getAttribute('data-toggle-id'));
+      });
+    });
   }
 
   async function renderAttendanceBox(box, eventId){
-    var res = await sb.from('event_attendance').select('*, members(first_name,last_name)').eq('event_id', eventId);
+    var res = await sb.from('event_attendance').select('*').eq('event_id', eventId);
     var rows = res.data || [];
-    var memberOptions = (window.__liveMemberList || []).map(function(m){
-      return '<option value="' + m.id + '">' + escT(((m.first_name||'') + ' ' + (m.last_name||'')).trim() || 'Member') + '</option>';
-    }).join('');
-    box.innerHTML =
-      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
-        '<select class="att-select" style="max-width:220px"><option value="">Mark a member as attended…</option>' + memberOptions + '</select>' +
-        '<button class="aw-btn approve att-add">Add</button>' +
-        '<span style="font-size:12px;color:var(--ink-soft)">' + rows.length + ' attended</span>' +
-      '</div>' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap">' + rows.map(function(a){
-        var nm = a.members ? ((a.members.first_name||'') + ' ' + (a.members.last_name||'')).trim() : 'Member';
-        return '<span class="tag" style="display:inline-flex;align-items:center;gap:6px">' + escT(nm) + '<button class="att-remove" data-att-id="' + a.id + '" aria-label="Remove ' + escT(nm) + '" style="background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:0;font-size:14px;line-height:1">×</button></span>';
-      }).join('') + '</div>';
-    box.querySelector('.att-add').addEventListener('click', async function(){
-      var sel = box.querySelector('.att-select');
-      var memberId = sel.value;
-      if (!memberId) return;
-      this.disabled = true;
-      var r = await dbInsertRow('event_attendance', { event_id: eventId, member_id: memberId, marked_by: window.currentMember.id });
-      this.disabled = false;
-      if (r.error){ popToast('Could not mark attendance — try again'); return; }
-      renderAttendanceBox(box, eventId);
+    var attendedIds = {};
+    rows.forEach(function(a){ attendedIds[a.member_id] = a.id; });
+    var members = (window.__liveMemberList || []).slice().sort(function(a, b){
+      var na = ((a.first_name||'')+(a.last_name||'')).toLowerCase(), nb = ((b.first_name||'')+(b.last_name||'')).toLowerCase();
+      return na < nb ? -1 : na > nb ? 1 : 0;
     });
-    box.querySelectorAll('.att-remove').forEach(function(x){
-      x.addEventListener('click', async function(){
-        await dbDeleteRow('event_attendance', x.getAttribute('data-att-id'));
-        renderAttendanceBox(box, eventId);
+    box.innerHTML =
+      '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:8px">' + rows.length + ' of ' + members.length + ' members marked as attended — tick to mark, untick to remove</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px 14px">' + members.map(function(m){
+        var nm = ((m.first_name||'') + ' ' + (m.last_name||'')).trim() || 'New member';
+        var checked = !!attendedIds[m.id];
+        return '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">' +
+          '<input type="checkbox" class="att-check" data-member-id="' + m.id + '" data-att-id="' + (attendedIds[m.id] || '') + '"' + (checked ? ' checked' : '') + '> ' + escT(nm) +
+        '</label>';
+      }).join('') + '</div>';
+    box.querySelectorAll('.att-check').forEach(function(cb){
+      cb.addEventListener('change', async function(){
+        var memberId = cb.getAttribute('data-member-id');
+        cb.disabled = true;
+        if (cb.checked){
+          var r = await dbInsertRow('event_attendance', { event_id: eventId, member_id: memberId, marked_by: window.currentMember.id });
+          if (r.error){ popToast('Could not mark attendance — try again'); cb.checked = false; cb.disabled = false; return; }
+          cb.setAttribute('data-att-id', r.data ? r.data.id : '');
+        } else {
+          var attId = cb.getAttribute('data-att-id');
+          if (attId) await dbDeleteRow('event_attendance', attId);
+        }
+        cb.disabled = false;
+        var countEl = box.querySelector('div');
+        var newCount = box.querySelectorAll('.att-check:checked').length;
+        if (countEl) countEl.textContent = newCount + ' of ' + members.length + ' members marked as attended — tick to mark, untick to remove';
       });
     });
   }
