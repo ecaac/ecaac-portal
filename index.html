@@ -585,6 +585,12 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       <span class="pill">4</span>
     </button>
 
+    <div class="side-label" id="admin-side-label" style="display:none">Admin</div>
+    <button class="side-link" data-view="admin" id="admin-side-link" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 6v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg>
+      Admin Panel
+    </button>
+
     <div class="side-label">Account</div>
     <button class="side-link" data-view="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.9 2.9l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.9-2.9l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.9-2.9l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.9 2.9l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
@@ -769,7 +775,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </div>
 
   <div class="sec-title"><h3>Club news — members only</h3></div>
-  <div class="grid g3">
+  <div class="grid g3" id="news-grid">
     <div class="card t-leaf">
       <span class="badge ok" style="margin-bottom:10px;display:inline-block">Announcement</span>
       <h4>Expo 2027 venue confirmed</h4>
@@ -824,7 +830,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <div class="field full"><label for="f-bio">Biography</label><textarea id="f-bio" rows="3">Keeping fish since the 90s and hopelessly addicted to planted tanks. Proud to serve as ECAAC's Club President.</textarea></div>
       </div>
       <div style="margin-top:18px;display:flex;gap:10px">
-        <button class="btn btn-primary toastable" data-toast="Profile changes saved">Save changes</button>
+        <button class="btn btn-primary" id="profile-save-btn">Save changes</button>
         <button class="btn btn-outline toastable" data-toast="Changes discarded">Cancel</button>
       </div>
     </div>
@@ -1446,6 +1452,45 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <div class="card t-leaf"><div class="stat-num" data-live="ev-meetings">11 / 12</div><div class="stat-label">Meetings attended, last 12 months</div></div>
     <div class="card t-deep"><div class="stat-num" data-live="ev-workshops">4</div><div class="stat-label">Workshops attended in 2026</div></div>
     <div class="card t-gold"><div class="stat-num" data-live="ev-auctions">2</div><div class="stat-label">Auctions participated in</div></div>
+  </div>
+</section>
+
+<!-- ============ ADMIN PANEL (visible to role=admin only) ============ -->
+<section class="view" id="view-admin">
+  <div class="view-head">
+    <div>
+      <span class="kicker">Admin Panel</span>
+      <h2>Committee tools</h2>
+      <p>Post club news that every member sees on their dashboard, and manage member-facing content. More tools arrive as each feature moves to the database.</p>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1fr 1.2fr">
+    <div class="panel">
+      <h3>Post club news</h3>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="field"><label for="an-title">Title *</label><input id="an-title" placeholder="e.g. August meeting moved to the 8th"></div>
+        <div class="field"><label for="an-badge">Category</label>
+          <select id="an-badge"><option>Announcement</option><option>Programs</option><option>Events</option><option>General</option></select>
+        </div>
+        <div class="field"><label for="an-body">Message *</label><textarea id="an-body" rows="4" placeholder="What do members need to know?"></textarea></div>
+      </div>
+      <p id="an-error" style="display:none;font-size:12.5px;font-weight:700;color:var(--coral-dark);margin:12px 0 0">Add a title and a message before posting.</p>
+      <div style="margin-top:16px"><button class="btn btn-primary" id="an-post-btn">Post news</button></div>
+    </div>
+    <div class="panel">
+      <h3>Posted news</h3>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Everything members currently see, newest first. Deleting removes it from every member's dashboard.</p>
+      <div class="rows" style="box-shadow:none;border:1px solid #F0EADB" id="admin-news-list">
+        <div class="reg-empty" style="padding:20px">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="future" style="margin-top:24px">
+    <span class="badge info">Coming soon</span>
+    <h4>Approve award entries · Confirm renewals · Manage events</h4>
+    <p>These arrive as award entries, payments and the events calendar are moved into the database — the same pattern as news posting.</p>
   </div>
 </section>
 
@@ -2433,7 +2478,7 @@ window.initPortal = function(){
       var tags = m.committee ? '<span class="n">Committee</span>' : m.cats.map(function(c){ return '<span>' + c + '</span>'; }).join('');
       var meta = m.breeder
         ? '<div class="dir-meta"><span><b>' + m.listings + '</b> register listings</span><span><b>' + m.current + '</b> breeding now</span></div>'
-        : '<div class="dir-meta"><span><a href="mailto:' + m.email + '" style="color:var(--leaf-dark);font-weight:700">' + m.email + '</a></span></div>';
+        : '<div class="dir-meta"><span>' + (m.email ? '<a href="mailto:' + m.email + '" style="color:var(--leaf-dark);font-weight:700">' + m.email + '</a>' : '<b>' + (m.metaLine || '') + '</b>') + '</span></div>';
       return '<div class="dir-card"><div class="dir-avatar" style="background:' + gradients[i % gradients.length] + '">' + initials(m.name) + '</div>' +
         '<div class="dir-body"><h4>' + m.name + '</h4><div class="dir-role">' + m.role + '</div>' +
         '<p>' + m.blurb + '</p><div class="dir-tags">' + tags + '</div>' + meta + '</div></div>';
@@ -3374,6 +3419,116 @@ window.initPortal = function(){
     var ref = document.getElementById('renew-ref');
     if (ref) ref.textContent = member.number;
   }
+  // ===== Live Supabase wiring: roles, club news, members directory, profile save =====
+  var IS_ADMIN = !!(window.currentMember && window.currentMember.role === 'admin');
+  var sb = (window.currentMember && typeof supabase !== 'undefined') ? supabase : null;
+
+  if (IS_ADMIN) {
+    document.getElementById('admin-side-label').style.display = '';
+    document.getElementById('admin-side-link').style.display = '';
+  }
+
+  var NEWS_BADGE_CLASS = { 'Announcement':'ok', 'Programs':'pend', 'Events':'info', 'General':'info' };
+  var NEWS_CARD_TONE = ['t-leaf','t-deep','t-gold'];
+
+  async function loadNews(){
+    if (!sb) return;
+    var res = await sb.from('news').select('*').order('published_at', { ascending: false });
+    var rows = res.data || [];
+
+    // dashboard: newest 3
+    var grid = document.getElementById('news-grid');
+    if (grid) {
+      grid.innerHTML = rows.length ? rows.slice(0, 3).map(function(n, i){
+        return '<div class="card ' + NEWS_CARD_TONE[i % 3] + '">' +
+          '<span class="badge ' + (NEWS_BADGE_CLASS[n.badge] || 'info') + '" style="margin-bottom:10px;display:inline-block">' + escT(n.badge || 'News') + '</span>' +
+          '<h4>' + escT(n.title) + '</h4><p>' + escT(n.body) + '</p></div>';
+      }).join('') : '<div class="card t-leaf" style="grid-column:1/-1"><h4>No club news yet</h4><p>' + (IS_ADMIN ? 'Post the first update from the Admin Panel.' : 'Committee announcements will appear here.') + '</p></div>';
+    }
+
+    // admin list: all, with delete
+    var list = document.getElementById('admin-news-list');
+    if (list && IS_ADMIN) {
+      list.innerHTML = rows.length ? rows.map(function(n){
+        var when = n.published_at ? new Date(n.published_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short' }) : '';
+        return '<div class="row"><div class="row-body"><b>' + escT(n.title) + '</b><span>' + escT(n.badge || '') + ' · ' + when + '</span></div>' +
+          '<button class="rm-btn" data-news-id="' + n.id + '" aria-label="Delete news item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>';
+      }).join('') : '<div class="reg-empty" style="padding:20px">Nothing posted yet.</div>';
+      list.querySelectorAll('[data-news-id]').forEach(function(b){
+        b.addEventListener('click', async function(){
+          await sb.from('news').delete().eq('id', b.getAttribute('data-news-id'));
+          popToast('News item deleted');
+          loadNews();
+        });
+      });
+    }
+  }
+
+  var anPostBtn = document.getElementById('an-post-btn');
+  if (anPostBtn) anPostBtn.addEventListener('click', async function(){
+    if (!sb) return;
+    var title = document.getElementById('an-title').value.trim();
+    var body = document.getElementById('an-body').value.trim();
+    var errEl = document.getElementById('an-error');
+    if (!title || !body){ errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    anPostBtn.disabled = true; anPostBtn.textContent = 'Posting…';
+    var res = await sb.from('news').insert({ title: title, body: body, badge: document.getElementById('an-badge').value });
+    anPostBtn.disabled = false; anPostBtn.textContent = 'Post news';
+    if (res.error){ popToast('Could not post — are you signed in as an admin?'); return; }
+    document.getElementById('an-title').value = '';
+    document.getElementById('an-body').value = '';
+    popToast('News posted — every member now sees it');
+    loadNews();
+  });
+
+  async function loadLiveMembers(){
+    if (!sb) return;
+    var res = await sb.from('members').select('*').order('created_at', { ascending: true });
+    var rows = res.data || [];
+    if (!rows.length) return;
+    DIR.length = 0;
+    rows.sort(function(a, b){ return (b.role === 'admin') - (a.role === 'admin'); });
+    rows.forEach(function(m){
+      var nm = ((m.first_name || '') + ' ' + (m.last_name || '')).trim() || 'New member';
+      var joinYear = m.join_date ? new Date(m.join_date).getFullYear() : '';
+      DIR.push({
+        name: nm,
+        role: (m.role === 'admin' ? 'Committee' : 'Member') + (joinYear ? ' · joined ' + joinYear : ''),
+        blurb: m.bio || 'This member hasn\u2019t written a bio yet.',
+        cats: [m.province || 'ECAAC'],
+        committee: m.role === 'admin',
+        breeder: false, shrimp: false, listings: 0, current: 0,
+        email: '', metaLine: (m.membership_number || '') + (m.province ? ' · ' + m.province : '')
+      });
+    });
+    renderDir();
+  }
+
+  var profileSaveBtn = document.getElementById('profile-save-btn');
+  if (profileSaveBtn) profileSaveBtn.addEventListener('click', async function(){
+    if (!sb || !window.currentMember){ popToast('Profile changes saved'); return; }
+    var cm = window.currentMember;
+    var updates = {
+      first_name: document.getElementById('f-name').value.trim() || null,
+      last_name: document.getElementById('f-surname').value.trim() || null,
+      phone: document.getElementById('f-phone').value.trim() || null,
+      province: document.getElementById('f-province').value || null,
+      bio: document.getElementById('f-bio').value.trim() || null
+    };
+    profileSaveBtn.disabled = true; profileSaveBtn.textContent = 'Saving…';
+    var res = await sb.from('members').update(updates).eq('id', cm.id);
+    profileSaveBtn.disabled = false; profileSaveBtn.textContent = 'Save changes';
+    if (res.error){ popToast('Could not save — try again'); return; }
+    Object.assign(cm, updates);
+    member.name = liveName(cm);
+    applyLiveMember();
+    popToast('Profile saved');
+    loadLiveMembers();
+  });
+
+  if (window.currentMember) { loadNews(); loadLiveMembers(); }
+
   applyLiveMember();
 
   renderTanks();
