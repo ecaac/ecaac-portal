@@ -490,10 +490,14 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 <div id="auth-gate" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#F6F1E6;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <div style="background:#fff;border-radius:20px;padding:40px;max-width:380px;width:90%;box-shadow:0 20px 40px -16px rgba(11,59,76,0.25);text-align:center;">
     <h2 style="font-family:'Fraunces',Georgia,serif;color:#0D1026;margin-bottom:8px;">ECAAC Members Portal</h2>
-    <p style="font-size:13.5px;color:#565A72;margin-bottom:20px;">Enter your email — we'll send you a sign-in link, no password needed.</p>
-    <input id="auth-email" type="email" placeholder="you@example.com" style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid #E1D8C4;font:inherit;font-size:13.5px;margin-bottom:12px;box-sizing:border-box;">
-    <button id="auth-send-btn" style="width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#35AD51,#248238);color:#fff;font-weight:700;font-size:14px;cursor:pointer;">Send sign-in link</button>
+    <p style="font-size:13.5px;color:#565A72;margin-bottom:20px;">Sign in with the email and password given to you by the committee.</p>
+    <form id="auth-form">
+      <input id="auth-email" type="email" placeholder="you@example.com" autocomplete="username" required style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid #E1D8C4;font:inherit;font-size:13.5px;margin-bottom:10px;box-sizing:border-box;">
+      <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password" required style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid #E1D8C4;font:inherit;font-size:13.5px;margin-bottom:12px;box-sizing:border-box;">
+      <button type="submit" id="auth-signin-btn" style="width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#35AD51,#248238);color:#fff;font-weight:700;font-size:14px;cursor:pointer;">Sign in</button>
+    </form>
     <p id="auth-status" style="font-size:12.5px;color:#565A72;margin-top:14px;min-height:18px;"></p>
+    <p style="font-size:12px;color:#8890A8;margin-top:6px;">Not a member yet, or forgotten your password? Contact the committee.</p>
   </div>
 </div>
 
@@ -1687,12 +1691,20 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     }
   }
 
-  document.getElementById('auth-send-btn').addEventListener('click', async function(){
+  document.getElementById('auth-form').addEventListener('submit', async function(e){
+    e.preventDefault();
     var email = document.getElementById('auth-email').value.trim();
-    if (!email) { statusEl.textContent = 'Enter your email first.'; return; }
-    statusEl.textContent = 'Sending...';
-    var res = await supabase.auth.signInWithOtp({ email: email });
-    statusEl.textContent = res.error ? 'Something went wrong — try again.' : 'Check your email for the link!';
+    var password = document.getElementById('auth-password').value;
+    if (!email || !password) { statusEl.textContent = 'Enter both your email and password.'; return; }
+    var btn = document.getElementById('auth-signin-btn');
+    btn.disabled = true; btn.textContent = 'Signing in…';
+    statusEl.textContent = '';
+    var res = await supabase.auth.signInWithPassword({ email: email, password: password });
+    btn.disabled = false; btn.textContent = 'Sign in';
+    if (res.error) {
+      statusEl.textContent = 'Incorrect email or password — check with the committee if you\'re unsure.';
+    }
+    // on success, onAuthStateChange fires and checkSession() shows the portal
   });
 
   supabase.auth.onAuthStateChange(function(_event, _session){ checkSession(); });
@@ -1747,7 +1759,8 @@ window.initPortal = function(){
   });
 
   document.getElementById('logout-link').addEventListener('click', function(){
-    popToast('This is a demo — logging out would return you to ecaac.co.za');
+    supabase.auth.signOut();
+    window.__portalInited = false;
   });
 
   // ===== membership card: view + download =====
