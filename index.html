@@ -3474,55 +3474,40 @@ window.initPortal = function(){
   var MA_AVATAR_GRADS = ['linear-gradient(135deg,var(--deep),var(--leaf))','linear-gradient(135deg,var(--leaf),var(--leaf-dark))','linear-gradient(135deg,var(--deep-2),var(--deep))','linear-gradient(135deg,var(--leaf-dark),var(--deep))','linear-gradient(135deg,var(--deep),var(--deep-3))','linear-gradient(135deg,var(--coral),var(--coral-dark))'];
   function maInitials(n){ return n.split(/\s+/).map(function(w){return w[0];}).slice(0,2).join('').toUpperCase(); }
 
-  var MEMBER_TANKS = [
-    { owner:'Jonathan Balmer', name:'Killifish & Caridina Haven', type:'Freshwater', subtitle:'Species vault', volume:120, dims:'100 × 40 × 40', started:'Jan 2022',
-      tags:['Killifish','Crystal Red Caridina','Bucephalandra','Sponge filtration'],
-      params:[['6.4','pH'],['2°','KH'],['24 °C','Temp'],['0','Nitrite'],['5','Nitrate']],
-      livestock:[['Gardneri killifish','Trio','3'],['Crystal Red Caridina','Breeding colony','40+']],
-      plants:[['Bucephalandra spp.','On lava rock',''],['Anubias spp.','Attached to wood','']] },
-    { owner:'Brenton Simpson', name:'Blackwater Nano Community', type:'Aquascape', subtitle:'Nature style', volume:80, dims:'60 × 35 × 35', started:'Mar 2023',
-      tags:['Celestial Pearl Danio','Vietnamese Cardinals','Tannin-stained','Low-tech'],
-      params:[['6.2','pH'],['3°','KH'],['24 °C','Temp'],['0','Nitrite'],['8','Nitrate']],
-      livestock:[['Celestial Pearl Danios','Shoal','15'],['Emerald Rasbora','Shoal','10']],
-      plants:[['Java moss','Carpet',''],['Limnophila sessiliflora','Background stems','']] },
-    { owner:'Malcolm Logan', name:'Pleco Breeding Battery', type:'Freshwater', subtitle:'Ancistrus line-breeding', volume:200, dims:'100 × 50 × 45', started:'Aug 2021',
-      tags:['Ancistrus','PVC caves','Driftwood','Strong flow'],
-      params:[['7.0','pH'],['6°','KH'],['27 °C','Temp'],['0','Nitrite'],['10','Nitrate']],
-      livestock:[['Ancistrus — Common','Breeding group','8'],['Ancistrus — Lemon','Breeding group','6']],
-      plants:[['Driftwood stack','Grazing surface & cover','']] },
-    { owner:'Michael Serfontein', name:'Livebearer Line-Breeding Tank', type:'Freshwater', subtitle:'Guppy & sword strains', volume:150, dims:'90 × 45 × 40', started:'May 2022',
-      tags:['Poecilia wingei','Sword strains','Hard water','High turnover'],
-      params:[['7.4','pH'],['10°','KH'],['25 °C','Temp'],['0','Nitrite'],['12','Nitrate']],
-      livestock:[['Poecilia wingei \u2018Campoma 48\u2019','Breeding strain','20+'],['Green Sword (wild type)','Breeding strain','12']],
-      plants:[['Water sprite','Fry cover','']] },
-    { owner:'Venesh Pillay', name:'Shrimp & Rams Showcase', type:'Aquascape', subtitle:'Dwarf cichlid biotope', volume:110, dims:'80 × 40 × 40', started:'Feb 2024',
-      tags:['Black rams','Crystal Red Shrimp','Soft water','Heavily planted'],
-      params:[['6.6','pH'],['2°','KH'],['26 °C','Temp'],['0','Nitrite'],['5','Nitrate']],
-      livestock:[['Black rams','Pair','2'],['Crystal Red Shrimp','Colony','50+']],
-      plants:[['Red Galaxy Pinto shrimp habitat moss','Cover',''],['Cryptocoryne bed','Foreground','']] },
-    { owner:'Pierre Gerber', name:'Corydoras Colony', type:'Freshwater', subtitle:'Bottom-dweller focus', volume:130, dims:'90 × 40 × 35', started:'Nov 2023',
-      tags:['Bronze Corydoras','Peppered Corydoras','Sand substrate','Cool current'],
-      params:[['6.8','pH'],['4°','KH'],['24 °C','Temp'],['0','Nitrite'],['8','Nitrate']],
-      livestock:[['Bronze Corydoras','Shoal','12'],['Peppered Corydoras','Shoal','8']],
-      plants:[['Amazon sword','Background','']] },
-    { owner:'Kristen Van Staden', name:'Apple Snail Sanctuary', type:'Freshwater', subtitle:'Snail & plant tank', volume:70, dims:'60 × 30 × 35', started:'Jun 2024',
-      tags:['Gold apple snails','Black apple snails','Java fern','Calcium-rich water'],
-      params:[['7.6','pH'],['8°','KH'],['25 °C','Temp'],['0','Nitrite'],['5','Nitrate']],
-      livestock:[['Gold apple snails','Colony','6'],['Black apple snails','Colony','4']],
-      plants:[['Java Fern \u2018Trident\u2019','Attached to wood','']] },
-    { owner:'Donaven Campodonica', name:'Electric Blue Acara Grow-Out', type:'Freshwater', subtitle:'Cichlid breeding project', volume:250, dims:'120 × 50 × 45', started:'Sep 2024',
-      tags:['Electric Blue Acara','Breeding pair','Fry grow-out','Weekly water changes'],
-      params:[['7.2','pH'],['7°','KH'],['26 °C','Temp'],['0','Nitrite'],['10','Nitrate']],
-      livestock:[['Electric Blue Acara','Breeding pair','2'],['Electric Blue Acara fry','Latest spawn','40+']],
-      plants:[['Java fern','Cover for fry','']] }
-  ];
+  // Other members' tanks are loaded live from Supabase (see loadOtherMemberTanks below).
+  // No demo data here — if nobody else has added a tank yet, this list is genuinely empty.
+  var otherMemberTanks = [];
+
+  async function loadOtherMemberTanks(){
+    if (!sb || !window.currentMember) { otherMemberTanks = []; return; }
+    var res = await sb.from('tanks')
+      .select('*, tank_tags(*), tank_params(*), tank_livestock(*), tank_plants(*), members(first_name,last_name)')
+      .neq('owner_id', window.currentMember.id)
+      .order('created_at', { ascending: true });
+    if (res.error || !res.data){ otherMemberTanks = []; renderMemberAquariums(); return; }
+    otherMemberTanks = res.data.map(function(row){
+      var ownerName = row.members ? ((row.members.first_name || '') + ' ' + (row.members.last_name || '')).trim() : '';
+      var params = (row.tank_params || []).slice().sort(function(a,b){ return (a.sort_order||0) - (b.sort_order||0); })
+        .map(function(p){ return [p.value, p.label]; });
+      return {
+        name: row.name, type: row.type, subtitle: row.subtitle || '',
+        volume: row.volume || 0, dims: row.dims || '—', started: row.started || '',
+        owner: ownerName || 'ECAAC member',
+        tags: (row.tank_tags || []).map(function(t){ return t.label; }),
+        params: params,
+        livestock: (row.tank_livestock || []).map(function(l){ return [l.name, l.note || '', l.qty || '']; }),
+        plants: (row.tank_plants || []).map(function(p){ return [p.name, p.note || '', p.qty || '']; }),
+        mine: false
+      };
+    });
+    renderMemberAquariums();
+  }
 
   function getAllMemberTanks(){
     var mine = tanks.map(function(t, i){
       return Object.assign({}, t, { owner: member.name, mine:true, myIndex:i });
     });
-    var others = MEMBER_TANKS.map(function(t){ return Object.assign({}, t, { mine:false }); });
-    return mine.concat(others);
+    return mine.concat(otherMemberTanks);
   }
 
   var maFilter = 'All';
@@ -3776,7 +3761,7 @@ window.initPortal = function(){
     if (window.checkBadgeChanges) window.checkBadgeChanges();
   });
 
-  if (window.currentMember) { loadNews(); loadLiveMembers(); loadTanksFromDB(); }
+  if (window.currentMember) { loadNews(); loadLiveMembers(); loadTanksFromDB(); loadOtherMemberTanks(); }
 
   applyLiveMember();
 
