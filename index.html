@@ -579,9 +579,28 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 @media (hover:none){.row .rm-btn{opacity:1}}
 
 /* card viewer modal */
-.card-modal{position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(6,7,15,0.7);backdrop-filter:blur(6px)}
+.card-modal{position:fixed;inset:0;z-index:150;display:none;align-items:flex-start;justify-content:center;padding:24px;background:rgba(6,7,15,0.7);backdrop-filter:blur(6px);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .card-modal.show{display:flex;animation:fadeUp .25s cubic-bezier(.16,.8,.3,1)}
-.card-modal-inner{width:100%;max-width:640px}
+/* margin:auto centres the panel when it fits and lets it scroll from the top
+   when it doesn't — align-items:center would clip the head of a tall form. */
+.card-modal-inner{width:100%;max-width:640px;margin:auto}
+body.modal-open{overflow:hidden}
+@media (max-width:640px){
+  .card-modal{padding:12px}
+  .card-modal-inner{max-width:100%}
+  .card-modal-inner .panel{padding:18px 16px}
+  /* iOS zooms the whole page when a focused input is under 16px. */
+  .card-modal .field input,.card-modal .field select,.card-modal .field textarea,
+  .card-modal .dim-row input,.card-modal .test-row input,.card-modal .disp-row input{font-size:16px}
+  .dim-row{gap:8px}
+  .dim-row .dim-cell label{font-size:9.5px;letter-spacing:.02em}
+  .dim-row input{padding:10px 8px;text-align:center}
+  .vol-calc{flex-direction:column;align-items:stretch;gap:10px}
+  .vol-calc .vc-apply{margin-left:0;width:100%;padding:11px 14px}
+  .disp-row{flex-wrap:wrap}
+  .test-grid{grid-template-columns:1fr}
+  .card-modal .panel > div:last-child .btn{flex:1;justify-content:center}
+}
 .card-modal-inner .member-card{transform:none}
 .card-modal-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .card-modal-bar b{font-family:'Fraunces',Georgia,serif;color:#fff;font-size:17px}
@@ -1362,7 +1381,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
       Back to My Aquariums
     </button>
-    <div style="display:flex;gap:10px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-outline btn-sm" id="td-edit-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
         Edit tank
@@ -5071,10 +5090,10 @@ window.initPortal = function(){
     document.getElementById('tf-notes').value = t ? (t.notes || '') : '';
     document.getElementById('tf-error').style.display = 'none';
     updateCalc();
-    tankModal.classList.add('show');
+    openLocked(tankModal);
     document.getElementById('tf-name').focus();
   }
-  function closeTankModal(){ tankModal.classList.remove('show'); }
+  function closeTankModal(){ closeLocked(tankModal); }
   document.getElementById('tank-filter-type').addEventListener('change', function(){
     tankView.type = this.value; renderTanks();
   });
@@ -5090,7 +5109,6 @@ window.initPortal = function(){
   document.getElementById('td-edit-btn').addEventListener('click', function(){ openTankModal(currentTank); });
   document.getElementById('tank-modal-close').addEventListener('click', closeTankModal);
   document.getElementById('tf-cancel').addEventListener('click', closeTankModal);
-  tankModal.addEventListener('click', function(e){ if (e.target === tankModal) closeTankModal(); });
 
   var tfSaving = false;
   document.getElementById('tf-save').addEventListener('click', async function(){
@@ -5192,6 +5210,46 @@ window.initPortal = function(){
     tfSaving = false;
   });
 
+  // ===== locked modals =====
+  // Data-entry modals are only dismissed on purpose: close, save or cancel.
+  // No backdrop taps, no Escape, and one back press is swallowed rather than
+  // throwing someone out of the portal halfway through filling in a tank.
+  var lockedModals = [];
+  var guardArmed = false, guardConsuming = false;
+  function armGuard(){
+    if (guardArmed) return;
+    try { history.pushState({ ecaacModalGuard: true }, ''); guardArmed = true; } catch (e){}
+  }
+  function disarmGuard(){
+    if (!guardArmed) return;
+    guardArmed = false;
+    // Pop our own entry back off so a later back press doesn't waste a tap on
+    // a history slot the member never navigated to.
+    if (history.state && history.state.ecaacModalGuard){
+      guardConsuming = true;
+      try { history.back(); } catch (e){ guardConsuming = false; }
+    }
+  }
+  window.addEventListener('popstate', function(){
+    if (guardConsuming){ guardConsuming = false; return; }
+    if (lockedModals.length){ guardArmed = false; armGuard(); }
+  });
+  function openLocked(el){
+    el.classList.add('show');
+    if (lockedModals.indexOf(el) === -1) lockedModals.push(el);
+    document.body.classList.add('modal-open');
+    armGuard();
+  }
+  function closeLocked(el){
+    el.classList.remove('show');
+    var i = lockedModals.indexOf(el);
+    if (i >= 0) lockedModals.splice(i, 1);
+    if (!lockedModals.length){
+      document.body.classList.remove('modal-open');
+      disarmGuard();
+    }
+  }
+
   // ===== quick actions =====
   // A test session is one sitting with the kit, not eight separate taps on
   // eight tiles, so this collects the lot and writes a single log entry.
@@ -5214,15 +5272,14 @@ window.initPortal = function(){
     if (!t.params.length){
       wrap.innerHTML = '<div class="reg-empty" style="grid-column:1/-1;padding:20px">No parameters on this tank yet — add one below the tiles first.</div>';
     }
-    testModal.classList.add('show');
+    openLocked(testModal);
     var first = wrap.querySelector('input');
     if (first) first.focus();
   }
-  function closeTestModal(){ testModal.classList.remove('show'); }
+  function closeTestModal(){ closeLocked(testModal); }
   document.getElementById('qa-test').addEventListener('click', openTestModal);
   document.getElementById('test-modal-close').addEventListener('click', closeTestModal);
   document.getElementById('test-cancel').addEventListener('click', closeTestModal);
-  testModal.addEventListener('click', function(e){ if (e.target === testModal) closeTestModal(); });
 
   var testSaving = false;
   document.getElementById('test-save').addEventListener('click', async function(){
@@ -5280,14 +5337,13 @@ window.initPortal = function(){
     document.getElementById('wc-pct').value = 30;
     document.getElementById('wc-note').value = '';
     syncWc();
-    wcModal.classList.add('show');
+    openLocked(wcModal);
     document.getElementById('wc-pct').focus();
   });
   document.getElementById('wc-pct').addEventListener('input', syncWc);
-  function closeWc(){ wcModal.classList.remove('show'); }
+  function closeWc(){ closeLocked(wcModal); }
   document.getElementById('wc-modal-close').addEventListener('click', closeWc);
   document.getElementById('wc-cancel').addEventListener('click', closeWc);
-  wcModal.addEventListener('click', function(e){ if (e.target === wcModal) closeWc(); });
 
   document.getElementById('wc-save').addEventListener('click', async function(){
     var t = tanks[currentTank];
@@ -5422,9 +5478,8 @@ window.initPortal = function(){
   }
 
   // esc closes tank modal too
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape'){ closeTankModal(); closeTestModal(); closeWc(); }
-  });
+  // No Escape handler for these three on purpose — a stray key press shouldn't
+  // discard a half-filled form. Close, Save and Cancel are the only ways out.
 
   // ===== Global search (top bar) =====
   var NAV_ICONS = {
