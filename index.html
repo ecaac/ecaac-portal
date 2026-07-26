@@ -88,6 +88,7 @@ button{font-family:inherit}
 
 .content{padding:30px 32px 110px;max-width:1220px;width:100%;margin:0 auto}
 .bday-banner{display:flex;align-items:center;gap:12px;margin:0 0 24px;padding:13px 16px;border-radius:14px;background:linear-gradient(135deg,var(--deep-2),var(--deep));border:1px solid rgba(217,164,65,0.4);color:#fff;box-shadow:0 14px 30px -16px rgba(6,7,15,0.6)}
+.bday-banner[hidden]{display:none}
 .bday-banner .bday-emoji{font-size:20px;line-height:1}
 .bday-banner .bday-text{font-size:14px;font-weight:700;flex:1}
 .bday-banner .bday-close{flex:none;width:30px;height:30px;border-radius:8px;border:none;background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
@@ -252,6 +253,7 @@ button{font-family:inherit}
 .dir-search input:focus{outline:2px solid var(--leaf-light);outline-offset:0}
 .dir-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ink-soft)}
 .chip-btn{border:1px solid var(--sand-line);background:var(--paper);color:var(--ink-soft);font-size:12px;font-weight:700;padding:9px 15px;border-radius:20px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.chip-select{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .chip-btn:hover{border-color:var(--leaf)}
 .chip-btn.active{background:#EAF3DE;color:var(--leaf-dark);border-color:var(--leaf-light)}
 .dir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
@@ -669,7 +671,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </button>
   <div class="welcome">
     <b data-live="welcome">Welcome back, Judy 🌿</b>
-    <span>Friday, 24 July 2026</span>
+    <span id="topbar-date">Friday, 24 July 2026</span>
   </div>
   <span class="status-chip">Membership active</span>
   <div class="top-search">
@@ -881,7 +883,17 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <div class="field"><label for="f-comm">Preferred communication</label>
           <select id="f-comm"><option selected>WhatsApp</option><option>Email</option><option>SMS</option></select>
         </div>
-        <div class="field full"><label for="f-interests">Aquarium interests</label><input id="f-interests" value="Planted tanks, Tanganyikan cichlids, shrimp, paludariums"></div>
+        <div class="field full"><label>Aquarium interests</label>
+          <div class="chip-select" id="f-interests" role="group" aria-label="Aquarium interests">
+            <button type="button" class="chip-btn" data-interest="Breeding">Breeding</button>
+            <button type="button" class="chip-btn" data-interest="Plants">Plants</button>
+            <button type="button" class="chip-btn" data-interest="Shrimp">Shrimp</button>
+            <button type="button" class="chip-btn" data-interest="Aquascaping">Aquascaping</button>
+            <button type="button" class="chip-btn" data-interest="Freshwater">Freshwater</button>
+            <button type="button" class="chip-btn" data-interest="Marine">Marine</button>
+            <button type="button" class="chip-btn" data-interest="Terrariums">Terrariums</button>
+          </div>
+        </div>
         <div class="field full"><label for="f-bio">About you</label><textarea id="f-bio" rows="3">Keeping fish since the 90s and hopelessly addicted to planted tanks. Proud to serve as ECAAC's Club President.</textarea></div>
       </div>
       <div style="margin-top:18px;display:flex;gap:10px">
@@ -1281,8 +1293,13 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <button class="chip-btn active" data-dirf="all">All</button>
     <button class="chip-btn" data-dirf="committee">Committee</button>
     <button class="chip-btn" data-dirf="breeder">Breeders</button>
+    <button class="chip-btn" data-dirf="breeding">Breeding</button>
     <button class="chip-btn" data-dirf="plants">Plants</button>
     <button class="chip-btn" data-dirf="shrimp">Shrimp</button>
+    <button class="chip-btn" data-dirf="aquascaping">Aquascaping</button>
+    <button class="chip-btn" data-dirf="freshwater">Freshwater</button>
+    <button class="chip-btn" data-dirf="marine">Marine</button>
+    <button class="chip-btn" data-dirf="terrariums">Terrariums</button>
   </div>
 
   <div class="dir-grid" id="dir-grid"></div>
@@ -2682,13 +2699,22 @@ window.initPortal = function(){
   var dirSearch = document.getElementById('dir-search');
   var dirFilter = 'all';
 
+  // Matches a member against a directory filter. Legacy demo rules (committee /
+  // breeder / plants / shrimp) are preserved; live members also match on their
+  // stored interest, and the new interest pills match purely on that.
+  function memberMatchesDirFilter(m, f){
+    if (f === 'committee') return !!m.committee;
+    if (f === 'breeder') return !!m.breeder;
+    var interests = (m.interests || []).map(function(s){ return String(s).toLowerCase(); });
+    if (f === 'plants') return interests.indexOf('plants') !== -1 || (m.cats && m.cats.indexOf('Plant') !== -1);
+    if (f === 'shrimp') return interests.indexOf('shrimp') !== -1 || !!m.shrimp;
+    return interests.indexOf(f) !== -1;
+  }
+
   function renderDir(){
     var q = (dirSearch.value || '').toLowerCase();
     var out = DIR.filter(function(m){
-      if (dirFilter === 'committee' && !m.committee) return false;
-      if (dirFilter === 'breeder' && !m.breeder) return false;
-      if (dirFilter === 'plants' && m.cats.indexOf('Plant') === -1) return false;
-      if (dirFilter === 'shrimp' && !m.shrimp) return false;
+      if (dirFilter !== 'all' && !memberMatchesDirFilter(m, dirFilter)) return false;
       if (q && (m.name + ' ' + m.blurb + ' ' + m.cats.join(' ')).toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
@@ -3999,7 +4025,7 @@ window.initPortal = function(){
     setVal('f-email', cm.email);
     setVal('f-phone', cm.phone);
     setVal('f-city', cm.city);
-    setVal('f-interests', cm.interests);
+    setSelectedInterests(cm.interests);
     setVal('f-birthday', cm.birthday);
     var bioEl = document.getElementById('f-bio'); if (bioEl) bioEl.value = cm.bio || '';
     if (window.checkBirthday) window.checkBirthday();
@@ -4114,8 +4140,10 @@ window.initPortal = function(){
   }
 
   // ----- Admin: create events + mark attendance -----
+  var postingEvent = false;
   var anEventBtn = document.getElementById('ae-post-btn');
   if (anEventBtn) anEventBtn.addEventListener('click', async function(){
+    if (postingEvent) return;
     if (!sb || !IS_ADMIN) return;
     var title = document.getElementById('ae-title').value.trim();
     var dateVal = document.getElementById('ae-date').value;
@@ -4123,6 +4151,7 @@ window.initPortal = function(){
     var errEl = document.getElementById('ae-error');
     if (!title || !dateVal){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
+    postingEvent = true;
     var start = new Date(dateVal + 'T' + timeVal);
     var hours = parseFloat(document.getElementById('ae-hours').value) || 4;
     var end = new Date(start.getTime() + hours * 3600000);
@@ -4135,12 +4164,13 @@ window.initPortal = function(){
       created_by: window.currentMember.id
     });
     anEventBtn.disabled = false; anEventBtn.textContent = 'Post event';
-    if (res.error){ popToast('Could not post — try again'); return; }
+    if (res.error){ popToast('Could not post — try again'); postingEvent = false; return; }
     document.getElementById('ae-title').value = '';
     document.getElementById('ae-location').value = '';
     document.getElementById('ae-desc').value = '';
     popToast(title + ' added to the calendar');
     loadEvents();
+    postingEvent = false;
   });
 
   function renderAdminEventList(rows){
@@ -4242,8 +4272,10 @@ window.initPortal = function(){
     }).join('');
   }
 
+  var postingLot = false;
   var alPostBtn = document.getElementById('al-post-btn');
   if (alPostBtn) alPostBtn.addEventListener('click', async function(){
+    if (postingLot) return;
     if (!sb || !IS_ADMIN) return;
     var memberId = document.getElementById('al-member').value;
     var dateVal = document.getElementById('al-date').value;
@@ -4252,6 +4284,7 @@ window.initPortal = function(){
     var errEl = document.getElementById('al-error');
     if (!memberId || !dateVal || !item || !amount || amount <= 0){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
+    postingLot = true;
     alPostBtn.disabled = true; alPostBtn.textContent = 'Saving…';
     var res = await dbInsertRow('auction_lots', {
       member_id: memberId, auction_date: dateVal, item: item,
@@ -4259,12 +4292,13 @@ window.initPortal = function(){
       created_by: window.currentMember.id
     });
     alPostBtn.disabled = false; alPostBtn.textContent = 'Log lot';
-    if (res.error){ popToast('Could not save — try again'); return; }
+    if (res.error){ popToast('Could not save — try again'); postingLot = false; return; }
     document.getElementById('al-item').value = '';
     document.getElementById('al-amount').value = '';
     popToast('Lot logged for that member');
     loadAdminAuctionList();
     if (memberId === window.currentMember.id) loadMyAuctionLots();
+    postingLot = false;
   });
 
   async function loadAdminAuctionList(){
@@ -4388,22 +4422,26 @@ window.initPortal = function(){
     });
   }
 
+  var postingNews = false;
   var anPostBtn = document.getElementById('an-post-btn');
   if (anPostBtn) anPostBtn.addEventListener('click', async function(){
+    if (postingNews) return;
     if (!sb) return;
     var title = document.getElementById('an-title').value.trim();
     var body = document.getElementById('an-body').value.trim();
     var errEl = document.getElementById('an-error');
     if (!title || !body){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
+    postingNews = true;
     anPostBtn.disabled = true; anPostBtn.textContent = 'Posting…';
     var res = await sb.from('news').insert({ title: title, body: body, badge: document.getElementById('an-badge').value });
     anPostBtn.disabled = false; anPostBtn.textContent = 'Post news';
-    if (res.error){ popToast('Could not post — are you signed in as an admin?'); return; }
+    if (res.error){ popToast('Could not post — are you signed in as an admin?'); postingNews = false; return; }
     document.getElementById('an-title').value = '';
     document.getElementById('an-body').value = '';
     popToast('News posted — every member now sees it');
     loadNews();
+    postingNews = false;
   });
 
   async function loadLiveMembers(){
@@ -4417,11 +4455,13 @@ window.initPortal = function(){
     rows.forEach(function(m){
       var nm = ((m.first_name || '') + ' ' + (m.last_name || '')).trim() || 'New member';
       var joinYear = m.join_date ? new Date(m.join_date).getFullYear() : '';
+      var interestList = String(m.interests || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
       DIR.push({
         name: nm,
         role: (m.role === 'admin' ? 'Committee' : 'Member') + (joinYear ? ' · joined ' + joinYear : ''),
         blurb: m.bio || 'This member hasn\u2019t written a bio yet.',
-        cats: [m.province || 'ECAAC'],
+        cats: interestList.length ? interestList : ['Member'],
+        interests: interestList,
         committee: m.role === 'admin',
         breeder: false, shrimp: false, listings: 0, current: 0,
         email: '', metaLine: (m.membership_number || '') + (m.province ? ' · ' + m.province : '')
@@ -4449,9 +4489,9 @@ window.initPortal = function(){
     var todayKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + now.getDate();
     var dismissKey = 'ecaac-bday-dismissed-' + (cm.id || 'demo') + '-' + todayKey;
     if (localStorage.getItem(dismissKey)){ banner.hidden = true; return; }
-    var first = (cm.first_name || (member.name || '').split(' ')[0] || '').trim();
+    var fullName = [cm.first_name, cm.last_name].filter(Boolean).join(' ').trim() || (member.name || '').trim();
     var txt = document.getElementById('bday-text');
-    if (txt) txt.textContent = 'Happy birthday' + (first ? ', ' + first : '') + '! The whole ECAAC club wishes you a wonderful day.';
+    if (txt) txt.textContent = 'Happy birthday' + (fullName ? ', ' + fullName : '') + '! The whole ECAAC club wishes you a wonderful day.';
     banner.hidden = false;
   };
   var bdayClose = document.getElementById('bday-close');
@@ -4464,6 +4504,31 @@ window.initPortal = function(){
     try { localStorage.setItem('ecaac-bday-dismissed-' + ((cm && cm.id) || 'demo') + '-' + todayKey, '1'); } catch(e){}
   });
 
+  // ===== Aquarium interests: multi-select toggle chips =====
+  // Selected interests are stored as a comma-separated list in members.interests.
+  function getSelectedInterests(){
+    var box = document.getElementById('f-interests');
+    if (!box) return [];
+    return Array.prototype.map.call(box.querySelectorAll('.chip-btn.active'), function(c){
+      return c.getAttribute('data-interest');
+    });
+  }
+  function setSelectedInterests(str){
+    var box = document.getElementById('f-interests');
+    if (!box) return;
+    var list = String(str || '').split(',').map(function(s){ return s.trim().toLowerCase(); }).filter(Boolean);
+    box.querySelectorAll('[data-interest]').forEach(function(c){
+      c.classList.toggle('active', list.indexOf(c.getAttribute('data-interest').toLowerCase()) !== -1);
+    });
+  }
+  (function(){
+    var box = document.getElementById('f-interests');
+    if (!box) return;
+    box.querySelectorAll('[data-interest]').forEach(function(chip){
+      chip.addEventListener('click', function(){ chip.classList.toggle('active'); });
+    });
+  })();
+
   var profileSaveBtn = document.getElementById('profile-save-btn');
   if (profileSaveBtn) profileSaveBtn.addEventListener('click', async function(){
     if (!sb || !window.currentMember){ popToast('Profile changes saved'); return; }
@@ -4474,7 +4539,7 @@ window.initPortal = function(){
       phone: document.getElementById('f-phone').value.trim() || null,
       province: document.getElementById('f-province').value || null,
       city: document.getElementById('f-city').value.trim() || null,
-      interests: document.getElementById('f-interests').value.trim() || null,
+      interests: getSelectedInterests().join(', ') || null,
       birthday: document.getElementById('f-birthday').value || null,
       bio: document.getElementById('f-bio').value.trim() || null
     };
@@ -4493,6 +4558,16 @@ window.initPortal = function(){
   if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); }
 
   applyLiveMember();
+
+  // Top bar date: always show today's date, formatted "Weekday, D Month YYYY".
+  (function(){
+    var el = document.getElementById('topbar-date');
+    if (!el) return;
+    var now = new Date();
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    el.textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+  })();
 
   renderTanks();
 
