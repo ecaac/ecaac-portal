@@ -612,17 +612,41 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   .md-body{padding:18px 16px 30px}
   .md-head{padding:18px 16px 15px}
 }
-/* Admin panel on narrow screens. Scoped to #view-admin so no other view shifts.
-   Fixes: dense list rows squeezing their text to a sliver beside non-shrinking
-   action buttons, native file inputs overflowing the panel, and 26px panel
-   padding eating a third of a phone viewport. */
+/* Dense list rows on narrow screens. Applies to the two views whose .row items
+   carry action buttons or badges beside the text: the admin panel and the
+   breeders register's "My listings". Without this, .row never wraps and
+   .row-body (min-width:0) squeezes its text to a sliver beside the buttons.
+   Deliberately scoped rather than global so other views keep their layout. */
 @media (max-width:640px){
-  #view-admin .panel{padding:18px 16px}
-  #view-admin .row{flex-wrap:wrap;gap:10px;padding:14px 16px;justify-content:flex-end}
-  #view-admin .row-body{flex:1 1 100%}
+  #view-admin .panel,
+  #view-breeders .panel{padding:18px 16px}
+  #view-admin .row,
+  #view-breeders #my-listings .row{flex-wrap:wrap;gap:10px;padding:14px 16px;justify-content:flex-end}
+  #view-admin .row-body,
+  #view-breeders #my-listings .row-body{flex:1 1 100%}
   #view-admin .aw-review-actions{flex:1 1 100%;flex-wrap:wrap;justify-content:flex-end}
   #view-admin .aw-comment-input{width:100%;order:-1}
   #view-admin input[type=file]{flex:1 1 100%;max-width:100%;min-width:0}
+}
+/* Breeders register on narrow screens. The table is min-width:760px inside a
+   horizontally-scrolling wrapper, which works but hides the last few columns
+   behind a scroll gesture members don't know is there. Below 640px each row
+   becomes a stacked card instead, labelled from each cell's data-label. */
+@media (max-width:640px){
+  .reg-table-wrap{overflow:visible}
+  .reg-table{min-width:0}
+  .reg-table thead{display:none}
+  .reg-table, .reg-table tbody, .reg-table tr, .reg-table tbody td{display:block;width:100%}
+  .reg-table tbody tr{display:flex;flex-direction:column;padding:14px 16px;border-bottom:1px solid #F0EADB}
+  .reg-table tbody tr:last-child{border-bottom:none}
+  .reg-table tbody td{padding:4px 0;border-bottom:none;font-size:13px}
+  .reg-table tbody td::before{content:attr(data-label);display:block;font-size:9.5px;font-weight:800;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:1px}
+  /* Species leads the card (it is the second cell in DOM order), so pull it up
+     with flex order and drop its label — the value speaks for itself. */
+  .reg-table tbody td.reg-species{order:-1;font-size:15px;font-style:normal;font-weight:700;color:var(--deep);padding-top:0}
+  .reg-table tbody td.reg-species::before{display:none}
+  .reg-table tbody td.reg-member{white-space:normal}
 }
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 .side-link:focus-visible,.btn:focus-visible,.icon-btn:focus-visible,.tank-card:focus-visible{outline:3px solid var(--leaf-light);outline-offset:2px}
@@ -1632,9 +1656,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       <p>South Africa's aquarium hobby, all in one hall. Volunteer sign-ups open to members in September.</p>
     </div>
     <div class="countdown" aria-label="Time until Expo 2027">
-      <div class="cd"><b>310</b><span>Days</span></div>
-      <div class="cd"><b>14</b><span>Hours</span></div>
-      <div class="cd"><b>36</b><span>Min</span></div>
+      <div class="cd"><b id="cd-days">—</b><span>Days</span></div>
+      <div class="cd"><b id="cd-hours">—</b><span>Hours</span></div>
+      <div class="cd"><b id="cd-mins">—</b><span>Min</span></div>
     </div>
   </div>
 
@@ -2250,6 +2274,7 @@ window.initPortal = function(){
     localAreas: 'Gqeberha (PE), Jeffreys Bay, Humansdorp, Uitenhage & Despatch',
     feesDueMonth: 'February',                   // fees due by the end of this month
     foundingYear: 2018,                         // members who joined this year are founding members
+    expoDate: '2027-04-22T09:00:00',            // Aquarium Expo — drives the countdown
     bank: {
       name: 'Nedbank',
       accountName: 'Eastern Cape Aquarium & Aquascaping Club',
@@ -2613,6 +2638,30 @@ window.initPortal = function(){
       '<div class="row-body"><b>' + escT(m.name) + '</b><span>' + escT(m.meta) + '</span></div>' +
       '<div class="row-actions">' + icsButton + action + '</div></div>';
   }
+
+  // Expo countdown. Previously three hardcoded numbers that never moved; now
+  // derived from CLUB.expoDate and refreshed every 30s so it stays honest while
+  // the page is open.
+  function renderExpoCountdown(){
+    var dEl = document.getElementById('cd-days');
+    var hEl = document.getElementById('cd-hours');
+    var mEl = document.getElementById('cd-mins');
+    if (!dEl || !hEl || !mEl) return;
+    var target = new Date(CLUB.expoDate);
+    if (isNaN(target.getTime())){ dEl.textContent = hEl.textContent = mEl.textContent = '—'; return; }
+    var ms = target - new Date();
+    if (ms <= 0){
+      // Expo day (or past): don't show negative numbers.
+      dEl.textContent = '0'; hEl.textContent = '0'; mEl.textContent = '0';
+      return;
+    }
+    var mins = Math.floor(ms / 60000);
+    dEl.textContent = Math.floor(mins / 1440);
+    hEl.textContent = Math.floor((mins % 1440) / 60);
+    mEl.textContent = mins % 60;
+  }
+  renderExpoCountdown();
+  setInterval(renderExpoCountdown, 30000);
 
   // Dashboard "Next meeting" card. Previously hardcoded to "1 Aug · The Italian
   // Club" even though MEETINGS already held the real schedule.
@@ -3447,12 +3496,12 @@ window.initPortal = function(){
         ? '<span class="reg-dot cur"></span><span class="badge ok">Breeding now</span>'
         : '<span class="reg-dot fut"></span><span class="badge pend">Planned</span>';
       var shipHtml = d.shipping === 'Yes' ? '<span class="badge info">Ships</span>' : '<span style="color:var(--ink-soft)">Collection</span>';
-      return '<tr><td class="reg-member">' + esc(d.member) + '</td>' +
-        '<td class="reg-species">' + esc(d.species) + '</td>' +
-        '<td>' + esc(d.category) + '</td>' +
-        '<td>' + statusHtml + '</td>' +
-        '<td>' + esc(d.pref) + '</td>' +
-        '<td>' + shipHtml + '</td></tr>';
+      return '<tr><td class="reg-member" data-label="Breeder">' + esc(d.member) + '</td>' +
+        '<td class="reg-species" data-label="Species / item">' + esc(d.species) + '</td>' +
+        '<td data-label="Category">' + esc(d.category) + '</td>' +
+        '<td data-label="Status">' + statusHtml + '</td>' +
+        '<td data-label="Sales preference">' + esc(d.pref) + '</td>' +
+        '<td data-label="Shipping">' + shipHtml + '</td></tr>';
     }).join('');
     // Distinguish "still loading", "register is empty" and "filters match nothing".
     if (regLoading) regEmpty.textContent = 'Loading the register\u2026';
