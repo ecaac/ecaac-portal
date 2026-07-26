@@ -56,16 +56,22 @@ button{font-family:inherit}
 /* ===== main ===== */
 .main{display:flex;flex-direction:column;min-width:0}
 .topbar{
-  position:sticky;top:0;z-index:50;background:rgba(246,241,230,0.92);backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--sand-line);padding:14px 32px;display:flex;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:50;
+  background:radial-gradient(120% 160% at 15% 10%, #142542 0%, var(--deep) 55%, var(--deep-3) 100%);
+  border-bottom:1px solid rgba(255,255,255,0.08);padding:14px 32px;display:flex;align-items:center;gap:16px;
 }
-.burger{display:none;width:40px;height:40px;border-radius:10px;border:1px solid var(--sand-line);background:var(--paper);cursor:pointer;align-items:center;justify-content:center;color:var(--deep)}
+.burger{display:none;width:40px;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);cursor:pointer;align-items:center;justify-content:center;color:#fff}
 .burger svg{width:19px;height:19px}
-.topbar .welcome b{font-family:'Fraunces',Georgia,serif;font-size:17px;color:var(--deep);display:block;line-height:1.2}
+.topbar .welcome b{font-family:'Fraunces',Georgia,serif;font-size:17px;color:#fff;display:block;line-height:1.2}
+.topbar .status-chip{color:#C9F0C9;background:rgba(255,255,255,0.1)}
 .top-search{flex:1;max-width:380px;margin-left:auto;position:relative}
-.top-search input{width:100%;padding:10px 14px 10px 38px;border-radius:11px;border:1px solid var(--sand-line);background:var(--paper);font:inherit;font-size:13px;color:var(--ink)}
+.top-search input{width:100%;padding:10px 14px 10px 38px;border-radius:11px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);font:inherit;font-size:13px;color:#fff}
+.top-search input::placeholder{color:rgba(255,255,255,0.55)}
 .top-search input:focus{outline:2px solid var(--leaf-light);outline-offset:0}
-.top-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ink-soft)}
+.topbar .icon-btn{border-color:rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);color:#fff}
+.topbar .icon-btn .dot{border-color:var(--deep-2)}
+.topbar .top-avatar{border-color:rgba(255,255,255,0.5)}
+.top-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:rgba(255,255,255,0.6)}
 .gsearch-results{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--paper);border:1px solid var(--sand-line);border-radius:14px;box-shadow:0 20px 40px -16px rgba(11,59,76,0.3);overflow:hidden;z-index:60;display:none;max-height:360px;overflow-y:auto}
 .gsearch-results.show{display:block}
 .gsearch-item{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid #F0EADB}
@@ -132,6 +138,21 @@ button{font-family:inherit}
 .card.t-deep{border-top-color:var(--deep)}
 .card.t-coral{border-top-color:var(--coral-dark)}
 .card.t-gold{border-top-color:var(--gold-dark)}
+/* Stat cards (a single big number + label) go dark navy with white text, keeping
+   their tone colour as the top border only. Scoped to .stat-grid specifically —
+   NOT all .card.t-* — because the same tone classes are reused by unrelated
+   content cards (news articles, Hall of Fame, resource links) that keep their
+   original light styling. */
+.stat-grid .card{
+  background:radial-gradient(120% 160% at 15% 10%, #142542 0%, var(--deep) 55%, var(--deep-3) 100%);
+  box-shadow:0 1px 2px rgba(11,59,76,0.08),0 12px 26px -18px rgba(13,16,38,0.5);
+}
+.stat-grid .card:hover{box-shadow:0 20px 36px -16px rgba(13,16,38,0.6)}
+.stat-grid .stat-num{color:#fff}
+.stat-grid .stat-label{color:#B9C1D6}
+/* t-deep's border colour (var(--deep)) is now nearly the same as the card
+   background it sits on, so it would vanish. Lighten just this one accent. */
+.stat-grid .card.t-deep{border-top-color:#4A5A8A}
 .card h4{font-size:15.5px;margin-bottom:8px}
 .card p{font-size:13px;color:var(--ink-soft);line-height:1.65;margin:0}
 .card-icon{width:40px;height:40px;border-radius:11px;color:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:0 8px 16px -8px rgba(11,59,76,0.35)}
@@ -1724,7 +1745,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   <div class="rows" id="events-past-rows"></div>
 
   <div class="sec-title"><h3>Your attendance</h3></div>
-  <div style="max-width:280px">
+  <div class="stat-grid" style="max-width:280px">
     <div class="card t-leaf"><div class="stat-num" data-live="ev-meetings">11 / 12</div><div class="stat-label">Meetings attended, last 12 months</div></div>
   </div>
 </section>
