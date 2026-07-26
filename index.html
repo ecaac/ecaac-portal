@@ -783,23 +783,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <h3>Upcoming events</h3>
         <button class="linkish" data-view-jump="events">All events <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
       </div>
-      <div class="rows">
-        <div class="row">
-          <div class="event-date"><b>1</b><span>Aug</span></div>
-          <div class="row-body"><b>Monthly club meeting</b><span>Sat 14:00–18:00 · The Italian Club, Broadwood · talks, braai, raffle &amp; auction</span></div>
-          <button class="btn btn-primary btn-sm toastable" data-toast="RSVP confirmed — see you on 1 August!">RSVP</button>
-        </div>
-        <div class="row">
-          <div class="event-date"><b>22</b><span>Aug</span></div>
-          <div class="row-body"><b>Aquascaping workshop</b><span>10:00 · Hardscape composition with Iwagumi principles</span></div>
-          <button class="btn btn-outline btn-sm toastable" data-toast="RSVP confirmed for the workshop">RSVP</button>
-        </div>
-        <div class="row">
-          <div class="event-date"><b>5</b><span>Sep</span></div>
-          <div class="row-body"><b>Monthly meeting &amp; spring auction</b><span>Sat 14:00 · The Italian Club · member livestock, plants and dry goods</span></div>
-          <span class="badge info">Details soon</span>
-        </div>
-      </div>
+      <div class="rows" id="dash-events"></div>
     </div>
     <div>
       <div class="sec-title" style="margin-top:0">
@@ -2296,6 +2280,28 @@ window.initPortal = function(){
       '<div class="row-actions">' + icsButton + action + '</div></div>';
   }
 
+  // Dashboard "Upcoming events" summary — driven by the same MEETINGS source as
+  // the events view, so live users see only real created events (demo shows fixtures).
+  function renderDashEvents(){
+    var el = document.getElementById('dash-events');
+    if (!el) return;
+    var now = new Date();
+    var upcoming = MEETINGS.filter(function(m){ return m.date >= now; })
+      .sort(function(a, b){ return a.date - b.date; })
+      .slice(0, 3);
+    if (!upcoming.length){
+      el.innerHTML = '<div class="reg-empty" style="padding:22px">' + (IS_LIVE ? 'No upcoming events yet — the committee will post the next one soon.' : 'No upcoming events.') + '</div>';
+      return;
+    }
+    el.innerHTML = upcoming.map(function(m){
+      var action = m.rsvp
+        ? '<button class="btn btn-primary btn-sm toastable" data-toast="RSVP confirmed — see you on ' + m.dateLabel[0] + ' ' + m.dateLabel[1] + '!">RSVP</button>'
+        : '<span class="badge info">Details soon</span>';
+      return '<div class="row"><div class="event-date"><b>' + m.dateLabel[0] + '</b><span>' + m.dateLabel[1] + '</span></div>' +
+        '<div class="row-body"><b>' + escT(m.name) + '</b><span>' + escT(m.meta) + '</span></div>' + action + '</div>';
+    }).join('');
+  }
+
   function renderEvents(){
     var el = document.getElementById('events-rows');
     var pastEl = document.getElementById('events-past-rows');
@@ -2304,6 +2310,7 @@ window.initPortal = function(){
       var msg = '<div class="reg-empty" style="padding:22px">' + (IS_LIVE ? 'No events on the calendar yet — the committee will post the next one soon.' : 'No events yet.') + '</div>';
       el.innerHTML = msg;
       if (pastEl) pastEl.innerHTML = '<div class="reg-empty" style="padding:22px">Nothing here yet.</div>';
+      renderDashEvents();
       return;
     }
     var now = new Date();
@@ -2328,6 +2335,7 @@ window.initPortal = function(){
         popToast(m.name + ' added to your calendar file');
       });
     });
+    renderDashEvents();
   }
   renderEvents();
 
