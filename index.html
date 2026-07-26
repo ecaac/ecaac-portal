@@ -4202,7 +4202,7 @@ window.initPortal = function(){
     if (!sb || !IS_ADMIN) return;
     populateMemberSelect();
     var res = await sb.from('auction_lots')
-      .select('*, members(first_name,last_name)')
+      .select('*, members!member_id(first_name,last_name)')
       .order('created_at', { ascending: false })
       .limit(25);
     var rows = res.data || [];
@@ -4273,7 +4273,7 @@ window.initPortal = function(){
   async function loadAdminAwardQueue(){
     if (!sb || !IS_ADMIN) return;
     var res = await sb.from('award_entries')
-      .select('*, members(first_name,last_name), tanks(name)')
+      .select('*, members!member_id(first_name,last_name), tanks(name)')
       .eq('status', 'pending')
       .order('submitted_at', { ascending: true });
     var rows = res.data || [];
