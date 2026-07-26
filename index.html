@@ -87,13 +87,6 @@ button{font-family:inherit}
 .status-chip::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--leaf)}
 
 .content{padding:30px 32px 110px;max-width:1220px;width:100%;margin:0 auto}
-.bday-banner{display:flex;align-items:center;gap:12px;margin:0 0 24px;padding:13px 16px;border-radius:14px;background:linear-gradient(135deg,var(--deep-2),var(--deep));border:1px solid rgba(217,164,65,0.4);color:#fff;box-shadow:0 14px 30px -16px rgba(6,7,15,0.6)}
-.bday-banner[hidden]{display:none}
-.bday-banner .bday-emoji{font-size:20px;line-height:1}
-.bday-banner .bday-text{font-size:14px;font-weight:700;flex:1}
-.bday-banner .bday-close{flex:none;width:30px;height:30px;border-radius:8px;border:none;background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-.bday-banner .bday-close:hover{background:rgba(255,255,255,0.22)}
-.bday-banner .bday-close svg{width:15px;height:15px}
 .view{display:none;animation:fadeUp .35s cubic-bezier(.16,.8,.3,1)}
 .view.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -253,7 +246,6 @@ button{font-family:inherit}
 .dir-search input:focus{outline:2px solid var(--leaf-light);outline-offset:0}
 .dir-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ink-soft)}
 .chip-btn{border:1px solid var(--sand-line);background:var(--paper);color:var(--ink-soft);font-size:12px;font-weight:700;padding:9px 15px;border-radius:20px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
-.chip-select{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .chip-btn:hover{border-color:var(--leaf)}
 .chip-btn.active{background:#EAF3DE;color:var(--leaf-dark);border-color:var(--leaf-light)}
 .dir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
@@ -631,7 +623,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <button class="side-link" data-view="notifications">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
       Notifications
-      <span class="pill">4</span>
+      <span class="pill" id="notif-pill">4</span>
     </button>
 
     <div class="side-label" id="admin-side-label" style="display:none">Admin</div>
@@ -671,7 +663,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </button>
   <div class="welcome">
     <b data-live="welcome">Welcome back, Judy 🌿</b>
-    <span id="topbar-date">Friday, 24 July 2026</span>
+    <span>Friday, 24 July 2026</span>
   </div>
   <span class="status-chip">Membership active</span>
   <div class="top-search">
@@ -682,21 +674,13 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   <div class="top-actions">
     <button class="icon-btn" data-view-jump="notifications" aria-label="Notifications">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-      <span class="dot"></span>
+      <span class="dot" id="notif-dot"></span>
     </button>
     <button class="top-avatar" data-view-jump="profile" aria-label="My profile" data-live="initials">JN</button>
   </div>
 </header>
 
 <main class="content">
-
-<div class="bday-banner" id="bday-banner" role="status" hidden>
-  <span class="bday-emoji" aria-hidden="true">🎉</span>
-  <span class="bday-text" id="bday-text">Happy birthday!</span>
-  <button class="bday-close" id="bday-close" aria-label="Dismiss">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-  </button>
-</div>
 
 <!-- ============ DASHBOARD ============ -->
 <section class="view active" id="view-dashboard">
@@ -783,7 +767,23 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <h3>Upcoming events</h3>
         <button class="linkish" data-view-jump="events">All events <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
       </div>
-      <div class="rows" id="dash-events"></div>
+      <div class="rows">
+        <div class="row">
+          <div class="event-date"><b>1</b><span>Aug</span></div>
+          <div class="row-body"><b>Monthly club meeting</b><span>Sat 14:00–18:00 · The Italian Club, Broadwood · talks, braai, raffle &amp; auction</span></div>
+          <button class="btn btn-primary btn-sm toastable" data-toast="RSVP confirmed — see you on 1 August!">RSVP</button>
+        </div>
+        <div class="row">
+          <div class="event-date"><b>22</b><span>Aug</span></div>
+          <div class="row-body"><b>Aquascaping workshop</b><span>10:00 · Hardscape composition with Iwagumi principles</span></div>
+          <button class="btn btn-outline btn-sm toastable" data-toast="RSVP confirmed for the workshop">RSVP</button>
+        </div>
+        <div class="row">
+          <div class="event-date"><b>5</b><span>Sep</span></div>
+          <div class="row-body"><b>Monthly meeting &amp; spring auction</b><span>Sat 14:00 · The Italian Club · member livestock, plants and dry goods</span></div>
+          <span class="badge info">Details soon</span>
+        </div>
+      </div>
     </div>
     <div>
       <div class="sec-title" style="margin-top:0">
@@ -863,41 +863,12 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
           <select id="f-province"><option selected>Eastern Cape</option><option>Western Cape</option><option>Gauteng</option><option>KwaZulu-Natal</option><option>Free State</option><option>Other</option></select>
         </div>
         <div class="field"><label for="f-city">City / Town</label><input id="f-city" value="Gqeberha"></div>
-        <div class="field"><label for="f-bday-day">Birthday</label>
-          <div style="display:flex;gap:10px">
-            <select id="f-bday-day" style="flex:1"><option value="">Day</option></select>
-            <select id="f-bday-month" style="flex:1.6">
-              <option value="">Month</option>
-              <option value="1">January</option>
-              <option value="2">February</option>
-              <option value="3">March</option>
-              <option value="4">April</option>
-              <option value="5">May</option>
-              <option value="6">June</option>
-              <option value="7">July</option>
-              <option value="8">August</option>
-              <option value="9">September</option>
-              <option value="10">October</option>
-              <option value="11">November</option>
-              <option value="12">December</option>
-            </select>
-          </div>
-        </div>
+        <div class="field"><label for="f-emergency">Emergency contact</label><input id="f-emergency" value="P. Nel · +27 82 000 0000"></div>
         <div class="field"><label for="f-comm">Preferred communication</label>
           <select id="f-comm"><option selected>WhatsApp</option><option>Email</option><option>SMS</option></select>
         </div>
-        <div class="field full"><label>Aquarium interests</label>
-          <div class="chip-select" id="f-interests" role="group" aria-label="Aquarium interests">
-            <button type="button" class="chip-btn" data-interest="Breeding">Breeding</button>
-            <button type="button" class="chip-btn" data-interest="Plants">Plants</button>
-            <button type="button" class="chip-btn" data-interest="Shrimp">Shrimp</button>
-            <button type="button" class="chip-btn" data-interest="Aquascaping">Aquascaping</button>
-            <button type="button" class="chip-btn" data-interest="Freshwater">Freshwater</button>
-            <button type="button" class="chip-btn" data-interest="Marine">Marine</button>
-            <button type="button" class="chip-btn" data-interest="Terrariums">Terrariums</button>
-          </div>
-        </div>
-        <div class="field full"><label for="f-bio">About you</label><textarea id="f-bio" rows="3">Keeping fish since the 90s and hopelessly addicted to planted tanks. Proud to serve as ECAAC's Club President.</textarea></div>
+        <div class="field full"><label for="f-interests">Aquarium interests</label><input id="f-interests" value="Planted tanks, Tanganyikan cichlids, shrimp, paludariums"></div>
+        <div class="field full"><label for="f-bio">Biography</label><textarea id="f-bio" rows="3">Keeping fish since the 90s and hopelessly addicted to planted tanks. Proud to serve as ECAAC's Club President.</textarea></div>
       </div>
       <div style="margin-top:18px;display:flex;gap:10px">
         <button class="btn btn-primary" id="profile-save-btn">Save changes</button>
@@ -977,8 +948,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <div class="panel">
       <h3>2027 fee structure</h3>
       <div class="rows" style="box-shadow:none;border:1px solid #F0EADB">
-        <div class="row"><div class="row-body"><b>R270 · Local households</b><span>Gqeberha (PE), Jeffreys Bay, Humansdorp, Uitenhage &amp; Despatch</span></div></div>
-        <div class="row"><div class="row-body"><b>R100 · Outlying households &amp; scholars</b><span>Households outside the areas above, and all scholars</span></div></div>
+        <div class="row"><div class="row-body"><b>R270 · Full members</b><span>Local households — Gqeberha (PE), Jeffreys Bay, Humansdorp, Uitenhage &amp; Despatch</span></div></div>
+        <div class="row"><div class="row-body"><b>R100 · Country members</b><span>Households outside the local areas above</span></div></div>
+        <div class="row"><div class="row-body"><b>R100 · Scholars</b><span>Full member benefits at the reduced scholar rate</span></div></div>
       </div>
     </div>
   </div>
@@ -1296,13 +1268,8 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <button class="chip-btn active" data-dirf="all">All</button>
     <button class="chip-btn" data-dirf="committee">Committee</button>
     <button class="chip-btn" data-dirf="breeder">Breeders</button>
-    <button class="chip-btn" data-dirf="breeding">Breeding</button>
     <button class="chip-btn" data-dirf="plants">Plants</button>
     <button class="chip-btn" data-dirf="shrimp">Shrimp</button>
-    <button class="chip-btn" data-dirf="aquascaping">Aquascaping</button>
-    <button class="chip-btn" data-dirf="freshwater">Freshwater</button>
-    <button class="chip-btn" data-dirf="marine">Marine</button>
-    <button class="chip-btn" data-dirf="terrariums">Terrariums</button>
   </div>
 
   <div class="dir-grid" id="dir-grid"></div>
@@ -1571,6 +1538,24 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     </div>
   </div>
 
+  <div class="sec-title" style="margin-top:26px"><h3>Membership types</h3></div>
+  <div class="panel">
+    <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Set a member's tier. Full members pay R270 a year; country members and scholars pay R100. The member's card, role line and renewal amount all follow this setting.</p>
+    <div class="form-grid" style="grid-template-columns:1.4fr 1fr auto;align-items:end">
+      <div class="field"><label for="mt-member">Member *</label><select id="mt-member"><option value="">— Select a member —</option></select></div>
+      <div class="field"><label for="mt-type">Membership type</label>
+        <select id="mt-type">
+          <option value="Full">Full — R270</option>
+          <option value="Country">Country — R100</option>
+          <option value="Scholar">Scholar — R100</option>
+        </select>
+      </div>
+      <div class="field"><button class="btn btn-primary" id="mt-save-btn">Save type</button></div>
+    </div>
+    <p id="mt-error" style="display:none;font-size:12.5px;font-weight:700;color:var(--coral-dark);margin:12px 0 0">Choose a member first.</p>
+    <p id="mt-note" style="font-size:12px;color:var(--ink-soft);margin:12px 0 0"></p>
+  </div>
+
   <div class="sec-title" style="margin-top:26px"><h3>Manage events</h3></div>
   <div class="grid" style="grid-template-columns:1fr 1.2fr">
     <div class="panel">
@@ -1598,6 +1583,17 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <div class="reg-empty" style="padding:20px">Loading…</div>
       </div>
     </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <h3>Import meeting attendance (CSV)</h3>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Upload a sign-in sheet to mark attendance in bulk. Every member you mark counts toward their meetings-attended score for the last 12 months. Required columns: <b>event_date</b> (YYYY-MM-DD) and one of <b>membership_number</b>, <b>email</b> or <b>name</b>. An optional <b>event_title</b> column disambiguates two events held on the same day.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input type="file" id="att-csv-file" accept=".csv,text/csv" style="font-size:13px">
+      <button class="btn btn-primary btn-sm" id="att-csv-btn">Import attendance</button>
+      <button class="btn btn-outline btn-sm" id="att-csv-template">Download template</button>
+    </div>
+    <div id="att-import-log" style="margin-top:14px;font-size:13px"></div>
   </div>
 
   <div class="sec-title" style="margin-top:26px"><h3>Award entries awaiting review</h3><span style="font-size:12.5px;color:var(--ink-soft)" id="admin-aw-count"></span></div>
@@ -1648,7 +1644,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       <h2 data-live="notif-heading">4 unread</h2>
       <p>Award updates, committee announcements, renewals and event reminders.</p>
     </div>
-    <button class="btn btn-outline toastable" data-toast="All notifications marked as read">Mark all as read</button>
+    <button class="btn btn-outline" id="notif-mark-all">Mark all as read</button>
   </div>
   <div class="rows" id="notif-rows">
     <div class="row"><div class="row-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/></svg></div><div class="row-body"><b>BAP entry approved 🎉</b><span>Neolamprologus multifasciatus — +15 points. Certificate available in Documents.</span></div><div class="row-end"><span class="badge warn">New</span><div style="margin-top:4px">2 days ago</div></div></div>
@@ -1672,13 +1668,14 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <div class="panel">
       <h3>Notifications</h3>
       <div class="form-grid" style="grid-template-columns:1fr">
-        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" checked style="width:17px;height:17px;accent-color:var(--leaf)"> Award status updates</label>
-        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" checked style="width:17px;height:17px;accent-color:var(--leaf)"> Event reminders</label>
-        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" checked style="width:17px;height:17px;accent-color:var(--leaf)"> Committee announcements</label>
-        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" style="width:17px;height:17px;accent-color:var(--leaf)"> New resource alerts</label>
-        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" checked style="width:17px;height:17px;accent-color:var(--leaf)"> Membership renewal reminders</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" id="np-award" checked style="width:17px;height:17px;accent-color:var(--leaf)"> Award status updates</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" id="np-event" checked style="width:17px;height:17px;accent-color:var(--leaf)"> Event reminders</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" id="np-news" checked style="width:17px;height:17px;accent-color:var(--leaf)"> Committee announcements</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" id="np-resource" style="width:17px;height:17px;accent-color:var(--leaf)"> New resource alerts</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" id="np-renewal" checked style="width:17px;height:17px;accent-color:var(--leaf)"> Membership renewal reminders</label>
       </div>
-      <button class="btn btn-primary btn-sm toastable" data-toast="Notification preferences saved" style="margin-top:16px">Save preferences</button>
+      <p style="font-size:12px;color:var(--ink-soft);margin:12px 0 0">Unticking a category hides those notifications from your feed.</p>
+      <button class="btn btn-primary btn-sm" id="np-save" style="margin-top:16px">Save preferences</button>
     </div>
     <div class="panel">
       <h3>Security</h3>
@@ -1785,9 +1782,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <div class="eft-row"><span>Account number</span><b>1198 234 5017</b><button class="copy-btn" data-copy="1198234 5017" aria-label="Copy account number"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
         <div class="eft-row"><span>Branch code</span><b>198765</b></div>
         <div class="eft-row"><span>Reference</span><b id="renew-ref">ECAAC-0002</b><button class="copy-btn" id="renew-copy-ref" aria-label="Copy reference"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
-        <div class="eft-row"><span>Amount due</span><b style="color:var(--leaf-dark);font-size:17px">R270.00</b></div>
+        <div class="eft-row"><span>Amount due</span><b id="renew-amount" style="color:var(--leaf-dark);font-size:17px">R270.00</b></div>
       </div>
-      <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 18px">Local household rate — Gqeberha, Jeffreys Bay, Humansdorp, Uitenhage &amp; Despatch. R100 applies outside these areas and for scholars.</p>
+      <p id="renew-rate-note" style="font-size:11.5px;color:var(--ink-soft);margin:0 0 18px">Local household rate — Gqeberha, Jeffreys Bay, Humansdorp, Uitenhage &amp; Despatch. R100 applies outside these areas and for scholars.</p>
 
       <div id="renew-actions" style="display:flex;gap:10px">
         <button class="btn btn-primary" id="renew-mark-paid">I've paid — mark as awaiting confirmation</button>
@@ -1944,6 +1941,7 @@ window.initPortal = function(){
     if (id === 'admin' && typeof loadEvents === 'function') loadEvents();
     if (id === 'admin' && typeof loadAdminAuctionList === 'function') loadAdminAuctionList();
     if ((id === 'tanks' || id === 'dashboard') && typeof loadTanksFromDB === 'function') loadTanksFromDB();
+    if (id === 'notifications' && typeof window.loadNotifications === 'function') window.loadNotifications();
     sidebar.classList.remove('open'); scrim.classList.remove('show');
     window.scrollTo({top:0, behavior:'smooth'});
   }
@@ -2019,15 +2017,49 @@ window.initPortal = function(){
     return ('0' + d.getDate()).slice(-2) + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getFullYear();
   }
 
+  // ===== Membership types =====
+  // Single source of truth for tiers, pills and annual fees. Adding a future tier
+  // means adding one entry here — every display site below reads from this map.
+  // Committee members are always Full, so the role line never has to show both.
+  var MEMBER_TYPES = {
+    'Full': {
+      label: 'Full', pill: 'Member', fee: 270,
+      note: 'Local household rate — Gqeberha, Jeffreys Bay, Humansdorp, Uitenhage &amp; Despatch.'
+    },
+    'Country': {
+      label: 'Country', pill: 'Country Member', fee: 100,
+      note: 'Country member rate — households outside Gqeberha, Jeffreys Bay, Humansdorp, Uitenhage &amp; Despatch.'
+    },
+    'Scholar': {
+      label: 'Scholar', pill: 'Scholar', fee: 100,
+      note: 'Scholar rate — full member benefits at the reduced scholar fee.'
+    }
+  };
+  function memberTypeKey(raw){
+    var k = String(raw || 'Full').trim();
+    k = k.charAt(0).toUpperCase() + k.slice(1).toLowerCase();
+    return MEMBER_TYPES[k] ? k : 'Full';
+  }
+  function memberTypeInfo(raw){ return MEMBER_TYPES[memberTypeKey(raw)]; }
+  function memberFee(raw){ return memberTypeInfo(raw).fee; }
+  function fmtRand(n){ return 'R' + Number(n).toFixed(2); }
+  // First segment of the role line: Committee for admins, otherwise the tier.
+  // Second segment stays "Full Member" — that's paid-up status, not the tier.
+  function memberRoleLine(isAdmin, rawType){
+    var key = memberTypeKey(rawType);
+    var lead = isAdmin ? 'Committee' : (key === 'Full' ? 'Member' : MEMBER_TYPES[key].label);
+    return lead + ' · Full Member';
+  }
+
   var member;
   if (window.currentMember) {
     var cm = window.currentMember;
     var joined = cm.join_date ? new Date(cm.join_date) : new Date();
     member = {
       name: liveName(cm),
-      role: (cm.role === 'admin' ? 'COMMITTEE' : 'MEMBER') + ' · ' + (cm.membership_type || 'Full').toUpperCase() + ' MEMBER',
+      role: memberRoleLine(cm.role === 'admin', cm.membership_type).toUpperCase(),
       number: cm.membership_number || 'ECAAC-' + String(cm.id || '').substr(0, 6).toUpperCase(),
-      type: 'Annual · ' + (cm.membership_type || 'Full'),
+      type: 'Annual · ' + memberTypeInfo(cm.membership_type).label,
       issued: fmtShortDate(joined),
       expires: fmtShortDate(nextRenewalDate())
     };
@@ -2286,39 +2318,16 @@ window.initPortal = function(){
     return { uid:m.uid, title:m.title, start:m.date, end:end, location:m.location, desc:m.desc };
   }
 
-  function eventRowHtml(m, originalIndex, isPast){
-    var action = isPast
-      ? '<span class="badge info">Past</span>'
-      : (m.rsvp
-        ? '<button class="btn btn-primary btn-sm toastable" data-toast="RSVP confirmed — see you on ' + m.dateLabel[0] + ' ' + m.dateLabel[1] + '!">RSVP</button>'
-        : '<span class="badge info">Details soon</span>');
+  function eventRowHtml(m, originalIndex, isPast, isNext){
+    var action;
+    if (isPast) action = '<span class="badge info">Past</span>';
+    else if (isNext) action = '<span class="badge warn">Soon</span>';
+    else action = '<span class="badge pend">Upcoming</span>';
     var icsButton = isPast ? '' :
       '<button class="ics-btn" data-mtg="' + originalIndex + '" title="Add to calendar" aria-label="Add ' + escT(m.name) + ' to calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M12 14v4M10 16h4"/></svg></button>';
     return '<div class="row"' + (isPast ? ' style="opacity:.7"' : '') + '><div class="event-date"><b>' + m.dateLabel[0] + '</b><span>' + m.dateLabel[1] + '</span></div>' +
       '<div class="row-body"><b>' + escT(m.name) + '</b><span>' + escT(m.meta) + '</span></div>' +
       '<div class="row-actions">' + icsButton + action + '</div></div>';
-  }
-
-  // Dashboard "Upcoming events" summary — driven by the same MEETINGS source as
-  // the events view, so live users see only real created events (demo shows fixtures).
-  function renderDashEvents(){
-    var el = document.getElementById('dash-events');
-    if (!el) return;
-    var now = new Date();
-    var upcoming = MEETINGS.filter(function(m){ return m.date >= now; })
-      .sort(function(a, b){ return a.date - b.date; })
-      .slice(0, 3);
-    if (!upcoming.length){
-      el.innerHTML = '<div class="reg-empty" style="padding:22px">' + (IS_LIVE ? 'No upcoming events yet — the committee will post the next one soon.' : 'No upcoming events.') + '</div>';
-      return;
-    }
-    el.innerHTML = upcoming.map(function(m){
-      var action = m.rsvp
-        ? '<button class="btn btn-primary btn-sm toastable" data-toast="RSVP confirmed — see you on ' + m.dateLabel[0] + ' ' + m.dateLabel[1] + '!">RSVP</button>'
-        : '<span class="badge info">Details soon</span>';
-      return '<div class="row"><div class="event-date"><b>' + m.dateLabel[0] + '</b><span>' + m.dateLabel[1] + '</span></div>' +
-        '<div class="row-body"><b>' + escT(m.name) + '</b><span>' + escT(m.meta) + '</span></div>' + action + '</div>';
-    }).join('');
   }
 
   function renderEvents(){
@@ -2329,7 +2338,6 @@ window.initPortal = function(){
       var msg = '<div class="reg-empty" style="padding:22px">' + (IS_LIVE ? 'No events on the calendar yet — the committee will post the next one soon.' : 'No events yet.') + '</div>';
       el.innerHTML = msg;
       if (pastEl) pastEl.innerHTML = '<div class="reg-empty" style="padding:22px">Nothing here yet.</div>';
-      renderDashEvents();
       return;
     }
     var now = new Date();
@@ -2338,7 +2346,7 @@ window.initPortal = function(){
     var past = withIdx.filter(function(x){ return x.m.date < now; }).sort(function(a,b){ return b.m.date - a.m.date; });
 
     el.innerHTML = upcoming.length
-      ? upcoming.map(function(x){ return eventRowHtml(x.m, x.i, false); }).join('')
+      ? upcoming.map(function(x, ui){ return eventRowHtml(x.m, x.i, false, ui === 0); }).join('')
       : '<div class="reg-empty" style="padding:22px">Nothing on the calendar yet — check back soon.</div>';
 
     if (pastEl){
@@ -2354,7 +2362,6 @@ window.initPortal = function(){
         popToast(m.name + ' added to your calendar file');
       });
     });
-    renderDashEvents();
   }
   renderEvents();
 
@@ -2726,27 +2733,22 @@ window.initPortal = function(){
   var dirSearch = document.getElementById('dir-search');
   var dirFilter = 'all';
 
-  // Matches a member against a directory filter. Legacy demo rules (committee /
-  // breeder / plants / shrimp) are preserved; live members also match on their
-  // stored interest, and the new interest pills match purely on that.
-  function memberMatchesDirFilter(m, f){
-    if (f === 'committee') return !!m.committee;
-    if (f === 'breeder') return !!m.breeder;
-    var interests = (m.interests || []).map(function(s){ return String(s).toLowerCase(); });
-    if (f === 'plants') return interests.indexOf('plants') !== -1 || (m.cats && m.cats.indexOf('Plant') !== -1);
-    if (f === 'shrimp') return interests.indexOf('shrimp') !== -1 || !!m.shrimp;
-    return interests.indexOf(f) !== -1;
-  }
-
   function renderDir(){
     var q = (dirSearch.value || '').toLowerCase();
     var out = DIR.filter(function(m){
-      if (dirFilter !== 'all' && !memberMatchesDirFilter(m, dirFilter)) return false;
+      if (dirFilter === 'committee' && !m.committee) return false;
+      if (dirFilter === 'breeder' && !m.breeder) return false;
+      if (dirFilter === 'plants' && m.cats.indexOf('Plant') === -1) return false;
+      if (dirFilter === 'shrimp' && !m.shrimp) return false;
       if (q && (m.name + ' ' + m.blurb + ' ' + m.cats.join(' ')).toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
     dirGrid.innerHTML = out.map(function(m, i){
-      var tags = m.committee ? '<span class="n">Committee</span>' : m.cats.map(function(c){ return '<span>' + c + '</span>'; }).join('');
+      var tags = m.committee
+        ? '<span class="n">Committee</span>'
+        : (m.typePill
+            ? '<span>' + escT(m.typePill) + '</span>'
+            : m.cats.map(function(c){ return '<span>' + c + '</span>'; }).join(''));
       var meta = m.breeder
         ? '<div class="dir-meta"><span><b>' + m.listings + '</b> register listings</span><span><b>' + m.current + '</b> breeding now</span></div>'
         : '<div class="dir-meta"><span>' + (m.email ? '<a href="mailto:' + m.email + '" style="color:var(--leaf-dark);font-weight:700">' + m.email + '</a>' : '<b>' + (m.metaLine || '') + '</b>') + '</span></div>';
@@ -4020,25 +4022,27 @@ window.initPortal = function(){
     var firstName = cm.first_name || name.split(' ')[0];
     var joinYear = cm.join_date ? new Date(cm.join_date).getFullYear() : new Date().getFullYear();
     var years = Math.max(0, new Date().getFullYear() - joinYear);
-    var roleLine = (cm.role === 'admin' ? 'Committee' : 'Member') + ' · ' + (cm.membership_type || 'Full') + ' member';
+    var roleLine = memberRoleLine(cm.role === 'admin', cm.membership_type);
+    // keep the membership-card fields in sync too (they're built once at init)
+    member.role = roleLine.toUpperCase();
+    member.type = 'Annual · ' + memberTypeInfo(cm.membership_type).label;
     var daysLeft = Math.max(0, Math.ceil((nextRenewalDate() - new Date()) / 86400000));
 
     var LIVE = {
       'fullname': name,
       'initials': initials,
       'welcome': 'Welcome back, ' + firstName + ' 🌿',
-      'side-sub': roleLine.replace(' member','') + ' · ' + member.number,
+      'side-sub': roleLine.replace(/ Member$/, '') + ' · ' + member.number,
       'role-line': roleLine,
       'member-number': member.number,
-      'profile-sub': (cm.role === 'admin' ? 'Committee member' : 'Club member') + ' · Member since ' + joinYear,
+      'profile-sub': (cm.role === 'admin' ? 'Committee member' : memberTypeInfo(cm.membership_type).pill) + ' · Member since ' + joinYear,
       'years-badge': years + ' year' + (years===1?'':'s') + ' a member',
       'years-num': String(years),
       'joined-label': 'Years as member · joined ' + joinYear,
       'award-points': '0',
       'award-points-label': 'Award points',
       'aw-badges': '0',
-      'ev-meetings': '0 / 0',
-      'notif-heading': '1 unread'
+      'ev-meetings': '0 / 0'
     };
     document.querySelectorAll('[data-live]').forEach(function(el){
       var key = el.getAttribute('data-live');
@@ -4051,11 +4055,10 @@ window.initPortal = function(){
     setVal('f-surname', cm.last_name);
     setVal('f-email', cm.email);
     setVal('f-phone', cm.phone);
-    setVal('f-city', cm.city);
-    setSelectedInterests(cm.interests);
-    setBirthdayValue(cm.birthday);
+    setVal('f-city', '');
+    setVal('f-emergency', '');
+    setVal('f-interests', '');
     var bioEl = document.getElementById('f-bio'); if (bioEl) bioEl.value = cm.bio || '';
-    if (window.checkBirthday) window.checkBirthday();
 
     // dashboard recent activity: single welcome entry
     var act = document.getElementById('dash-activity');
@@ -4063,15 +4066,20 @@ window.initPortal = function(){
       '<div class="row-body"><b>Welcome to the members portal!</b><span>Your account is set up — start by completing your profile and adding your first aquarium.</span></div>' +
       '<div class="row-end">Today</div></div>';
 
-    // notifications: single welcome notification
+    // notifications: real rows are fetched by loadNotifications()
     var notif = document.getElementById('notif-rows');
-    if (notif) notif.innerHTML = '<div class="row"><div class="row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg></div>' +
-      '<div class="row-body"><b>Welcome to ECAAC 🎉</b><span>Your portal account is active. Add your aquariums, browse the club resources, and see you at the next meeting!</span></div>' +
-      '<div class="row-end"><span class="badge warn">New</span></div></div>';
+    if (notif) notif.innerHTML = '<div class="reg-empty" style="padding:22px">Loading…</div>';
 
     // renewal EFT reference uses the real member number
     var ref = document.getElementById('renew-ref');
     if (ref) ref.textContent = member.number;
+
+    // renewal amount + rate note follow the member's tier (Full R270, Country/Scholar R100)
+    var tInfo = memberTypeInfo(cm.membership_type);
+    var amtEl = document.getElementById('renew-amount');
+    if (amtEl) amtEl.textContent = fmtRand(tInfo.fee);
+    var noteEl = document.getElementById('renew-rate-note');
+    if (noteEl) noteEl.innerHTML = tInfo.note;
   }
   // ===== Live Supabase wiring: roles, club news, members directory, profile save =====
   var IS_ADMIN = !!(window.currentMember && window.currentMember.role === 'admin');
@@ -4167,10 +4175,8 @@ window.initPortal = function(){
   }
 
   // ----- Admin: create events + mark attendance -----
-  var postingEvent = false;
   var anEventBtn = document.getElementById('ae-post-btn');
   if (anEventBtn) anEventBtn.addEventListener('click', async function(){
-    if (postingEvent) return;
     if (!sb || !IS_ADMIN) return;
     var title = document.getElementById('ae-title').value.trim();
     var dateVal = document.getElementById('ae-date').value;
@@ -4178,7 +4184,6 @@ window.initPortal = function(){
     var errEl = document.getElementById('ae-error');
     if (!title || !dateVal){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
-    postingEvent = true;
     var start = new Date(dateVal + 'T' + timeVal);
     var hours = parseFloat(document.getElementById('ae-hours').value) || 4;
     var end = new Date(start.getTime() + hours * 3600000);
@@ -4191,13 +4196,17 @@ window.initPortal = function(){
       created_by: window.currentMember.id
     });
     anEventBtn.disabled = false; anEventBtn.textContent = 'Post event';
-    if (res.error){ popToast('Could not post — try again'); postingEvent = false; return; }
+    if (res.error){ popToast('Could not post — try again'); return; }
+    var evLocation = document.getElementById('ae-location').value.trim();
     document.getElementById('ae-title').value = '';
     document.getElementById('ae-location').value = '';
     document.getElementById('ae-desc').value = '';
     popToast(title + ' added to the calendar');
+    pushNotification('event', 'New event: ' + title,
+      start.toLocaleDateString('en-ZA', { weekday:'long', day:'numeric', month:'long' }) +
+      ' at ' + start.toLocaleTimeString('en-ZA', { hour:'2-digit', minute:'2-digit', hour12:false }) +
+      (evLocation ? ' · ' + evLocation : ''), null);
     loadEvents();
-    postingEvent = false;
   });
 
   function renderAdminEventList(rows){
@@ -4267,6 +4276,352 @@ window.initPortal = function(){
     });
   }
 
+  // ----- Admin: bulk attendance import from CSV -----
+  function attParseCSV(text){
+    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    var rows = [], row = [], field = '', i = 0, q = false;
+    while (i < text.length){
+      var c = text[i];
+      if (q){
+        if (c === '"'){ if (text[i+1] === '"'){ field += '"'; i += 2; continue; } q = false; i++; continue; }
+        field += c; i++; continue;
+      }
+      if (c === '"'){ q = true; i++; continue; }
+      if (c === ','){ row.push(field); field = ''; i++; continue; }
+      if (c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+      field += c; i++;
+    }
+    if (field.length || row.length){ row.push(field); rows.push(row); }
+    return rows.filter(function(r){ return r.some(function(x){ return x.trim() !== ''; }); });
+  }
+  function attPad(n){ return (n < 10 ? '0' : '') + n; }
+  function attDateKey(d){ return d.getFullYear() + '-' + attPad(d.getMonth() + 1) + '-' + attPad(d.getDate()); }
+  function attNormaliseDate(raw){
+    raw = (raw || '').trim();
+    var m = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return m[1] + '-' + attPad(+m[2]) + '-' + attPad(+m[3]);
+    m = raw.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/); // DD/MM/YYYY
+    if (m) return m[3] + '-' + attPad(+m[2]) + '-' + attPad(+m[1]);
+    var d = new Date(raw);
+    return isNaN(d.getTime()) ? null : attDateKey(d);
+  }
+
+  var attImporting = false;
+  var attCsvBtn = document.getElementById('att-csv-btn');
+  if (attCsvBtn) attCsvBtn.addEventListener('click', async function(){
+    if (attImporting) return;
+    if (!sb || !IS_ADMIN){ popToast('Admins only'); return; }
+    var fileEl = document.getElementById('att-csv-file');
+    var logEl = document.getElementById('att-import-log');
+    var file = fileEl && fileEl.files && fileEl.files[0];
+    if (!file){ popToast('Choose a CSV file first'); return; }
+    attImporting = true; attCsvBtn.disabled = true; attCsvBtn.textContent = 'Importing…';
+    try {
+      var grid = attParseCSV(await file.text());
+      if (grid.length < 2){ logEl.innerHTML = '<span style="color:var(--coral-dark)">That file has no data rows.</span>'; return; }
+      var header = grid[0].map(function(h){ return h.trim().toLowerCase(); });
+      function col(names){ for (var k = 0; k < names.length; k++){ var idx = header.indexOf(names[k]); if (idx !== -1) return idx; } return -1; }
+      var iNum = col(['membership_number','member_number','membership','memberno']);
+      var iEmail = col(['email','e-mail']);
+      var iName = col(['name','member','full name','member name']);
+      var iDate = col(['event_date','date','meeting_date']);
+      var iTitle = col(['event_title','title','event','meeting']);
+      if (iDate === -1 || (iNum === -1 && iEmail === -1 && iName === -1)){
+        logEl.innerHTML = '<span style="color:var(--coral-dark)">Missing columns. Need an <b>event_date</b> column and one of <b>membership_number</b>, <b>email</b> or <b>name</b>.</span>';
+        return;
+      }
+      // member lookups
+      var byNum = {}, byEmail = {}, byName = {};
+      (window.__liveMemberList || []).forEach(function(mm){
+        if (mm.membership_number) byNum[String(mm.membership_number).trim().toLowerCase()] = mm;
+        if (mm.email) byEmail[String(mm.email).trim().toLowerCase()] = mm;
+        var nm = ((mm.first_name || '') + ' ' + (mm.last_name || '')).trim().toLowerCase();
+        if (nm) byName[nm] = mm;
+      });
+      // event lookups by date
+      var evRes = await sb.from('events').select('id, title, start_at');
+      var evByDate = {};
+      (evRes.data || []).forEach(function(e){
+        var key = attDateKey(new Date(e.start_at));
+        (evByDate[key] = evByDate[key] || []).push(e);
+      });
+      // resolve each data row
+      var parsed = [], problems = [], eventIdsInFile = {};
+      for (var r = 1; r < grid.length; r++){
+        var rowArr = grid[r];
+        var member = null, who = '';
+        if (iNum !== -1 && (rowArr[iNum] || '').trim()){ who = rowArr[iNum].trim(); member = byNum[who.toLowerCase()]; }
+        if (!member && iEmail !== -1 && (rowArr[iEmail] || '').trim()){ who = rowArr[iEmail].trim(); member = byEmail[who.toLowerCase()]; }
+        if (!member && iName !== -1 && (rowArr[iName] || '').trim()){ who = rowArr[iName].trim(); member = byName[who.toLowerCase()]; }
+        var dateKey = attNormaliseDate(rowArr[iDate]);
+        if (!member){ problems.push('Row ' + (r+1) + ': no member matches \u201C' + (who || '(blank)') + '\u201D'); continue; }
+        if (!dateKey){ problems.push('Row ' + (r+1) + ': couldn\u2019t read date \u201C' + (rowArr[iDate] || '') + '\u201D'); continue; }
+        var evs = evByDate[dateKey] || [];
+        if (iTitle !== -1 && (rowArr[iTitle] || '').trim() && evs.length > 1){
+          var wantT = rowArr[iTitle].trim().toLowerCase();
+          evs = evs.filter(function(e){ return (e.title || '').trim().toLowerCase() === wantT; });
+        }
+        if (evs.length === 0){ problems.push('Row ' + (r+1) + ': no event on ' + dateKey); continue; }
+        if (evs.length > 1){ problems.push('Row ' + (r+1) + ': more than one event on ' + dateKey + ' \u2014 add an event_title column'); continue; }
+        eventIdsInFile[evs[0].id] = true;
+        parsed.push({ event_id: evs[0].id, member_id: member.id });
+      }
+      // skip attendance that already exists
+      var existingSet = {}, evIdList = Object.keys(eventIdsInFile);
+      if (evIdList.length){
+        var exRes = await sb.from('event_attendance').select('event_id, member_id').in('event_id', evIdList);
+        (exRes.data || []).forEach(function(a){ existingSet[a.event_id + '|' + a.member_id] = true; });
+      }
+      var toInsert = [], seen = {}, already = 0;
+      parsed.forEach(function(p){
+        var key = p.event_id + '|' + p.member_id;
+        if (existingSet[key]){ already++; return; }
+        if (seen[key]) return;
+        seen[key] = true;
+        toInsert.push({ event_id: p.event_id, member_id: p.member_id, marked_by: window.currentMember.id });
+      });
+      var inserted = 0, insertErr = null;
+      if (toInsert.length){
+        var insRes = await sb.from('event_attendance').insert(toInsert).select('id');
+        if (insRes.error) insertErr = insRes.error; else inserted = (insRes.data || []).length;
+      }
+      // report
+      var html;
+      if (insertErr){
+        html = '<div style="color:var(--coral-dark);font-weight:700">Import failed: ' + escT(insertErr.message || 'database error') + '. Check that the event_attendance table allows admin inserts.</div>';
+      } else {
+        var parts = ['<b>' + inserted + '</b> new attendance record' + (inserted === 1 ? '' : 's') + ' added.'];
+        if (already) parts.push('<b>' + already + '</b> already recorded (skipped).');
+        if (problems.length) parts.push('<b>' + problems.length + '</b> row' + (problems.length === 1 ? '' : 's') + ' couldn\u2019t be matched.');
+        html = '<div style="color:var(--leaf-dark);font-weight:700;margin-bottom:6px">' + parts.join(' ') + '</div>';
+        if (problems.length){
+          html += '<details style="margin-top:6px"><summary style="cursor:pointer;color:var(--ink-soft)">Show unmatched rows</summary>' +
+            '<ul style="margin:8px 0 0;padding-left:18px;color:var(--ink-soft)">' +
+            problems.slice(0, 50).map(function(p){ return '<li>' + escT(p) + '</li>'; }).join('') +
+            (problems.length > 50 ? '<li>\u2026and ' + (problems.length - 50) + ' more</li>' : '') +
+            '</ul></details>';
+        }
+      }
+      logEl.innerHTML = html;
+      if (inserted){
+        popToast(inserted + ' attendance record' + (inserted === 1 ? '' : 's') + ' imported');
+        if (fileEl) fileEl.value = '';
+        // Recomputes MEETINGS and calls loadMyAttendance(), which refreshes the
+        // signed-in member's last-12-months score and re-runs badge checks.
+        loadEvents();
+      }
+    } catch (err){
+      document.getElementById('att-import-log').innerHTML = '<span style="color:var(--coral-dark)">Could not read that file \u2014 is it a valid CSV?</span>';
+    } finally {
+      attImporting = false; attCsvBtn.disabled = false; attCsvBtn.textContent = 'Import attendance';
+    }
+  });
+
+  var attTemplateBtn = document.getElementById('att-csv-template');
+  if (attTemplateBtn) attTemplateBtn.addEventListener('click', function(){
+    var sampleNum = 'ECAAC-0001';
+    var m0 = (window.__liveMemberList || [])[0];
+    if (m0 && m0.membership_number) sampleNum = m0.membership_number;
+    var sampleDate = attDateKey(new Date());
+    var pastM = MEETINGS.filter(function(m){ return m.date <= new Date(); }).sort(function(a,b){ return b.date - a.date; })[0];
+    if (pastM) sampleDate = attDateKey(pastM.date);
+    var csv = 'membership_number,event_date\n' + sampleNum + ',' + sampleDate + '\n';
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url; a.download = 'ecaac-attendance-template.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  });
+
+  // ===== Notifications feed + preferences =====
+  // Broadcasts (member_id null) are club-wide and stored once; personal notifications
+  // carry a member_id. Read state lives in notification_reads, so a broadcast never
+  // needs fanning out into one row per member.
+  var NOTIF_ICONS = {
+    award: '<path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/>',
+    event: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+    news:  '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>',
+    resource: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>',
+    renewal: '<path d="M16 3H8l-2 5h12l-2-5Z"/><path d="M4 8h16l-1.5 12a2 2 0 0 1-2 2H7.5a2 2 0 0 1-2-2L4 8Z"/>',
+    general: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'
+  };
+  var NOTIF_ICON_TONE = { award:'gold', event:'', news:'deep', resource:'deep', renewal:'warn', general:'' };
+  // notification kind -> the preference checkbox that controls it
+  var NOTIF_PREF_FOR_KIND = {
+    award: 'award_updates', event: 'event_reminders', news: 'committee_announcements',
+    resource: 'resource_alerts', renewal: 'renewal_reminders'
+  };
+  var NOTIF_PREF_FIELDS = ['award_updates','event_reminders','committee_announcements','resource_alerts','renewal_reminders'];
+  var NOTIF_PREF_INPUTS = {
+    award_updates: 'np-award', event_reminders: 'np-event', committee_announcements: 'np-news',
+    resource_alerts: 'np-resource', renewal_reminders: 'np-renewal'
+  };
+  var NOTIF_PREF_DEFAULTS = {
+    award_updates: true, event_reminders: true, committee_announcements: true,
+    resource_alerts: false, renewal_reminders: true
+  };
+  var myNotifPrefs = null;   // null until loaded; general kind is always shown
+  var myNotifications = [];
+
+  function notifAgo(iso){
+    var then = new Date(iso), now = new Date();
+    var mins = Math.round((now - then) / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return mins + ' minute' + (mins === 1 ? '' : 's') + ' ago';
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24) return hrs + ' hour' + (hrs === 1 ? '' : 's') + ' ago';
+    var days = Math.round(hrs / 24);
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return days + ' days ago';
+    var wks = Math.round(days / 7);
+    if (wks < 5) return wks + ' week' + (wks === 1 ? '' : 's') + ' ago';
+    return then.toLocaleDateString('en-ZA', { day:'numeric', month:'short', year:'numeric' });
+  }
+
+  function notifPrefAllows(kind){
+    var field = NOTIF_PREF_FOR_KIND[kind];
+    if (!field) return true;                       // 'general' and anything unknown always shows
+    if (!myNotifPrefs) return true;                // prefs not loaded yet — don't hide anything
+    return myNotifPrefs[field] !== false;
+  }
+
+  function renderNotifications(){
+    var list = document.getElementById('notif-rows');
+    if (!list) return;
+    var visible = myNotifications.filter(function(n){ return notifPrefAllows(n.kind); });
+    var unread = visible.filter(function(n){ return !n.__read; }).length;
+
+    var headEl = document.querySelector('[data-live="notif-heading"]');
+    if (headEl) headEl.textContent = unread ? unread + ' unread' : 'All caught up';
+    var pill = document.getElementById('notif-pill');
+    if (pill){ pill.textContent = unread; pill.style.display = unread ? '' : 'none'; }
+    var dot = document.getElementById('notif-dot');
+    if (dot) dot.style.display = unread ? '' : 'none';
+    var markBtn = document.getElementById('notif-mark-all');
+    if (markBtn) markBtn.style.display = unread ? '' : 'none';
+
+    if (!visible.length){
+      var hiddenCount = myNotifications.length - visible.length;
+      list.innerHTML = '<div class="reg-empty" style="padding:22px">' +
+        (hiddenCount
+          ? 'Nothing to show — ' + hiddenCount + ' notification' + (hiddenCount === 1 ? ' is' : 's are') + ' hidden by your notification preferences in Settings.'
+          : 'No notifications yet. Award results, committee announcements and event updates will appear here.') +
+        '</div>';
+      return;
+    }
+
+    list.innerHTML = visible.map(function(n){
+      var tone = NOTIF_ICON_TONE[n.kind] || '';
+      var path = NOTIF_ICONS[n.kind] || NOTIF_ICONS.general;
+      var end = n.__read
+        ? 'Read · ' + escT(notifAgo(n.created_at))
+        : '<span class="badge warn">New</span><div style="margin-top:4px">' + escT(notifAgo(n.created_at)) + '</div>';
+      return '<div class="row notif-row" data-notif-id="' + n.id + '"' + (n.__read ? '' : ' style="cursor:pointer"') + '>' +
+        '<div class="row-icon' + (tone ? ' ' + tone : '') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + path + '</svg></div>' +
+        '<div class="row-body"><b>' + escT(n.title) + '</b>' + (n.body ? '<span>' + escT(n.body) + '</span>' : '') + '</div>' +
+        '<div class="row-end">' + end + '</div></div>';
+    }).join('');
+
+    list.querySelectorAll('.notif-row').forEach(function(row){
+      row.addEventListener('click', function(){
+        var id = row.getAttribute('data-notif-id');
+        var n = myNotifications.filter(function(x){ return String(x.id) === String(id); })[0];
+        if (n && !n.__read) markNotificationsRead([n]);
+      });
+    });
+  }
+
+  async function loadNotifications(){
+    if (!sb || !window.currentMember) return;
+    var meId = window.currentMember.id;
+    var res = await sb.from('notifications')
+      .select('*')
+      .or('member_id.is.null,member_id.eq.' + meId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (res.error){
+      var l = document.getElementById('notif-rows');
+      if (l) l.innerHTML = '<div class="reg-empty" style="padding:22px">Couldn\u2019t load notifications right now.</div>';
+      return;
+    }
+    myNotifications = res.data || [];
+    var readRes = await sb.from('notification_reads').select('notification_id').eq('member_id', meId);
+    var readSet = {};
+    (readRes.data || []).forEach(function(r){ readSet[r.notification_id] = true; });
+    myNotifications.forEach(function(n){ n.__read = !!readSet[n.id]; });
+    renderNotifications();
+  }
+
+  async function markNotificationsRead(items){
+    if (!sb || !window.currentMember || !items.length) return;
+    var meId = window.currentMember.id;
+    // optimistic: flip locally first so the UI responds immediately
+    items.forEach(function(n){ n.__read = true; });
+    renderNotifications();
+    var rows = items.map(function(n){ return { notification_id: n.id, member_id: meId }; });
+    var res = await sb.from('notification_reads').upsert(rows, { onConflict: 'notification_id,member_id' });
+    if (res.error){
+      items.forEach(function(n){ n.__read = false; });
+      renderNotifications();
+      popToast('Could not save — try again');
+    }
+  }
+
+  var notifMarkBtn = document.getElementById('notif-mark-all');
+  if (notifMarkBtn) notifMarkBtn.addEventListener('click', async function(){
+    if (!sb || !window.currentMember){ popToast('All notifications marked as read'); return; }
+    var unread = myNotifications.filter(function(n){ return !n.__read && notifPrefAllows(n.kind); });
+    if (!unread.length) return;
+    notifMarkBtn.disabled = true;
+    await markNotificationsRead(unread);
+    notifMarkBtn.disabled = false;
+    popToast('All notifications marked as read');
+  });
+
+  // Create a notification. memberId null = club-wide broadcast.
+  // Deliberately fire-and-forget: a notification failing must never block the
+  // action that triggered it (posting news, approving an entry, and so on).
+  async function pushNotification(kind, title, body, memberId){
+    if (!sb) return;
+    try {
+      await sb.from('notifications').insert({
+        member_id: memberId || null, kind: kind, title: title, body: body || null
+      });
+    } catch (e){ /* non-fatal */ }
+  }
+  window.pushNotification = pushNotification;
+
+  // ----- preferences -----
+  async function loadNotifPrefs(){
+    if (!sb || !window.currentMember) return;
+    var res = await sb.from('notification_prefs').select('*').eq('member_id', window.currentMember.id).maybeSingle();
+    myNotifPrefs = (res && res.data) ? res.data : Object.assign({}, NOTIF_PREF_DEFAULTS);
+    NOTIF_PREF_FIELDS.forEach(function(f){
+      var el = document.getElementById(NOTIF_PREF_INPUTS[f]);
+      if (el) el.checked = myNotifPrefs[f] !== false;
+    });
+    renderNotifications();
+  }
+
+  var npSaveBtn = document.getElementById('np-save');
+  if (npSaveBtn) npSaveBtn.addEventListener('click', async function(){
+    if (!sb || !window.currentMember){ popToast('Notification preferences saved'); return; }
+    var patch = { member_id: window.currentMember.id, updated_at: new Date().toISOString() };
+    NOTIF_PREF_FIELDS.forEach(function(f){
+      var el = document.getElementById(NOTIF_PREF_INPUTS[f]);
+      patch[f] = el ? !!el.checked : NOTIF_PREF_DEFAULTS[f];
+    });
+    npSaveBtn.disabled = true; npSaveBtn.textContent = 'Saving…';
+    var res = await sb.from('notification_prefs').upsert(patch, { onConflict: 'member_id' });
+    npSaveBtn.disabled = false; npSaveBtn.textContent = 'Save preferences';
+    if (res.error){ popToast('Could not save — try again'); return; }
+    myNotifPrefs = patch;
+    popToast('Notification preferences saved');
+    renderNotifications();
+  });
+
+  window.loadNotifications = loadNotifications;
+
   // ===== Auction lots: member's own read-only history + admin logging =====
   function fmtAuctionDate(iso){
     var d = new Date(iso + 'T00:00:00');
@@ -4290,19 +4645,68 @@ window.initPortal = function(){
   }
 
   function populateMemberSelect(){
-    var sel = document.getElementById('al-member');
-    if (!sel) return;
     var list = window.__liveMemberList || [];
-    sel.innerHTML = '<option value="">— Select a member —</option>' + list.map(function(m){
+    var opts = '<option value="">— Select a member —</option>' + list.map(function(m){
       var nm = ((m.first_name||'') + ' ' + (m.last_name||'')).trim() || 'New member';
       return '<option value="' + m.id + '">' + escT(nm) + '</option>';
     }).join('');
+    var sel = document.getElementById('al-member');
+    if (sel) sel.innerHTML = opts;
+    var mtSel = document.getElementById('mt-member');
+    if (mtSel){
+      var keep = mtSel.value;
+      mtSel.innerHTML = opts;
+      if (keep) mtSel.value = keep;
+    }
   }
 
-  var postingLot = false;
+  // ----- Admin: assign membership type -----
+  function mtSyncFromSelection(){
+    var mtSel = document.getElementById('mt-member');
+    var typeSel = document.getElementById('mt-type');
+    var noteEl = document.getElementById('mt-note');
+    if (!mtSel || !typeSel) return;
+    var row = (window.__liveMemberList || []).filter(function(m){ return String(m.id) === String(mtSel.value); })[0];
+    if (!row){ typeSel.value = 'Full'; if (noteEl) noteEl.textContent = ''; return; }
+    var key = memberTypeKey(row.membership_type);
+    typeSel.value = key;
+    if (noteEl){
+      noteEl.textContent = (row.role === 'admin')
+        ? 'This member is on the committee — committee members are always Full.'
+        : 'Currently ' + MEMBER_TYPES[key].pill + ' · ' + fmtRand(MEMBER_TYPES[key].fee) + ' a year.';
+    }
+  }
+  var mtMemberSel = document.getElementById('mt-member');
+  if (mtMemberSel) mtMemberSel.addEventListener('change', mtSyncFromSelection);
+
+  var mtSaving = false;
+  var mtSaveBtn = document.getElementById('mt-save-btn');
+  if (mtSaveBtn) mtSaveBtn.addEventListener('click', async function(){
+    if (mtSaving) return;
+    if (!sb || !IS_ADMIN) return;
+    var memberId = document.getElementById('mt-member').value;
+    var newType = memberTypeKey(document.getElementById('mt-type').value);
+    var errEl = document.getElementById('mt-error');
+    if (!memberId){ errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    mtSaving = true; mtSaveBtn.disabled = true; mtSaveBtn.textContent = 'Saving…';
+    var res = await sb.from('members').update({ membership_type: newType }).eq('id', memberId);
+    mtSaving = false; mtSaveBtn.disabled = false; mtSaveBtn.textContent = 'Save type';
+    if (res.error){ popToast('Could not save — try again'); return; }
+    popToast('Membership type set to ' + MEMBER_TYPES[newType].pill);
+    pushNotification('renewal', 'Your membership type changed',
+      'You are now recorded as a ' + MEMBER_TYPES[newType].pill + ' — ' + fmtRand(MEMBER_TYPES[newType].fee) + ' a year.', memberId);
+    // If the admin changed their own tier, refresh their card, role line and renewal amount.
+    if (window.currentMember && String(memberId) === String(window.currentMember.id)){
+      window.currentMember.membership_type = newType;
+      applyLiveMember();
+    }
+    await loadLiveMembers();   // refreshes __liveMemberList + directory pills
+    mtSyncFromSelection();
+  });
+
   var alPostBtn = document.getElementById('al-post-btn');
   if (alPostBtn) alPostBtn.addEventListener('click', async function(){
-    if (postingLot) return;
     if (!sb || !IS_ADMIN) return;
     var memberId = document.getElementById('al-member').value;
     var dateVal = document.getElementById('al-date').value;
@@ -4311,7 +4715,6 @@ window.initPortal = function(){
     var errEl = document.getElementById('al-error');
     if (!memberId || !dateVal || !item || !amount || amount <= 0){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
-    postingLot = true;
     alPostBtn.disabled = true; alPostBtn.textContent = 'Saving…';
     var res = await dbInsertRow('auction_lots', {
       member_id: memberId, auction_date: dateVal, item: item,
@@ -4319,13 +4722,12 @@ window.initPortal = function(){
       created_by: window.currentMember.id
     });
     alPostBtn.disabled = false; alPostBtn.textContent = 'Log lot';
-    if (res.error){ popToast('Could not save — try again'); postingLot = false; return; }
+    if (res.error){ popToast('Could not save — try again'); return; }
     document.getElementById('al-item').value = '';
     document.getElementById('al-amount').value = '';
     popToast('Lot logged for that member');
     loadAdminAuctionList();
     if (memberId === window.currentMember.id) loadMyAuctionLots();
-    postingLot = false;
   });
 
   async function loadAdminAuctionList(){
@@ -4423,8 +4825,11 @@ window.initPortal = function(){
           '<button class="aw-btn reject" data-action="reject">Reject</button>' +
         '</div></div>';
     }).join('');
+    var awRowById = {};
+    rows.forEach(function(r){ awRowById[r.id] = r; });
     list.querySelectorAll('.aw-review-row').forEach(function(row){
       var entryId = row.getAttribute('data-entry-id');
+      var entry = awRowById[entryId] || {};
       var ptsInput = row.querySelector('.aw-points-input');
       row.querySelector('[data-action="approve"]').addEventListener('click', async function(){
         var pts = parseInt(ptsInput.value, 10);
@@ -4435,6 +4840,8 @@ window.initPortal = function(){
         }).eq('id', entryId);
         if (res2.error){ popToast('Could not approve — try again'); this.disabled = false; return; }
         popToast('Entry approved — +' + pts + ' points awarded');
+        pushNotification('award', (entry.program || 'Award') + ' entry approved \uD83C\uDF89',
+          (entry.species || 'Your entry') + ' — +' + pts + ' point' + (pts === 1 ? '' : 's') + ' awarded.', entry.member_id);
         loadAdminAwardQueue();
       });
       row.querySelector('[data-action="reject"]').addEventListener('click', async function(){
@@ -4444,31 +4851,30 @@ window.initPortal = function(){
         }).eq('id', entryId);
         if (res3.error){ popToast('Could not update — try again'); this.disabled = false; return; }
         popToast('Entry marked not approved');
+        pushNotification('award', (entry.program || 'Award') + ' entry not approved',
+          (entry.species || 'Your entry') + ' wasn\u2019t approved this round — chat to the committee for feedback.', entry.member_id);
         loadAdminAwardQueue();
       });
     });
   }
 
-  var postingNews = false;
   var anPostBtn = document.getElementById('an-post-btn');
   if (anPostBtn) anPostBtn.addEventListener('click', async function(){
-    if (postingNews) return;
     if (!sb) return;
     var title = document.getElementById('an-title').value.trim();
     var body = document.getElementById('an-body').value.trim();
     var errEl = document.getElementById('an-error');
     if (!title || !body){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
-    postingNews = true;
     anPostBtn.disabled = true; anPostBtn.textContent = 'Posting…';
     var res = await sb.from('news').insert({ title: title, body: body, badge: document.getElementById('an-badge').value });
     anPostBtn.disabled = false; anPostBtn.textContent = 'Post news';
-    if (res.error){ popToast('Could not post — are you signed in as an admin?'); postingNews = false; return; }
+    if (res.error){ popToast('Could not post — are you signed in as an admin?'); return; }
     document.getElementById('an-title').value = '';
     document.getElementById('an-body').value = '';
     popToast('News posted — every member now sees it');
+    pushNotification('news', title, body.length > 140 ? body.slice(0, 137) + '…' : body, null);
     loadNews();
-    postingNews = false;
   });
 
   async function loadLiveMembers(){
@@ -4482,13 +4888,12 @@ window.initPortal = function(){
     rows.forEach(function(m){
       var nm = ((m.first_name || '') + ' ' + (m.last_name || '')).trim() || 'New member';
       var joinYear = m.join_date ? new Date(m.join_date).getFullYear() : '';
-      var interestList = String(m.interests || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
       DIR.push({
         name: nm,
         role: (m.role === 'admin' ? 'Committee' : 'Member') + (joinYear ? ' · joined ' + joinYear : ''),
         blurb: m.bio || 'This member hasn\u2019t written a bio yet.',
-        cats: interestList.length ? interestList : ['Member'],
-        interests: interestList,
+        cats: [m.province || 'ECAAC'],
+        typePill: memberTypeInfo(m.membership_type).pill,
         committee: m.role === 'admin',
         breeder: false, shrimp: false, listings: 0, current: 0,
         email: '', metaLine: (m.membership_number || '') + (m.province ? ' · ' + m.province : '')
@@ -4496,105 +4901,6 @@ window.initPortal = function(){
     });
     renderDir();
   }
-
-  // ===== Birthday banner =====
-  // Shows a top-of-page greeting when today matches the member's saved birthday.
-  // Demo mode has no birthday on the demo member, so this stays dormant there.
-  window.checkBirthday = function(){
-    var banner = document.getElementById('bday-banner');
-    if (!banner) return;
-    var cm = window.currentMember;
-    var bday = cm && cm.birthday;
-    if (!bday){ banner.hidden = true; return; }
-    // birthday is a 'YYYY-MM-DD' date string; compare month + day only
-    var parts = String(bday).slice(0,10).split('-');
-    if (parts.length !== 3){ banner.hidden = true; return; }
-    var now = new Date();
-    var isToday = (parseInt(parts[1],10) === now.getMonth() + 1) && (parseInt(parts[2],10) === now.getDate());
-    if (!isToday){ banner.hidden = true; return; }
-    // don't re-show after the member dismissed it today
-    var todayKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + now.getDate();
-    var dismissKey = 'ecaac-bday-dismissed-' + (cm.id || 'demo') + '-' + todayKey;
-    if (localStorage.getItem(dismissKey)){ banner.hidden = true; return; }
-    var fullName = [cm.first_name, cm.last_name].filter(Boolean).join(' ').trim() || (member.name || '').trim();
-    var txt = document.getElementById('bday-text');
-    if (txt) txt.textContent = 'Happy birthday' + (fullName ? ', ' + fullName : '') + '! The whole ECAAC club wishes you a wonderful day.';
-    banner.hidden = false;
-  };
-  var bdayClose = document.getElementById('bday-close');
-  if (bdayClose) bdayClose.addEventListener('click', function(){
-    var banner = document.getElementById('bday-banner');
-    if (banner) banner.hidden = true;
-    var cm = window.currentMember;
-    var now = new Date();
-    var todayKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + now.getDate();
-    try { localStorage.setItem('ecaac-bday-dismissed-' + ((cm && cm.id) || 'demo') + '-' + todayKey, '1'); } catch(e){}
-  });
-
-  // ===== Aquarium interests: multi-select toggle chips =====
-  // Selected interests are stored as a comma-separated list in members.interests.
-  function getSelectedInterests(){
-    var box = document.getElementById('f-interests');
-    if (!box) return [];
-    return Array.prototype.map.call(box.querySelectorAll('.chip-btn.active'), function(c){
-      return c.getAttribute('data-interest');
-    });
-  }
-  function setSelectedInterests(str){
-    var box = document.getElementById('f-interests');
-    if (!box) return;
-    var list = String(str || '').split(',').map(function(s){ return s.trim().toLowerCase(); }).filter(Boolean);
-    box.querySelectorAll('[data-interest]').forEach(function(c){
-      c.classList.toggle('active', list.indexOf(c.getAttribute('data-interest').toLowerCase()) !== -1);
-    });
-  }
-  (function(){
-    var box = document.getElementById('f-interests');
-    if (!box) return;
-    box.querySelectorAll('[data-interest]').forEach(function(chip){
-      chip.addEventListener('click', function(){ chip.classList.toggle('active'); });
-    });
-  })();
-
-  // ===== Birthday: day + month only (stored as 2000-MM-DD; year is a placeholder) =====
-  function bdayDaysInMonth(month){ return month ? new Date(2000, parseInt(month, 10), 0).getDate() : 31; }
-  function populateBdayDays(){
-    var monthSel = document.getElementById('f-bday-month');
-    var daySel = document.getElementById('f-bday-day');
-    if (!monthSel || !daySel) return;
-    var max = bdayDaysInMonth(monthSel.value);
-    var prev = daySel.value;
-    var opts = '<option value="">Day</option>';
-    for (var d = 1; d <= max; d++){ opts += '<option value="' + d + '">' + d + '</option>'; }
-    daySel.innerHTML = opts;
-    if (prev && parseInt(prev, 10) <= max) daySel.value = prev;
-  }
-  function setBirthdayValue(str){
-    var monthSel = document.getElementById('f-bday-month');
-    var daySel = document.getElementById('f-bday-day');
-    if (!monthSel || !daySel) return;
-    var parts = String(str || '').slice(0, 10).split('-');
-    var mm = parts.length === 3 ? parseInt(parts[1], 10) : 0;
-    var dd = parts.length === 3 ? parseInt(parts[2], 10) : 0;
-    monthSel.value = mm ? String(mm) : '';
-    populateBdayDays();
-    daySel.value = dd ? String(dd) : '';
-  }
-  function getBirthdayValue(){
-    var monthSel = document.getElementById('f-bday-month');
-    var daySel = document.getElementById('f-bday-day');
-    if (!monthSel || !daySel) return null;
-    var mm = parseInt(monthSel.value, 10), dd = parseInt(daySel.value, 10);
-    if (!mm || !dd) return null;
-    var pad = function(n){ return (n < 10 ? '0' : '') + n; };
-    return '2000-' + pad(mm) + '-' + pad(dd);
-  }
-  (function(){
-    var monthSel = document.getElementById('f-bday-month');
-    if (!monthSel) return;
-    monthSel.addEventListener('change', populateBdayDays);
-    populateBdayDays();
-  })();
 
   var profileSaveBtn = document.getElementById('profile-save-btn');
   if (profileSaveBtn) profileSaveBtn.addEventListener('click', async function(){
@@ -4605,9 +4911,6 @@ window.initPortal = function(){
       last_name: document.getElementById('f-surname').value.trim() || null,
       phone: document.getElementById('f-phone').value.trim() || null,
       province: document.getElementById('f-province').value || null,
-      city: document.getElementById('f-city').value.trim() || null,
-      interests: getSelectedInterests().join(', ') || null,
-      birthday: getBirthdayValue(),
       bio: document.getElementById('f-bio').value.trim() || null
     };
     profileSaveBtn.disabled = true; profileSaveBtn.textContent = 'Saving…';
@@ -4622,19 +4925,9 @@ window.initPortal = function(){
     if (window.checkBadgeChanges) window.checkBadgeChanges();
   });
 
-  if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); }
+  if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); }
 
   applyLiveMember();
-
-  // Top bar date: always show today's date, formatted "Weekday, D Month YYYY".
-  (function(){
-    var el = document.getElementById('topbar-date');
-    if (!el) return;
-    var now = new Date();
-    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    el.textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
-  })();
 
   renderTanks();
 
