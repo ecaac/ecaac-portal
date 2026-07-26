@@ -523,6 +523,11 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 @media (min-width:861px){.scrim{display:none}}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 .side-link:focus-visible,.btn:focus-visible,.icon-btn:focus-visible,.tank-card:focus-visible{outline:3px solid var(--leaf-light);outline-offset:2px}
+/* auth gate: back-to-website link */
+.gate-back{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:12.5px;font-weight:700;color:#248238;transition:color .15s,gap .15s}
+.gate-back svg{width:14px;height:14px;flex:none}
+.gate-back:hover{color:#1B6B2C;gap:10px}
+.gate-back:focus-visible{outline:3px solid #8FD9A1;outline-offset:3px;border-radius:6px}
 </style>
 </head>
 <body>
@@ -539,6 +544,10 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     </form>
     <p id="auth-status" style="font-size:12.5px;color:#565A72;margin-top:14px;min-height:18px;"></p>
     <p style="font-size:12px;color:#8890A8;margin-top:6px;">Not a member yet, or forgotten your password? Contact the committee.</p>
+    <a class="gate-back" href="https://ecaac.co.za">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
+      Go back to the ECAAC website
+    </a>
   </div>
 </div>
 
@@ -1680,10 +1689,13 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <div class="panel">
       <h3>Security</h3>
       <div class="form-grid" style="grid-template-columns:1fr">
-        <div class="field"><label for="s-pass1">Current password</label><input id="s-pass1" type="password" placeholder="••••••••"></div>
-        <div class="field"><label for="s-pass2">New password</label><input id="s-pass2" type="password" placeholder="At least 10 characters"></div>
+        <div class="field"><label for="s-pass1">Current password</label><input id="s-pass1" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+        <div class="field"><label for="s-pass2">New password</label><input id="s-pass2" type="password" autocomplete="new-password" placeholder="At least 10 characters"></div>
+        <div class="field"><label for="s-pass3">Confirm new password</label><input id="s-pass3" type="password" autocomplete="new-password" placeholder="Re-type the new password"></div>
       </div>
-      <button class="btn btn-primary btn-sm toastable" data-toast="Password updated" style="margin-top:16px">Update password</button>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-soft);margin-top:10px"><input type="checkbox" id="s-pass-show" style="width:15px;height:15px;accent-color:var(--leaf)"> Show passwords</label>
+      <p id="s-pass-msg" style="display:none;font-size:12.5px;font-weight:700;margin:12px 0 0"></p>
+      <button class="btn btn-primary btn-sm" id="s-pass-btn" style="margin-top:16px">Update password</button>
       <div class="future" style="margin-top:16px">
         <span class="badge info">Coming soon</span>
         <h4>Two-factor authentication</h4>
@@ -4923,6 +4935,79 @@ window.initPortal = function(){
     popToast('Profile saved');
     loadLiveMembers();
     if (window.checkBadgeChanges) window.checkBadgeChanges();
+  });
+
+  // ===== Security: change password =====
+  var PW_MIN = 10;
+  function pwMsg(text, ok){
+    var el = document.getElementById('s-pass-msg');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = ok ? 'var(--leaf-dark)' : 'var(--coral-dark)';
+    el.style.display = text ? 'block' : 'none';
+  }
+
+  var pwShow = document.getElementById('s-pass-show');
+  if (pwShow) pwShow.addEventListener('change', function(){
+    ['s-pass1','s-pass2','s-pass3'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.type = pwShow.checked ? 'text' : 'password';
+    });
+  });
+
+  var pwSaving = false;
+  var pwBtn = document.getElementById('s-pass-btn');
+  if (pwBtn) pwBtn.addEventListener('click', async function(){
+    if (pwSaving) return;
+    var cur = document.getElementById('s-pass1').value;
+    var nw  = document.getElementById('s-pass2').value;
+    var cnf = document.getElementById('s-pass3').value;
+
+    // --- validate before touching the network ---
+    if (!cur || !nw || !cnf){ pwMsg('Fill in all three password fields.', false); return; }
+    if (nw.length < PW_MIN){ pwMsg('Your new password needs to be at least ' + PW_MIN + ' characters.', false); return; }
+    if (nw !== cnf){ pwMsg('The new passwords don\u2019t match.', false); return; }
+    if (nw === cur){ pwMsg('Your new password must be different from your current one.', false); return; }
+
+    if (!sb || !window.currentMember){ pwMsg('', true); popToast('Password updated'); return; }
+
+    var email = window.currentMember.email;
+    if (!email){
+      try { var u = await sb.auth.getUser(); email = u && u.data && u.data.user ? u.data.user.email : null; } catch (e){}
+    }
+    if (!email){ pwMsg('Couldn\u2019t confirm your account email — sign out and back in, then try again.', false); return; }
+
+    pwSaving = true; pwBtn.disabled = true; pwBtn.textContent = 'Updating…';
+    pwMsg('', true);
+
+    // Supabase lets a signed-in user set a new password without proving the old
+    // one. Re-authenticating first means someone on an unattended logged-in
+    // session can't silently take the account over.
+    var reauth = await sb.auth.signInWithPassword({ email: email, password: cur });
+    if (reauth.error){
+      pwSaving = false; pwBtn.disabled = false; pwBtn.textContent = 'Update password';
+      pwMsg('That current password isn\u2019t right. Try again, or ask the committee to reset it for you.', false);
+      return;
+    }
+
+    var res = await sb.auth.updateUser({ password: nw });
+    pwSaving = false; pwBtn.disabled = false; pwBtn.textContent = 'Update password';
+    if (res.error){
+      var m = (res.error.message || '').toLowerCase();
+      pwMsg(m.indexOf('should be different') !== -1
+        ? 'Your new password must be different from your current one.'
+        : 'Could not update your password — ' + (res.error.message || 'try again.'), false);
+      return;
+    }
+
+    document.getElementById('s-pass1').value = '';
+    document.getElementById('s-pass2').value = '';
+    document.getElementById('s-pass3').value = '';
+    if (pwShow && pwShow.checked){ pwShow.checked = false; pwShow.dispatchEvent(new Event('change')); }
+    pwMsg('Password updated. Use your new password next time you sign in.', true);
+    popToast('Password updated');
+    pushNotification('general', 'Your password was changed',
+      'If this wasn\u2019t you, contact the committee straight away.', window.currentMember.id);
   });
 
   if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); }
