@@ -554,6 +554,59 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   .status-chip{display:none}
 }
 @media (min-width:861px){.scrim{display:none}}
+/* ===== Member detail drawer (directory) ===== */
+.dir-card[role=button]{cursor:pointer}
+.dir-card[role=button]:focus-visible{outline:2px solid var(--leaf);outline-offset:2px}
+.md-scrim{position:fixed;inset:0;background:rgba(6,7,15,0.5);z-index:160;opacity:0;pointer-events:none;transition:opacity .25s}
+.md-scrim.show{opacity:1;pointer-events:auto}
+.mem-drawer{position:fixed;top:0;right:0;bottom:0;width:420px;max-width:92vw;z-index:170;background:var(--paper);box-shadow:-18px 0 50px -20px rgba(6,7,15,0.45);transform:translateX(103%);transition:transform .28s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;overflow:hidden}
+.mem-drawer.open{transform:none}
+.md-head{display:flex;align-items:center;gap:14px;padding:22px 22px 18px;border-bottom:1px solid var(--sand-line);flex:none}
+.md-avatar{width:54px;height:54px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px;letter-spacing:.02em}
+.md-head-txt{flex:1;min-width:0}
+.md-head-txt h3{font-family:'Fraunces',Georgia,serif;font-size:19px;color:var(--deep);margin:0 0 2px;line-height:1.2}
+.md-role{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--leaf-dark)}
+.md-close{width:36px;height:36px;flex:none;border-radius:10px;border:1px solid var(--sand-line);background:var(--sand);color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.md-close:hover{border-color:var(--leaf);color:var(--leaf-dark)}
+.md-close svg{width:16px;height:16px}
+.md-body{padding:20px 22px 34px;overflow-y:auto;flex:1}
+.md-sec{margin-bottom:22px}
+.md-sec:last-child{margin-bottom:0}
+.md-sec h4{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 10px}
+.md-bio{font-size:13.5px;line-height:1.6;color:var(--ink);margin:0}
+.md-shared{background:#EAF3DE;border:1px solid var(--leaf-light);border-radius:14px;padding:13px 15px;font-size:13.5px;color:var(--leaf-dark);font-weight:700;line-height:1.5}
+.md-shared span{font-weight:800}
+.md-pills{display:flex;flex-wrap:wrap;gap:6px}
+.md-pills span{font-size:11px;font-weight:700;color:var(--leaf-dark);background:#EAF3DE;padding:5px 11px;border-radius:12px}
+.md-standing{display:flex;align-items:center;gap:13px;background:var(--sand);border-radius:16px;padding:15px 16px}
+.md-standing-tier{font-family:'Fraunces',Georgia,serif;font-size:22px;color:var(--deep);line-height:1}
+.md-standing-sub{font-size:12px;color:var(--ink-soft);margin-top:3px}
+.md-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.md-stat{background:var(--sand);border-radius:13px;padding:12px 13px}
+.md-stat b{display:block;font-family:'Fraunces',Georgia,serif;font-size:19px;color:var(--deep);line-height:1}
+.md-stat span{font-size:11px;color:var(--ink-soft);display:block;margin-top:4px}
+.md-badges{display:flex;flex-wrap:wrap;gap:8px}
+.md-badge{display:flex;align-items:center;gap:7px;border-radius:12px;padding:7px 11px;font-size:11.5px;font-weight:700;color:#fff}
+.md-badge svg{width:13px;height:13px;flex:none}
+.md-empty{font-size:13px;color:var(--ink-soft);font-style:italic;margin:0}
+.md-note{font-size:12px;color:var(--ink-soft);line-height:1.5;margin:10px 0 0}
+@media (max-width:640px){
+  .mem-drawer{width:100%;max-width:100%}
+  .md-body{padding:18px 16px 30px}
+  .md-head{padding:18px 16px 15px}
+}
+/* Admin panel on narrow screens. Scoped to #view-admin so no other view shifts.
+   Fixes: dense list rows squeezing their text to a sliver beside non-shrinking
+   action buttons, native file inputs overflowing the panel, and 26px panel
+   padding eating a third of a phone viewport. */
+@media (max-width:640px){
+  #view-admin .panel{padding:18px 16px}
+  #view-admin .row{flex-wrap:wrap;gap:10px;padding:14px 16px;justify-content:flex-end}
+  #view-admin .row-body{flex:1 1 100%}
+  #view-admin .aw-review-actions{flex:1 1 100%;flex-wrap:wrap;justify-content:flex-end}
+  #view-admin .aw-comment-input{width:100%;order:-1}
+  #view-admin input[type=file]{flex:1 1 100%;max-width:100%;min-width:0}
+}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 .side-link:focus-visible,.btn:focus-visible,.icon-btn:focus-visible,.tank-card:focus-visible{outline:3px solid var(--leaf-light);outline-offset:2px}
 /* auth gate: back-to-website link */
@@ -1950,6 +2003,19 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   <button class="bp-close" id="bp-close" aria-label="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
 </div>
 
+<div class="md-scrim" id="md-scrim"></div>
+<aside class="mem-drawer" id="mem-drawer" role="dialog" aria-modal="true" aria-labelledby="md-name" aria-hidden="true">
+  <div class="md-head">
+    <div class="md-avatar" id="md-avatar">—</div>
+    <div class="md-head-txt">
+      <h3 id="md-name">Member</h3>
+      <div class="md-role" id="md-role"></div>
+    </div>
+    <button class="md-close" id="md-close" aria-label="Close profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="md-body" id="md-body"></div>
+</aside>
+
 </div><!-- /#portal-root -->
 
 <script>
@@ -2914,6 +2980,7 @@ window.initPortal = function(){
   var dirEmpty = document.getElementById('dir-empty');
   var dirSearch = document.getElementById('dir-search');
   var dirFilter = 'all';
+  var dirVisible = [];
 
   // Matches a member against a directory filter. Legacy demo rules (committee /
   // breeder / plants / shrimp) are preserved; live members also match on their
@@ -2934,6 +3001,7 @@ window.initPortal = function(){
       if (q && (m.name + ' ' + m.blurb + ' ' + m.cats.join(' ') + ' ' + (m.interests || []).join(' ')).toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
+    dirVisible = out;
     dirGrid.innerHTML = out.map(function(m, i){
       var tags = m.committee
         ? '<span class="n">Committee</span>'
@@ -2944,7 +3012,8 @@ window.initPortal = function(){
       var meta = m.breeder
         ? '<div class="dir-meta"><span><b>' + m.listings + '</b> register listings</span><span><b>' + m.current + '</b> breeding now</span></div>'
         : '<div class="dir-meta"><span>' + (m.email ? '<a href="mailto:' + m.email + '" style="color:var(--leaf-dark);font-weight:700">' + m.email + '</a>' : '<b>' + (m.metaLine || '') + '</b>') + '</span></div>';
-      return '<div class="dir-card"><div class="dir-avatar" style="background:' + gradients[i % gradients.length] + '">' + initials(m.name) + '</div>' +
+      return '<div class="dir-card" data-dir-idx="' + i + '" role="button" tabindex="0" aria-label="View ' + escA(m.name) + '\u2019s profile">' +
+        '<div class="dir-avatar" style="background:' + gradients[i % gradients.length] + '">' + initials(m.name) + '</div>' +
         '<div class="dir-body"><h4>' + m.name + '</h4><div class="dir-role">' + m.role + '</div>' +
         '<p>' + m.blurb + '</p><div class="dir-tags">' + tags + '</div>' + meta + '</div></div>';
     }).join('');
@@ -2953,6 +3022,20 @@ window.initPortal = function(){
     document.getElementById('dir-count').textContent = out.length + ' active member' + (out.length===1?'':'s');
   }
   dirSearch.addEventListener('input', renderDir);
+  // Delegated so it survives every re-render of the grid.
+  dirGrid.addEventListener('click', function(e){
+    var card = e.target.closest('.dir-card');
+    if (!card) return;
+    if (e.target.closest('a')) return;           // let the committee mailto links work
+    openMemberDrawer(dirVisible[parseInt(card.getAttribute('data-dir-idx'), 10)]);
+  });
+  dirGrid.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var card = e.target.closest('.dir-card');
+    if (!card) return;
+    e.preventDefault();
+    openMemberDrawer(dirVisible[parseInt(card.getAttribute('data-dir-idx'), 10)]);
+  });
   document.querySelectorAll('[data-dirf]').forEach(function(b){
     b.addEventListener('click', function(){
       document.querySelectorAll('[data-dirf]').forEach(function(x){ x.classList.remove('active'); });
@@ -2962,6 +3045,149 @@ window.initPortal = function(){
     });
   });
   renderDir();
+
+  // ===== Member detail drawer =====
+  // Opens from a directory card. Shows bio, interests, shared interests, awards
+  // standing and earned badges. Deliberately shows no email or phone number.
+  var memDrawer = document.getElementById('mem-drawer');
+  var memScrim = document.getElementById('md-scrim');
+  var mdBody = document.getElementById('md-body');
+  var mdLastFocus = null;
+  var mdToken = 0;                              // guards against a slow fetch landing after the drawer moved on
+
+  function closeMemberDrawer(){
+    if (!memDrawer) return;
+    memDrawer.classList.remove('open');
+    memDrawer.setAttribute('aria-hidden', 'true');
+    if (memScrim) memScrim.classList.remove('show');
+    if (mdLastFocus && mdLastFocus.focus) mdLastFocus.focus();
+    mdLastFocus = null;
+  }
+  var mdCloseBtn = document.getElementById('md-close');
+  if (mdCloseBtn) mdCloseBtn.addEventListener('click', closeMemberDrawer);
+  if (memScrim) memScrim.addEventListener('click', closeMemberDrawer);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && memDrawer && memDrawer.classList.contains('open')) closeMemberDrawer();
+  });
+
+  // Which interests the viewer and this member have in common.
+  function sharedInterestsWith(m){
+    var mine = String((window.currentMember && window.currentMember.interests) || '')
+      .split(',').map(function(s){ return s.trim().toLowerCase(); }).filter(Boolean);
+    if (!mine.length) return [];
+    return (m.interests || []).filter(function(x){ return mine.indexOf(String(x).toLowerCase()) !== -1; });
+  }
+  function listPhrase(arr){
+    if (arr.length === 1) return arr[0];
+    if (arr.length === 2) return arr[0] + ' and ' + arr[1];
+    return arr.slice(0, -1).join(', ') + ' and ' + arr[arr.length - 1];
+  }
+
+  // Pulls the numbers behind another member's standing. Each query is tolerated
+  // independently: if the database declines one (row-level security), that stat
+  // reports as unknown rather than a misleading zero.
+  async function loadMemberStanding(memberId){
+    var res = { awardPoints:0, programPoints:{ BAP:0, HAP:0, AAP:0, SBP:0 }, entryCount:0,
+                meetings:0, auctionValue:0, tankCount:0, failed:[] };
+    if (!sb || !memberId) return res;
+    var out = await Promise.all([
+      sb.from('award_entries').select('program,points,status').eq('member_id', memberId).eq('status', 'approved'),
+      sb.from('event_attendance').select('id').eq('member_id', memberId),
+      sb.from('auction_lots').select('amount').eq('member_id', memberId)
+    ].map(function(p){ return Promise.resolve(p).then(function(r){ return r; }, function(err){ return { error: err }; }); }));
+    if (out[0] && !out[0].error){
+      (out[0].data || []).forEach(function(r){
+        res.entryCount++;
+        res.awardPoints += (r.points || 0);
+        if (res.programPoints[r.program] !== undefined) res.programPoints[r.program] += (r.points || 0);
+      });
+    } else res.failed.push('awards');
+    if (out[1] && !out[1].error) res.meetings = (out[1].data || []).length; else res.failed.push('meetings');
+    if (out[2] && !out[2].error) res.auctionValue = (out[2].data || []).reduce(function(s, r){ return s + Number(r.amount || 0); }, 0);
+    else res.failed.push('auctions');
+    // Tank count comes from data already in memory — no extra round trip.
+    if (window.currentMember && memberId === window.currentMember.id) res.tankCount = tanks.length;
+    else res.tankCount = (otherMemberTanks || []).filter(function(t){ return t.ownerId === memberId || t.owner_id === memberId; }).length;
+    return res;
+  }
+
+  function mdStandingHtml(stats, joinDate){
+    var tenure = joinDate ? Math.max(0, new Date().getFullYear() - new Date(joinDate).getFullYear()) : 0;
+    var cats = badgeCatsFrom({
+      meetings: stats.meetings, auctionValue: stats.auctionValue, awardPoints: stats.awardPoints,
+      tankCount: stats.tankCount, tenureYears: tenure
+    });
+    var highest = -1, earned = 0, badges = [];
+    cats.forEach(function(cat){
+      var prog = tierProgress(cat);
+      earned += prog.achieved;
+      if (prog.achieved - 1 > highest) highest = prog.achieved - 1;
+      if (prog.achieved > 0){
+        var idx = prog.achieved - 1;
+        badges.push('<span class="md-badge ' + TIER_CLASS[idx] + '">' + escT(TIER_NAMES[idx] + ' \u00B7 ' + cat.label) + '</span>');
+      }
+    });
+    var html = '<div class="md-sec"><h4>Current standing</h4>' +
+      '<div class="md-standing"><div><div class="md-standing-tier">' + (highest >= 0 ? TIER_NAMES[highest] : 'Unranked') + '</div>' +
+      '<div class="md-standing-sub">' + earned + ' badge' + (earned === 1 ? '' : 's') + ' earned across ' + cats.length + ' categories</div></div></div></div>';
+
+    html += '<div class="md-sec"><h4>Award programs</h4><div class="md-stats">' +
+      ['BAP','HAP','AAP','SBP'].map(function(k){
+        return '<div class="md-stat"><b>' + (stats.programPoints[k] || 0) + '</b><span>' + k + ' points</span></div>';
+      }).join('') + '</div>' +
+      '<p class="md-note"><b>' + stats.awardPoints + '</b> points from <b>' + stats.entryCount + '</b> approved entr' + (stats.entryCount === 1 ? 'y' : 'ies') + '.</p></div>';
+
+    html += '<div class="md-sec"><h4>Badges earned</h4>' +
+      (badges.length ? '<div class="md-badges">' + badges.join('') + '</div>'
+                     : '<p class="md-empty">No badges yet \u2014 early days.</p>') + '</div>';
+
+    if (stats.failed.length){
+      html += '<p class="md-note">Some figures couldn\u2019t be read for this member (' + escT(stats.failed.join(', ')) +
+        '), so their standing may be understated.</p>';
+    }
+    return html;
+  }
+
+  async function openMemberDrawer(m){
+    if (!m || !memDrawer) return;
+    mdLastFocus = document.activeElement;
+    var token = ++mdToken;
+    document.getElementById('md-name').textContent = m.name;
+    document.getElementById('md-role').textContent = m.role || '';
+    var av = document.getElementById('md-avatar');
+    av.textContent = initials(m.name);
+    av.style.background = gradients[0];
+
+    // Static parts render immediately; the numbers stream in after.
+    var head = '';
+    var shared = sharedInterestsWith(m);
+    if (shared.length){
+      head += '<div class="md-sec"><div class="md-shared">You both keep <span>' + escT(listPhrase(shared)) + '</span>.</div></div>';
+    }
+    if ((m.interests || []).length){
+      head += '<div class="md-sec"><h4>Interests</h4><div class="md-pills">' +
+        m.interests.map(function(x){ return '<span>' + escT(x) + '</span>'; }).join('') + '</div></div>';
+    }
+    head += '<div class="md-sec"><h4>About</h4><p class="md-bio">' + escT(m.blurb || '') + '</p></div>';
+    if (m.joinDate){
+      head += '<div class="md-sec"><h4>Member since</h4><p class="md-bio">' +
+        new Date(m.joinDate).toLocaleDateString('en-ZA', { month:'long', year:'numeric' }) + '</p></div>';
+    }
+
+    mdBody.innerHTML = head + (m.memberId
+      ? '<div class="md-sec"><h4>Current standing</h4><p class="md-empty">Loading standing\u2026</p></div>'
+      : '');
+
+    memDrawer.classList.add('open');
+    memDrawer.setAttribute('aria-hidden', 'false');
+    if (memScrim) memScrim.classList.add('show');
+    if (mdCloseBtn) mdCloseBtn.focus();
+
+    if (!m.memberId) return;
+    var stats = await loadMemberStanding(m.memberId);
+    if (token !== mdToken) return;              // closed, or another member opened meanwhile
+    mdBody.innerHTML = head + mdStandingHtml(stats, m.joinDate);
+  }
 
   // ===== Breeders register =====
   var regBody = document.getElementById('reg-tbody');
@@ -3849,6 +4075,24 @@ window.initPortal = function(){
     lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
   };
 
+  // Single source of truth for badge tier thresholds. Both the badges page (for the
+  // signed-in member) and the directory drawer (for any member) build from this, so
+  // the two can never disagree about what earns a tier.
+  function badgeCatsFrom(stats){
+    return [
+      { id:'meetings', label:'Meeting Attendance', icon:'calendar', unit:'meetings attended', value:stats.meetings,
+        tiers:[10, 25, 50, 100] },
+      { id:'auctions', label:'Auction Trading', icon:'gavel', unit:'traded at auctions', value:stats.auctionValue, isMoney:true,
+        tiers:[500, 1500, 3000, 6000] },
+      { id:'awards', label:'Award Program Points', icon:'trophy', unit:'points earned', value:stats.awardPoints,
+        tiers:[50, 100, 200, 400] },
+      { id:'aquariums', label:'Aquarium Collection', icon:'fish', unit:'active aquariums', value:stats.tankCount,
+        tiers:[1, 3, 5, 8] },
+      { id:'tenure', label:'Membership Tenure', icon:'star', unit:'years as a member', value:stats.tenureYears,
+        tiers:[1, 3, 5, 10] }
+    ];
+  }
+
   function getBadgeCategories(){
     var auctionValue = AUCTIONS.reduce(function(sum, a){ return sum + a.amount; }, 0);
     var stats = window.currentMember
@@ -3858,18 +4102,13 @@ window.initPortal = function(){
           tenureYears: Math.max(0, new Date().getFullYear() - (window.currentMember.join_date ? new Date(window.currentMember.join_date).getFullYear() : new Date().getFullYear()))
         }
       : { meetings: 71, awardPoints: 245, tenureYears: 8 };
-    return [
-      { id:'meetings', label:'Meeting Attendance', icon:'calendar', unit:'meetings attended', value:stats.meetings,
-        tiers:[10, 25, 50, 100] },
-      { id:'auctions', label:'Auction Trading', icon:'gavel', unit:'traded at auctions', value:auctionValue, isMoney:true,
-        tiers:[500, 1500, 3000, 6000] },
-      { id:'awards', label:'Award Program Points', icon:'trophy', unit:'points earned', value:stats.awardPoints,
-        tiers:[50, 100, 200, 400] },
-      { id:'aquariums', label:'Aquarium Collection', icon:'fish', unit:'active aquariums', value:tanks.length,
-        tiers:[1, 3, 5, 8] },
-      { id:'tenure', label:'Membership Tenure', icon:'star', unit:'years as a member', value:stats.tenureYears,
-        tiers:[1, 3, 5, 10] }
-    ];
+    return badgeCatsFrom({
+      meetings: stats.meetings,
+      auctionValue: auctionValue,
+      awardPoints: stats.awardPoints,
+      tankCount: tanks.length,
+      tenureYears: stats.tenureYears
+    });
   }
 
   function tierProgress(cat){
@@ -4259,6 +4498,7 @@ window.initPortal = function(){
         name: row.name, type: row.type, subtitle: row.subtitle || '',
         volume: row.volume || 0, dims: row.dims || '—', started: row.started || '',
         owner: ownerName || 'ECAAC member',
+        ownerId: row.owner_id,
         tags: (row.tank_tags || []).map(function(t){ return t.label; }),
         params: params,
         livestock: (row.tank_livestock || []).map(function(l){ return [l.name, l.note || '', l.qty || '']; }),
@@ -5691,6 +5931,8 @@ window.initPortal = function(){
       var interestList = String(m.interests || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
       DIR.push({
         name: nm,
+        memberId: m.id,
+        joinDate: m.join_date || null,
         role: (m.role === 'admin' ? 'Committee' : 'Member') + (joinYear ? ' · joined ' + joinYear : ''),
         blurb: m.bio || 'This member hasn\u2019t written a bio yet.',
         cats: ['Member'],
