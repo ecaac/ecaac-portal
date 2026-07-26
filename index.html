@@ -365,6 +365,10 @@ button{font-family:inherit}
 .tier-pip b{font-size:11.5px;color:var(--deep)}
 .tier-pip span{font-size:10px;color:var(--ink-soft)}
 .tier-pip.next{outline:2px dashed var(--sand-line);outline-offset:2px}
+/* Completed milestones read as a plain green "done" check, not the tier's own
+   gold/silver/bronze colour — that colour is reserved for the badge showcase
+   and the category icon, where it means "current tier reached", not "step done". */
+.tier-pip.earned .dot{background:var(--leaf)}
 .badge-cat-next{margin-top:16px;font-size:12.5px;color:var(--ink-soft)}
 .badge-cat-next b{color:var(--deep)}
 .badges-showcase{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:14px;margin-top:6px}
@@ -4573,9 +4577,13 @@ window.initPortal = function(){
     cat.tiers.forEach(function(t){ if (cat.value >= t) achieved++; });
     var nextIdx = achieved; // index of next unearned tier, or -1 if maxed
     var maxed = nextIdx >= cat.tiers.length;
-    var prevThreshold = achieved > 0 ? cat.tiers[achieved - 1] : 0;
     var nextThreshold = maxed ? null : cat.tiers[nextIdx];
-    var pct = maxed ? 100 : Math.round(((cat.value - prevThreshold) / (nextThreshold - prevThreshold)) * 100);
+    // The bar shows overall progress toward the top (Platinum) tier, not just
+    // progress within the current tier's own stretch. Someone 6 years into a
+    // 10-year tenure ladder should see a bar a bit past halfway, not a bar that
+    // resets to a sliver every time they cross into a new tier's range.
+    var finalThreshold = cat.tiers[cat.tiers.length - 1];
+    var pct = Math.round((cat.value / finalThreshold) * 100);
     return { achieved: achieved, maxed: maxed, nextThreshold: nextThreshold, pct: Math.max(0, Math.min(100, pct)) };
   }
 
