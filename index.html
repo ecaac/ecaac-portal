@@ -110,6 +110,11 @@ button{font-family:inherit}
 .g4{grid-template-columns:repeat(4,1fr)}
 .g3{grid-template-columns:repeat(3,1fr)}
 .g2{grid-template-columns:repeat(2,1fr)}
+/* Layout classes replacing inline grid styles. Inline styles beat stylesheet
+   rules, so anything declared inline can never be undone by a media query. */
+.profile-grid{grid-template-columns:300px 1fr}
+.admin-split{grid-template-columns:1fr 1.2fr}
+.mt-form{grid-template-columns:1.4fr 1fr auto;align-items:end}
 .card{
   background:var(--paper);border-radius:18px;padding:24px 22px;border-top:4px solid transparent;
   box-shadow:0 1px 2px rgba(11,59,76,0.03),0 12px 26px -18px rgba(11,59,76,0.18);
@@ -337,6 +342,11 @@ button{font-family:inherit}
 .milestone-badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:16px;margin-top:6px}
 .milestone-badges .aw-badge{width:auto}
 .milestone-badges .aw-badge .hint{font-size:9.5px;color:#9A9478;font-style:italic;line-height:1.3;margin-top:-2px}
+.ms-group + .ms-group{margin-top:22px;padding-top:20px;border-top:1px solid #F0EADB}
+.ms-group-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:2px}
+.ms-group-head h5{font-family:'Fraunces',Georgia,serif;font-size:14px;font-weight:600;color:var(--deep);margin:0}
+.ms-group-head .ms-count{font-size:11px;font-weight:800;color:var(--ink-soft);letter-spacing:.02em;flex:none}
+.ms-group-note{font-size:11.5px;color:var(--ink-soft);margin:0 0 12px;line-height:1.5}
 .milestone-badges .aw-badge:not(.locked) span{color:var(--leaf-dark);font-weight:800}
 
 /* member aquariums directory */
@@ -515,6 +525,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   .member-card{grid-template-columns:1fr}
   .mc-qr{justify-self:start}
   .g2,.form-grid,.tank-grid,.g3,.g4{grid-template-columns:1fr}
+  .profile-grid,.admin-split,.mt-form{grid-template-columns:1fr}
   .params{grid-template-columns:repeat(2,1fr)}
   .scrim{position:fixed;inset:0;background:rgba(6,7,15,0.55);z-index:110;opacity:0;pointer-events:none;transition:opacity .25s}
   .scrim.show{opacity:1;pointer-events:auto}
@@ -776,22 +787,8 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <h3>Upcoming events</h3>
         <button class="linkish" data-view-jump="events">All events <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
       </div>
-      <div class="rows">
-        <div class="row">
-          <div class="event-date"><b>1</b><span>Aug</span></div>
-          <div class="row-body"><b>Monthly club meeting</b><span>Sat 14:00–18:00 · The Italian Club, Broadwood · talks, braai, raffle &amp; auction</span></div>
-          <button class="btn btn-primary btn-sm toastable" data-toast="RSVP confirmed — see you on 1 August!">RSVP</button>
-        </div>
-        <div class="row">
-          <div class="event-date"><b>22</b><span>Aug</span></div>
-          <div class="row-body"><b>Aquascaping workshop</b><span>10:00 · Hardscape composition with Iwagumi principles</span></div>
-          <button class="btn btn-outline btn-sm toastable" data-toast="RSVP confirmed for the workshop">RSVP</button>
-        </div>
-        <div class="row">
-          <div class="event-date"><b>5</b><span>Sep</span></div>
-          <div class="row-body"><b>Monthly meeting &amp; spring auction</b><span>Sat 14:00 · The Italian Club · member livestock, plants and dry goods</span></div>
-          <span class="badge info">Details soon</span>
-        </div>
+      <div class="rows" id="dash-events">
+        <div class="reg-empty" style="padding:20px">Loading…</div>
       </div>
     </div>
     <div>
@@ -853,7 +850,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       <p>Keep your details current so the committee can reach you and your award certificates carry the correct name.</p>
     </div>
   </div>
-  <div class="grid" style="grid-template-columns:300px 1fr">
+  <div class="grid profile-grid">
     <div class="panel" style="text-align:center">
       <div class="top-avatar" style="width:110px;height:110px;font-size:32px;margin:6px auto 16px" data-live="initials">JN</div>
       <h3 style="margin-bottom:4px" data-live="fullname">Judy Nel</h3>
@@ -1254,7 +1251,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </div>
   <p style="font-size:13px;color:var(--ink-soft);margin:-6px 0 16px">One-off badges for firsts and simple club moments — no tiers, just do the thing once.</p>
   <div class="panel">
-    <div class="milestone-badges" id="milestone-badges"></div>
+    <div id="milestone-badges"></div>
   </div>
 </section>
 
@@ -1525,7 +1522,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     </div>
   </div>
 
-  <div class="grid" style="grid-template-columns:1fr 1.2fr">
+  <div class="grid admin-split">
     <div class="panel">
       <h3>Post club news</h3>
       <div class="form-grid" style="grid-template-columns:1fr">
@@ -1550,7 +1547,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   <div class="sec-title" style="margin-top:26px"><h3>Membership types</h3></div>
   <div class="panel">
     <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Set a member's tier. Full members pay R270 a year; country members and scholars pay R100. The member's card, role line and renewal amount all follow this setting.</p>
-    <div class="form-grid" style="grid-template-columns:1.4fr 1fr auto;align-items:end">
+    <div class="form-grid mt-form">
       <div class="field"><label for="mt-member">Member *</label><select id="mt-member"><option value="">— Select a member —</option></select></div>
       <div class="field"><label for="mt-type">Membership type</label>
         <select id="mt-type">
@@ -1566,7 +1563,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </div>
 
   <div class="sec-title" style="margin-top:26px"><h3>Manage events</h3></div>
-  <div class="grid" style="grid-template-columns:1fr 1.2fr">
+  <div class="grid admin-split">
     <div class="panel">
       <h3>Post an event</h3>
       <div class="form-grid" style="grid-template-columns:1fr">
@@ -1613,7 +1610,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </div>
 
   <div class="sec-title" style="margin-top:26px"><h3>Auction lots</h3></div>
-  <div class="grid" style="grid-template-columns:1fr 1.2fr">
+  <div class="grid admin-split">
     <div class="panel">
       <h3>Log a lot</h3>
       <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Recording an auction on someone's behalf. For bulk imports from a spreadsheet, use Supabase's Table Editor → auction_lots → Import data instead.</p>
@@ -2342,7 +2339,35 @@ window.initPortal = function(){
       '<div class="row-actions">' + icsButton + action + '</div></div>';
   }
 
+  // Dashboard "Upcoming events" preview — the next three real events, same pill
+  // vocabulary as the Events view. Kept independent of renderEvents' own guards
+  // so it still renders on views where #events-rows isn't present.
+  function renderDashEvents(){
+    var dash = document.getElementById('dash-events');
+    if (!dash) return;
+    var now = new Date();
+    var upcoming = MEETINGS
+      .filter(function(m){ return m.date >= now; })
+      .sort(function(a, b){ return a.date - b.date; })
+      .slice(0, 3);
+    if (!upcoming.length){
+      dash.innerHTML = '<div class="reg-empty" style="padding:20px">' +
+        (IS_LIVE ? 'No events on the calendar yet — the committee will post the next one soon.' : 'No events yet.') +
+        '</div>';
+      return;
+    }
+    dash.innerHTML = upcoming.map(function(m, i){
+      var pill = i === 0
+        ? '<span class="badge warn">Soon</span>'
+        : '<span class="badge pend">Upcoming</span>';
+      return '<div class="row"><div class="event-date"><b>' + m.dateLabel[0] + '</b><span>' + m.dateLabel[1] + '</span></div>' +
+        '<div class="row-body"><b>' + escT(m.name) + '</b><span>' + escT(m.meta) + '</span></div>' +
+        '<div class="row-actions">' + pill + '</div></div>';
+    }).join('');
+  }
+
   function renderEvents(){
+    renderDashEvents();
     var el = document.getElementById('events-rows');
     var pastEl = document.getElementById('events-past-rows');
     if (!el) return;
@@ -3772,8 +3797,63 @@ window.initPortal = function(){
     card: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>',
     profile: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>',
     gavel2: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/></svg>',
-    seedling: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 15 8 22 9 17 14 18 21 12 17.5 6 21 7 14 2 9 9 8 12 2Z"/></svg>'
+    seedling: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 15 8 22 9 17 14 18 21 12 17.5 6 21 7 14 2 9 9 8 12 2Z"/></svg>',
+    droplet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.7 6.6 9.3a7.2 7.2 0 1 0 10.8 0Z"/></svg>',
+    notebook: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h14v18H5Z"/><path d="M9 3v18M12 8h4M12 12h4"/></svg>',
+    stock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 13s3.5-5 10-5 7 5 7 5-1.5 5-7 5-10-5-10-5Z"/><circle cx="15" cy="12" r=".6" fill="currentColor" stroke="none"/><path d="M19 3v4M17 5h4"/></svg>',
+    leaf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 0 1 4 13c0-6 8-10 16-10 0 8-4 17-9 17Z"/><path d="M4 21c2-6 6-9 10-11"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.4"/></svg>',
+    people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M16 5.6a3.2 3.2 0 0 1 0 5.6"/><path d="M18.2 13.9c2 .8 3.3 2.8 3.3 5.1"/></svg>',
+    crown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 19h16"/><path d="M3 7l4.5 3.5L12 4l4.5 6.5L21 7l-1.8 9H4.8Z"/></svg>',
+    rosette: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="9" r="6"/><path d="M9.6 9.2l1.8 1.8 3.2-3.4"/><path d="M8.6 14.4 7 22l5-2.6L17 22l-1.6-7.6"/></svg>',
+    cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2.5 4h2.2l2.3 10.6a2 2 0 0 0 2 1.6h7.4a2 2 0 0 0 2-1.6L20.5 8H6"/><circle cx="10" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg>',
+    note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M5.5 12h.01M18.5 12h.01"/></svg>',
+    sparkle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 2.5l1.6 4.9 4.9 1.6-4.9 1.6L9 15.5l-1.6-4.9L2.5 9l4.9-1.6Z"/><path d="M17.5 13l.9 2.8 2.8.9-2.8.9-.9 2.8-.9-2.8-2.8-.9 2.8-.9Z"/></svg>',
+    layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5Z"/><path d="M2 12l10 5 10-5"/><path d="M2 17l10 5 10-5"/></svg>',
+    nano: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M7 8h3M7 12h3M7 16h3"/></svg>',
+    whale: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2.5 10c0 6 4.2 9.5 9.5 9.5s9.5-3.5 9.5-9.5"/><path d="M2.5 10s3-2.2 6.2 0"/><path d="M17.5 4.5c1.4 1 2 2.6 2 4.2"/><circle cx="8" cy="12.6" r=".7" fill="currentColor" stroke="none"/></svg>',
+    waves: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 7.5c2.4-2 4.8-2 7.2 0s4.8 2 7.2 0 2.4-1.4 5.6-1.4"/><path d="M2 13c2.4-2 4.8-2 7.2 0s4.8 2 7.2 0"/><path d="M2 18.5c2.4-2 4.8-2 7.2 0s4.8 2 7.2 0"/></svg>',
+    shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="7" cy="17" r="4"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.4"/><path d="M12 2.5l4.6 8.2H7.4Z"/></svg>',
+    hourglass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2h12M6 22h12"/><path d="M8 2v3.6c0 1.6 1.2 2.6 2.6 3.6L12 11l1.4-1.8C14.8 8.2 16 7.2 16 5.6V2"/><path d="M8 22v-3.6c0-1.6 1.2-2.6 2.6-3.6L12 13l1.4 1.8c1.4 1 2.6 2 2.6 3.6V22"/></svg>',
+    moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.5 14.8A8.6 8.6 0 1 1 9.2 3.5a6.9 6.9 0 0 0 11.3 11.3Z"/></svg>',
+    sunrise: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.5v3M5.2 8.2 7.3 10.3M2.5 15h2.6M18.9 15h2.6M16.7 10.3l2.1-2.1"/><path d="M8 15a4 4 0 0 1 8 0"/><path d="M2 19.5h20"/></svg>'
   };
+
+  // Tanks are created with placeholder parameters ('—') and an automatic
+  // "Tank set up" log entry, and both are written to the database. Counting them
+  // naively would hand Water Watcher and Logbook Started over free with the very
+  // first tank, so both are filtered out here.
+  function realParamCount(t){
+    return (t.params || []).filter(function(p){
+      var v = String(p && p[0] != null ? p[0] : '').trim();
+      return v !== '' && v !== '—' && v !== '-' && v !== '–';
+    }).length;
+  }
+  function realLogCount(t){
+    return (t.log || []).filter(function(l){
+      return String(l && l[0] ? l[0] : '').trim().toLowerCase() !== 'tank set up';
+    }).length;
+  }
+  // "started" is free text (e.g. "Mar 2021"). Anything unparseable simply doesn't
+  // qualify rather than throwing.
+  function tankAgeYears(t){
+    if (!t.started) return -1;
+    var d = new Date(t.started);
+    if (isNaN(d.getTime())) return -1;
+    return (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
+  }
+
+  // Time-of-day badges have to be remembered: earned at 01:00, a live check would
+  // switch the badge back off by morning and make it look broken.
+  var funBadgeKey = 'ecaac-fun-badges-' + (window.currentMember ? window.currentMember.id : 'demo');
+  var funBadges = {};
+  try { funBadges = JSON.parse(localStorage.getItem(funBadgeKey) || '{}') || {}; } catch (e){ funBadges = {}; }
+  (function stampTimeOfDay(){
+    var h = new Date().getHours(), changed = false;
+    if (h < 4 && !funBadges.nightOwl){ funBadges.nightOwl = true; changed = true; }             // 00:00–03:59
+    if (h >= 4 && h < 6 && !funBadges.earlyBird){ funBadges.earlyBird = true; changed = true; } // 04:00–05:59
+    if (changed){ try { localStorage.setItem(funBadgeKey, JSON.stringify(funBadges)); } catch (e){} }
+  })();
 
   function getMilestoneBadges(){
     var hasBAP = ENTRIES.some(function(e){ return /^BAP/.test(e.title); });
@@ -3784,18 +3864,79 @@ window.initPortal = function(){
     var hasFullProfile = isLiveUser ? !!(cm.first_name && cm.bio) : true;
     var isCommittee = isLiveUser ? cm.role === 'admin' : true;
     var isFoundingYear = isLiveUser ? (cm.join_date && new Date(cm.join_date).getFullYear() <= 2018) : true;
+
+    var totalLogs = tanks.reduce(function(a, t){ return a + realLogCount(t); }, 0);
+    var totalLivestock = tanks.reduce(function(a, t){ return a + (t.livestock || []).length; }, 0);
+    var types = {};
+    tanks.forEach(function(t){ if (t.type) types[String(t.type).trim()] = true; });
+    var meetingsAttended = isLiveUser ? (window.myTotalMeetingsAttended || 0) : 71;
+    var roleIs = function(want){
+      return AUCTIONS.some(function(a){ return String(a.role || '').toLowerCase() === want; });
+    };
+
     return [
-      { label:'First Spawn', icon:'spawn', earned: hasBAP, hint:'Log a BAP entry for a spawn' },
-      { label:'First Bloom', icon:'bloom', earned: hasHAP, hint:'Log a HAP plant entry' },
-      { label:'Aquascape Debut', icon:'scape', earned: hasAAP, hint:'Submit an AAP entry' },
-      { label:'Tank Registered', icon:'tank', earned: tanks.length > 0, hint:'Add your first aquarium' },
-      { label:'Auction Regular', icon:'gavel', earned: AUCTIONS.length > 0, hint:'Buy or sell your first lot' },
-      { label:'Portal Pioneer', icon:'portal', earned: true, hint:'Log in to the members portal' },
-      { label:'Card Carrier', icon:'card', earned: cardDownloaded, hint:'Download your membership card' },
-      { label:'Full Profile', icon:'profile', earned: hasFullProfile, hint:'Complete your member profile' },
-      { label:'Committee Circle', icon:'gavel2', earned: isCommittee, hint:'Join the club committee' },
-      { label:'Founding-Year Member', icon:'seedling', earned: isFoundingYear, hint:'Have joined in 2018' }
+      // --- getting started ---
+      { group:'start', label:'Portal Pioneer', icon:'portal', earned: true, hint:'Log in to the members portal' },
+      { group:'start', label:'Tank Registered', icon:'tank', earned: tanks.length > 0, hint:'Add your first aquarium' },
+      { group:'start', label:'Water Watcher', icon:'droplet', earned: tanks.some(function(t){ return realParamCount(t) > 0; }), hint:'Log your first water parameters' },
+      { group:'start', label:'Logbook Started', icon:'notebook', earned: totalLogs > 0, hint:'Write your first maintenance entry' },
+      { group:'start', label:'Stocked Up', icon:'stock', earned: totalLivestock > 0, hint:'Add your first livestock' },
+      { group:'start', label:'Green Thumb', icon:'leaf', earned: tanks.some(function(t){ return (t.plants || []).length > 0; }), hint:'Add your first plant' },
+      { group:'start', label:'Snap Happy', icon:'camera', earned: tanks.some(function(t){ return (t.photos || []).length > 0; }), hint:'Upload your first tank photo' },
+      { group:'start', label:'Full Profile', icon:'profile', earned: hasFullProfile, hint:'Complete your member profile' },
+      { group:'start', label:'Card Carrier', icon:'card', earned: cardDownloaded, hint:'Download your membership card' },
+
+      // --- club life ---
+      { group:'club', label:'Meet the Club', icon:'people', earned: meetingsAttended > 0, hint:'Attend your first club meeting' },
+      { group:'club', label:'Going Once', icon:'cart', earned: roleIs('bought'), hint:'Buy your first lot at auction' },
+      { group:'club', label:'Sold!', icon:'note', earned: roleIs('sold'), hint:'Sell your first lot at auction' },
+
+      // --- award programs ---
+      { group:'club', label:'First Spawn', icon:'spawn', earned: hasBAP, hint:'Log a BAP entry for a spawn' },
+      { group:'club', label:'First Bloom', icon:'bloom', earned: hasHAP, hint:'Log a HAP plant entry' },
+      { group:'club', label:'Aquascape Debut', icon:'scape', earned: hasAAP, hint:'Submit an AAP entry' },
+      { group:'club', label:'Triple Crown', icon:'crown', earned: hasBAP && hasHAP && hasAAP, hint:'Enter BAP, HAP and AAP at least once' },
+      { group:'club', label:'On the Board', icon:'rosette', earned: ENTRIES.some(function(e){ return e.status === 'ok'; }), hint:'Get an award entry approved' },
+
+      // --- depth ---
+      { group:'collect', label:'Clean Sweep', icon:'sparkle', earned: totalLogs >= 5, hint:'Log five maintenance entries' },
+      { group:'collect', label:'Species Collector', icon:'layers', earned: totalLivestock >= 10, hint:'Log ten livestock entries' },
+
+      // --- tank personality ---
+      { group:'collect', label:'Nano Nut', icon:'nano', earned: tanks.some(function(t){ var v = Number(t.volume); return v > 0 && v < 30; }), hint:'Register a tank under 30 ℓ' },
+      { group:'collect', label:'Leviathan', icon:'whale', earned: tanks.some(function(t){ return Number(t.volume) > 300; }), hint:'Register a tank over 300 ℓ' },
+      { group:'collect', label:'Salt Life', icon:'waves', earned: tanks.some(function(t){ return String(t.type || '').toLowerCase() === 'marine'; }), hint:'Register a marine aquarium' },
+      { group:'collect', label:'Jack of All Tanks', icon:'shapes', earned: Object.keys(types).length >= 3, hint:'Keep three different tank types' },
+      { group:'collect', label:'Old Faithful', icon:'hourglass', earned: tanks.some(function(t){ return tankAgeYears(t) >= 3; }), hint:'Keep a tank running three years' },
+
+      // --- just for fun ---
+      { group:'fun', label:'Night Owl', icon:'moon', earned: !!funBadges.nightOwl, hint:'Use the portal after midnight' },
+      { group:'fun', label:'Early Bird', icon:'sunrise', earned: !!funBadges.earlyBird, hint:'Use the portal before 6am' },
+
+      // --- recognition ---
+      { group:'recognition', label:'Committee Circle', icon:'gavel2', earned: isCommittee, hint:'Join the club committee' },
+      { group:'recognition', label:'Founding-Year Member', icon:'seedling', earned: isFoundingYear, hint:'Have joined in 2018' }
     ];
+  }
+
+  // Grouping keeps a new member from facing one wall of ~20 grey circles: each
+  // section is a short, achievable-looking list with its own progress count.
+  // Recognition is status rather than achievement (you can't go back and join in
+  // 2018), so it sits apart and is left out of the headline count.
+  var MS_GROUPS = [
+    { id:'start',       title:'Getting started',   note:'The basics — set up your fishroom in the portal.' },
+    { id:'club',        title:'Club life & awards', note:'Show up, trade a lot, and enter the award programs.' },
+    { id:'collect',     title:'Building a collection', note:'For the depth and variety of what you keep.' },
+    { id:'fun',         title:'Just for fun',      note:'No reason at all.' },
+    { id:'recognition', title:'Recognition',       note:'Marks of standing in the club rather than things to chase.', excludeFromCount:true }
+  ];
+
+  function msBadgeHtml(m){
+    return '<div class="aw-badge' + (m.earned ? '' : ' locked') + '">' +
+      '<div class="ring" style="' + (m.earned ? 'background:linear-gradient(135deg,var(--leaf),var(--leaf-dark))' : '') + '">' + MILESTONE_ICONS[m.icon] + '</div>' +
+      '<span>' + escT(m.label) + '</span>' +
+      (m.earned ? '' : '<div class="hint">' + escT(m.hint) + '</div>') +
+    '</div>';
   }
 
   function renderMilestoneBadges(){
@@ -3803,13 +3944,23 @@ window.initPortal = function(){
     var el = document.getElementById('milestone-badges');
     var countEl = document.getElementById('milestones-count');
     if (!el) return;
-    var earnedCount = list.filter(function(m){ return m.earned; }).length;
-    if (countEl) countEl.textContent = earnedCount + ' of ' + list.length + ' earned';
-    el.innerHTML = list.map(function(m){
-      return '<div class="aw-badge' + (m.earned ? '' : ' locked') + '">' +
-        '<div class="ring" style="' + (m.earned ? 'background:linear-gradient(135deg,var(--leaf),var(--leaf-dark))' : '') + '">' + MILESTONE_ICONS[m.icon] + '</div>' +
-        '<span>' + escT(m.label) + '</span>' +
-        (m.earned ? '' : '<div class="hint">' + escT(m.hint) + '</div>') +
+
+    var countable = list.filter(function(m){
+      var g = MS_GROUPS.filter(function(x){ return x.id === m.group; })[0];
+      return !(g && g.excludeFromCount);
+    });
+    var earnedCount = countable.filter(function(m){ return m.earned; }).length;
+    if (countEl) countEl.textContent = earnedCount + ' of ' + countable.length + ' earned';
+
+    el.innerHTML = MS_GROUPS.map(function(g){
+      var items = list.filter(function(m){ return m.group === g.id; });
+      if (!items.length) return '';
+      var got = items.filter(function(m){ return m.earned; }).length;
+      return '<div class="ms-group">' +
+        '<div class="ms-group-head"><h5>' + escT(g.title) + '</h5>' +
+          '<span class="ms-count">' + got + ' / ' + items.length + '</span></div>' +
+        '<p class="ms-group-note">' + escT(g.note) + '</p>' +
+        '<div class="milestone-badges">' + items.map(msBadgeHtml).join('') + '</div>' +
       '</div>';
     }).join('');
   }
@@ -3866,6 +4017,9 @@ window.initPortal = function(){
   // loading can never cause a false "new" badge — and once shown, a badge is
   // marked seen immediately, so it can never notify twice, this session or any
   // future one.
+  // Bump whenever badges are added to or removed from the catalogue.
+  var BADGE_CATALOGUE_VERSION = 2;
+
   function checkBadgeChanges(){
     if (seenBadges === null) loadSeenBadges();
     var now = currentEarnedBadges();
@@ -3876,6 +4030,16 @@ window.initPortal = function(){
       // badge history the moment this feature reaches them.
       Object.keys(now).forEach(function(key){ seenBadges[key] = true; });
       seenBadges.__seeded = true;
+      seenBadges.__catalogue = BADGE_CATALOGUE_VERSION;
+      saveSeenBadges();
+      return;
+    }
+    // A release that adds new badge types would otherwise fire a popup for every
+    // one the member already qualifies for — a dozen at once on first load.
+    // Absorb the new catalogue silently, once; genuine future earns still notify.
+    if (seenBadges.__catalogue !== BADGE_CATALOGUE_VERSION){
+      Object.keys(now).forEach(function(key){ seenBadges[key] = true; });
+      seenBadges.__catalogue = BADGE_CATALOGUE_VERSION;
       saveSeenBadges();
       return;
     }
