@@ -3272,7 +3272,6 @@ window.initPortal = function(){
             ? '<span>' + escT(m.typePill) + '</span>'
             : m.cats.map(function(c){ return '<span>' + c + '</span>'; }).join(''));
       if (m.founding) tags += '<span class="founding">Founding member</span>';
-      tags += (m.interests || []).map(function(c){ return '<span>' + escT(c) + '</span>'; }).join('');
       var meta = m.breeder
         ? '<div class="dir-meta"><span><b>' + m.listings + '</b> register listings</span><span><b>' + m.current + '</b> breeding now</span></div>'
         : '<div class="dir-meta"><span>' + (m.email ? '<a href="mailto:' + m.email + '" style="color:var(--leaf-dark);font-weight:700">' + m.email + '</a>' : '<b>' + (m.metaLine || '') + '</b>') + '</span></div>';
@@ -6612,9 +6611,12 @@ window.initPortal = function(){
     populateBdayDays();
   })();
 
+  var profileSaving = false;
   var profileSaveBtn = document.getElementById('profile-save-btn');
   if (profileSaveBtn) profileSaveBtn.addEventListener('click', async function(){
+    if (profileSaving) return;
     if (!sb || !window.currentMember){ popToast('Profile changes saved'); return; }
+    profileSaving = true;
     var cm = window.currentMember;
     var updates = {
       first_name: document.getElementById('f-name').value.trim() || null,
@@ -6629,13 +6631,14 @@ window.initPortal = function(){
     profileSaveBtn.disabled = true; profileSaveBtn.textContent = 'Saving…';
     var res = await sb.from('members').update(updates).eq('id', cm.id);
     profileSaveBtn.disabled = false; profileSaveBtn.textContent = 'Save changes';
-    if (res.error){ popToast('Could not save — try again'); return; }
+    if (res.error){ popToast('Could not save — try again'); profileSaving = false; return; }
     Object.assign(cm, updates);
     member.name = liveName(cm);
     applyLiveMember();
     popToast('Profile saved');
     loadLiveMembers();
     if (window.checkBadgeChanges) window.checkBadgeChanges();
+    profileSaving = false;
   });
 
   // ===== Security: change password =====
