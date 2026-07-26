@@ -735,6 +735,54 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 }
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 .side-link:focus-visible,.btn:focus-visible,.icon-btn:focus-visible,.tank-card:focus-visible{outline:3px solid var(--leaf-light);outline-offset:2px}
+/* ===== tank modal: dimension + volume calculator ===== */
+.dim-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.dim-row .dim-cell label{display:block;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px}
+.dim-row input{width:100%;padding:11px 13px;border-radius:11px;border:1px solid var(--sand-line);background:var(--paper);font:inherit;font-size:13.5px;color:var(--ink)}
+.dim-row input:disabled{background:#F3EFE6;color:#9AA0B4;cursor:not-allowed}
+.vol-calc{margin-top:12px;padding:12px 14px;border-radius:13px;background:#F4F8EF;border:1px solid #D9E7C9;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.vol-calc .vc-figure{font-size:13px;font-weight:700;color:var(--leaf-dark);line-height:1.5}
+.vol-calc .vc-figure small{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft);letter-spacing:0;text-transform:none}
+.vol-calc .vc-apply{margin-left:auto;border:1.5px solid var(--leaf);background:var(--paper);color:var(--leaf-dark);font:inherit;font-size:12px;font-weight:700;padding:8px 14px;border-radius:10px;cursor:pointer;white-space:nowrap}
+.vol-calc .vc-apply:hover{background:var(--leaf);color:#fff}
+.vol-calc.is-empty{background:var(--sand);border-color:var(--sand-line)}
+.vol-calc.is-empty .vc-figure{color:var(--ink-soft);font-weight:600}
+.disp-row{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:12px;color:var(--ink-soft);font-weight:600}
+.disp-row input{width:66px;padding:7px 9px;border-radius:9px;border:1px solid var(--sand-line);font:inherit;font-size:12.5px}
+
+/* ===== My Aquariums toolbar (filter / sort / archive) ===== */
+.tank-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.tank-toolbar select{padding:9px 13px;border-radius:20px;border:1px solid var(--sand-line);background:var(--paper);font:inherit;font-size:12px;font-weight:700;color:var(--ink-soft);cursor:pointer}
+.tank-toolbar select:focus{outline:2px solid var(--leaf-light)}
+.tank-toolbar .tt-count{margin-left:auto;font-size:12px;font-weight:700;color:var(--ink-soft)}
+.tank-card.is-archived .tank-thumb{filter:grayscale(0.75) opacity(0.75)}
+.tank-card .arch-pill{position:absolute;top:12px;right:12px;z-index:1;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:rgba(86,90,114,0.88);padding:4px 9px;border-radius:999px}
+.arch-banner{display:none;align-items:center;gap:9px;padding:11px 15px;border-radius:13px;background:#F0EEF6;border:1px solid #DAD6E6;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:14px}
+.arch-banner.show{display:flex}
+
+/* ===== sign-in loader =====
+   Covers the gap between a successful signInWithPassword() and the portal
+   finishing initPortal(): without it the gate just sits there looking dead
+   while the profile row and first data batch come back. */
+#auth-loader{
+  position:fixed;inset:0;z-index:9999;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  background:radial-gradient(120% 130% at 20% 0%, #1B2E6B 0%, #0D1026 55%, #06070F 100%);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  opacity:0;transition:opacity .25s ease;
+}
+#auth-loader.is-on{display:flex;opacity:1}
+.auth-loader-ring{
+  width:52px;height:52px;border-radius:50%;
+  border:3px solid rgba(143,217,161,0.22);
+  border-top-color:#8FD9A1;
+  animation:auth-spin .8s linear infinite;
+}
+@keyframes auth-spin{to{transform:rotate(360deg)}}
+.auth-loader-text{font-size:13.5px;font-weight:600;color:#C7CCDF;letter-spacing:.01em}
+@media (prefers-reduced-motion: reduce){
+  .auth-loader-ring{animation:none;border-top-color:#8FD9A1;opacity:.8}
+}
 /* auth gate: back-to-website link */
 .gate-back{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:12.5px;font-weight:700;color:#248238;transition:color .15s,gap .15s}
 .gate-back svg{width:14px;height:14px;flex:none}
@@ -761,6 +809,11 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       Go back to the ECAAC website
     </a>
   </div>
+</div>
+
+<div id="auth-loader" role="status" aria-live="polite" aria-hidden="true">
+  <div class="auth-loader-ring"></div>
+  <p class="auth-loader-text">Signing you in…</p>
 </div>
 
 <div id="portal-root" style="display:none;">
@@ -1244,7 +1297,22 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     </button>
   </div>
 
+  <div class="tank-toolbar" id="tank-toolbar">
+    <select id="tank-filter-type" aria-label="Filter by tank type">
+      <option value="all">All types</option>
+    </select>
+    <select id="tank-sort" aria-label="Sort aquariums">
+      <option value="added">Order added</option>
+      <option value="name">Name (A–Z)</option>
+      <option value="volume">Largest first</option>
+      <option value="logs">Most logged</option>
+    </select>
+    <button class="chip-btn" id="tank-arch-toggle" aria-pressed="false">Show archived</button>
+    <span class="tt-count" id="tank-count-label"></span>
+  </div>
+
   <div class="tank-grid" id="tank-grid"></div>
+  <div class="reg-empty" id="tank-nomatch" style="display:none">No aquariums match this filter.</div>
   <div class="future" id="tank-empty" style="display:none;margin-top:8px">
     <h4 id="tank-empty-h4">No aquariums yet</h4>
     <p id="tank-empty-p">Add your first tank to start logging maintenance, parameters and award entries.</p>
@@ -1270,11 +1338,23 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
         Edit tank
       </button>
+      <button class="btn btn-outline btn-sm" id="td-dup-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Duplicate
+      </button>
+      <button class="btn btn-outline btn-sm" id="td-arch-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="5" rx="1.5"/><path d="M4 9v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9M10 13h4"/></svg>
+        Archive
+      </button>
       <button class="btn btn-sm" id="td-delete-btn" style="background:#FCEBDD;color:var(--coral-dark);border:1.5px solid var(--coral)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
         Delete
       </button>
     </div>
+  </div>
+  <div class="arch-banner" id="td-arch-banner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex:none"><rect x="2" y="4" width="20" height="5" rx="1.5"/><path d="M4 9v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9M10 13h4"/></svg>
+    This aquarium is archived — it stays in your records with all its photos, logs and awards, but it's hidden from your main grid.
   </div>
   <div class="detail-hero">
     <span class="kicker" style="background:rgba(143,217,161,0.12);color:var(--leaf-light)">Aquarium page</span>
@@ -2114,11 +2194,62 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
           </select>
         </div>
         <div class="field"><label for="tf-volume">Volume (litres)</label><input id="tf-volume" type="number" min="1" placeholder="e.g. 120"></div>
-        <div class="field"><label for="tf-dims">Dimensions (cm)</label><input id="tf-dims" placeholder="e.g. 90 × 45 × 45"></div>
+        <div class="field"><label for="tf-shape">Tank shape</label>
+          <select id="tf-shape">
+            <option value="rect">Rectangular</option>
+            <option value="cube">Cube</option>
+            <option value="bowfront">Bowfront</option>
+            <option value="cylinder">Cylinder</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label id="tf-dims-label">Dimensions (cm)</label>
+          <div class="dim-row">
+            <div class="dim-cell"><label for="tf-len" id="tf-len-label">Length</label><input id="tf-len" type="number" min="1" step="0.1" placeholder="90"></div>
+            <div class="dim-cell"><label for="tf-wid" id="tf-wid-label">Width</label><input id="tf-wid" type="number" min="1" step="0.1" placeholder="45"></div>
+            <div class="dim-cell"><label for="tf-hei" id="tf-hei-label">Height</label><input id="tf-hei" type="number" min="1" step="0.1" placeholder="45"></div>
+          </div>
+          <div class="vol-calc is-empty" id="tf-volcalc">
+            <div class="vc-figure" id="tf-volcalc-text">Enter dimensions to work out the volume.</div>
+            <button type="button" class="vc-apply" id="tf-volcalc-apply" style="display:none">Use this volume</button>
+          </div>
+          <div class="disp-row">
+            <label for="tf-disp" style="margin:0">Substrate &amp; hardscape displacement</label>
+            <input id="tf-disp" type="number" min="0" max="60" step="1" value="12" aria-label="Displacement percentage">
+            <span>%</span>
+          </div>
+        </div>
         <div class="field"><label for="tf-started">Date started</label><input id="tf-started" placeholder="e.g. Jul 2026"></div>
         <div class="field"><label for="tf-filter">Filter</label><input id="tf-filter" placeholder="e.g. Canister, sponge…"></div>
         <div class="field"><label for="tf-light">Lighting</label><input id="tf-light" placeholder="e.g. RGB LED, 8h"></div>
-        <div class="field full"><label for="tf-notes">Notes</label><textarea id="tf-notes" rows="2" placeholder="Substrate, CO₂, goals for this tank…"></textarea></div>
+        <div class="field"><label for="tf-substrate">Substrate</label>
+          <input id="tf-substrate" list="tf-substrate-list" placeholder="e.g. Aquasoil, inert gravel">
+          <datalist id="tf-substrate-list">
+            <option value="Aquasoil"></option><option value="Inert gravel"></option><option value="Sand"></option>
+            <option value="Fine sand"></option><option value="Dirted + capped"></option><option value="Bare bottom"></option>
+            <option value="Crushed coral"></option><option value="Leaf litter"></option>
+          </datalist>
+        </div>
+        <div class="field"><label for="tf-co2">CO₂</label>
+          <select id="tf-co2">
+            <option value="">None</option>
+            <option value="Liquid carbon">Liquid carbon</option>
+            <option value="Pressurised CO₂">Pressurised CO₂</option>
+            <option value="DIY CO₂">DIY (yeast) CO₂</option>
+          </select>
+        </div>
+        <div class="field"><label for="tf-water">Water source</label>
+          <select id="tf-water">
+            <option value="">Not set</option>
+            <option value="Tap water">Tap water</option>
+            <option value="RO">RO</option>
+            <option value="RO remineralised">RO remineralised</option>
+            <option value="Rainwater">Rainwater</option>
+            <option value="Borehole">Borehole</option>
+            <option value="Mixed">Mixed</option>
+          </select>
+        </div>
+        <div class="field full"><label for="tf-notes">Notes</label><textarea id="tf-notes" rows="2" placeholder="Dosing routine, goals for this tank…"></textarea></div>
       </div>
       <p id="tf-error" style="display:none;font-size:12.5px;font-weight:700;color:var(--coral-dark);margin:12px 0 0">Give the tank a name before saving.</p>
       <div style="margin-top:18px;display:flex;gap:10px">
@@ -2200,6 +2331,20 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   var gate = document.getElementById('auth-gate');
   var root = document.getElementById('portal-root');
   var statusEl = document.getElementById('auth-status');
+  var loader = document.getElementById('auth-loader');
+
+  function showLoader(msg){
+    if (!loader) return;
+    if (msg){ var t = loader.querySelector('.auth-loader-text'); if (t) t.textContent = msg; }
+    loader.classList.add('is-on');
+    loader.setAttribute('aria-hidden', 'false');
+  }
+  function hideLoader(){
+    if (!loader) return;
+    loader.classList.remove('is-on');
+    loader.setAttribute('aria-hidden', 'true');
+  }
+  window.__authLoader = { show: showLoader, hide: hideLoader };
 
   async function checkSession() {
     var res = await supabase.auth.getSession();
@@ -2224,8 +2369,16 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       if (window.currentMember && !window.currentMember.email) window.currentMember.email = session.user.email;
       gate.style.display = 'none';
       root.style.display = 'block';
-      if (window.initPortal) window.initPortal();
+      // Keep the loader up across initPortal() — it's the slowest part of the
+      // sign-in, and dropping it earlier just shows a half-empty portal.
+      showLoader('Loading your portal…');
+      try {
+        if (window.initPortal) window.initPortal();
+      } finally {
+        hideLoader();
+      }
     } else {
+      hideLoader();
       // Signed out elsewhere while the portal was live — same reasoning as above.
       // Safe from reload loops: a fresh page has __portalInited false.
       if (window.__portalInited) { window.location.reload(); return; }
@@ -2242,9 +2395,18 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     var btn = document.getElementById('auth-signin-btn');
     btn.disabled = true; btn.textContent = 'Signing in…';
     statusEl.textContent = '';
-    var res = await supabase.auth.signInWithPassword({ email: email, password: password });
+    showLoader('Signing you in…');
+    var res;
+    try {
+      res = await supabase.auth.signInWithPassword({ email: email, password: password });
+    } catch (err) {
+      res = { error: err };
+    }
     btn.disabled = false; btn.textContent = 'Sign in';
     if (res.error) {
+      // Only tear the loader down on failure — on success it stays up and
+      // checkSession() removes it once the portal has actually rendered.
+      hideLoader();
       statusEl.textContent = 'Incorrect email or password — check with the committee if you\'re unsure.';
     }
     // on success, onAuthStateChange fires and checkSession() shows the portal
@@ -3941,6 +4103,11 @@ window.initPortal = function(){
       tanks.push({
         id: row.id, name: row.name, type: row.type, subtitle: row.subtitle || '',
         volume: row.volume || 0, dims: row.dims || '—', started: row.started || '', notes: row.notes || '',
+        shape: row.shape || 'rect',
+        length_cm: row.length_cm || 0, width_cm: row.width_cm || 0, height_cm: row.height_cm || 0,
+        displacement: (typeof row.displacement === 'number') ? row.displacement : 12,
+        substrate: row.substrate || '', co2: row.co2 || '', water_source: row.water_source || '',
+        archived: !!row.archived,
         tags: (row.tank_tags || []).map(function(t){ return t.label; }),
         params: params, livestock: livestock, plants: plants, log: log, awards: [], photos: photos,
         cover_photo_id: row.cover_photo_id || null
@@ -3981,9 +4148,98 @@ window.initPortal = function(){
     return p ? p.url : null;
   }
 
+  // ===== volume maths =====
+  // Everything downstream (dosing, water changes, medication) leans on volume,
+  // and the number printed on the box is almost never the number in the tank.
+  // Gross is the glass; net subtracts substrate and hardscape displacement.
+  var SHAPE_LABEL = { rect:'Rectangular', cube:'Cube', bowfront:'Bowfront', cylinder:'Cylinder' };
+  function grossLitres(shape, l, w, h){
+    if (shape === 'cylinder'){
+      if (!l || !h) return 0;
+      var r = l / 2;                     // length field doubles as diameter
+      return (Math.PI * r * r * h) / 1000;
+    }
+    if (shape === 'cube'){
+      if (!l) return 0;
+      return (l * l * l) / 1000;
+    }
+    if (!l || !w || !h) return 0;
+    var v = (l * w * h) / 1000;
+    // A bowfront isn't a box: the curve adds glass but the standard rule of
+    // thumb is to take the max dimensions and knock off ~15%.
+    return shape === 'bowfront' ? v * 0.85 : v;
+  }
+  function dimsString(shape, l, w, h){
+    if (shape === 'cylinder') return l && h ? ('Ø' + l + ' × ' + h) : '';
+    if (shape === 'cube') return l ? (l + ' × ' + l + ' × ' + l) : '';
+    return (l && w && h) ? (l + ' × ' + w + ' × ' + h) : '';
+  }
+  // Older tanks were saved with only a free-text dims string. Pull numbers back
+  // out of it so the calculator isn't blank the first time someone edits them.
+  function parseDims(str){
+    var nums = String(str || '').match(/[\d.]+/g);
+    if (!nums) return null;
+    nums = nums.map(parseFloat).filter(function(n){ return n > 0; });
+    if (nums.length < 2) return null;
+    if (nums.length === 2) return { l: nums[0], w: 0, h: nums[1] };
+    return { l: nums[0], w: nums[1], h: nums[2] };
+  }
+  function netLitres(t){
+    // Only meaningful when the volume came from the glass dimensions. If someone
+    // typed a figure by hand it may already be the water volume, and quietly
+    // shaving 12% off it would be worse than saying nothing.
+    if (!t.length_cm || !t.volume) return 0;
+    var d = (typeof t.displacement === 'number') ? t.displacement : 12;
+    return Math.round(t.volume * (1 - d / 100));
+  }
+
+  // ===== My Aquariums toolbar state =====
+  var tankView = { type: 'all', sort: 'added', showArchived: false };
+
+  function visibleTanks(){
+    // Keep the original array index alongside each tank: every click handler,
+    // openTank() and currentTank all address tanks[] directly, so filtering must
+    // not renumber anything.
+    var out = tanks.map(function(t, i){ return { t: t, i: i }; }).filter(function(e){
+      if (!tankView.showArchived && e.t.archived) return false;
+      if (tankView.type !== 'all' && e.t.type !== tankView.type) return false;
+      return true;
+    });
+    if (tankView.sort === 'name') out.sort(function(a,b){ return a.t.name.localeCompare(b.t.name); });
+    else if (tankView.sort === 'volume') out.sort(function(a,b){ return (b.t.volume||0) - (a.t.volume||0); });
+    else if (tankView.sort === 'logs') out.sort(function(a,b){ return b.t.log.length - a.t.log.length; });
+    return out;
+  }
+
+  function syncTankToolbar(){
+    var sel = document.getElementById('tank-filter-type');
+    if (!sel) return;
+    // Only offer types the member actually keeps — an empty filter option is
+    // just a dead end.
+    var types = [];
+    tanks.forEach(function(t){ if (types.indexOf(t.type) === -1) types.push(t.type); });
+    types.sort();
+    var cur = tankView.type;
+    sel.innerHTML = '<option value="all">All types</option>' +
+      types.map(function(x){ return '<option value="' + escT(x) + '">' + escT(x) + '</option>'; }).join('');
+    sel.value = (cur === 'all' || types.indexOf(cur) >= 0) ? cur : 'all';
+    tankView.type = sel.value;
+
+    var archCount = tanks.filter(function(t){ return t.archived; }).length;
+    var arch = document.getElementById('tank-arch-toggle');
+    arch.style.display = archCount ? 'inline-flex' : 'none';
+    arch.textContent = tankView.showArchived ? 'Hide archived' : 'Show archived (' + archCount + ')';
+    arch.classList.toggle('active', tankView.showArchived);
+    arch.setAttribute('aria-pressed', tankView.showArchived ? 'true' : 'false');
+    document.getElementById('tank-toolbar').style.display = tanks.length > 1 ? 'flex' : 'none';
+  }
+
   function renderTanks(){
     var grid = document.getElementById('tank-grid');
-    grid.innerHTML = tanks.map(function(t, i){
+    syncTankToolbar();
+    var vis = visibleTanks();
+    grid.innerHTML = vis.map(function(entry){
+      var t = entry.t, i = entry.i;
       var st = TYPE_STYLE[t.type] || TYPE_STYLE['Freshwater'];
       var live = t.livestock.reduce(function(a, l){ var n = parseInt(l[2],10); return a + (isNaN(n) ? (l[2] ? 1 : 0) : n); }, 0);
       var liveLabel = /shrimp|caridina/i.test(t.livestock.map(function(l){return l[0];}).join(' ')) && t.type==='Freshwater' ? 'Shrimp' : (t.type==='Terrarium' ? 'Fauna' : 'Fish');
@@ -3991,9 +4247,10 @@ window.initPortal = function(){
       var thumbInner = cover
         ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
         : ICONS[st[2]];
-      return '<button class="tank-card" data-tank="' + i + '">' +
+      return '<button class="tank-card' + (t.archived ? ' is-archived' : '') + '" data-tank="' + i + '">' +
         '<div class="tank-thumb" style="background:linear-gradient(135deg,' + st[0] + ',' + st[1] + ')">' +
-          '<span class="cat-pill" style="z-index:1">' + escT(t.type) + (t.subtitle ? ' · ' + escT(t.subtitle) : '') + '</span>' + thumbInner +
+          '<span class="cat-pill" style="z-index:1">' + escT(t.type) + (t.subtitle ? ' · ' + escT(t.subtitle) : '') + '</span>' +
+          (t.archived ? '<span class="arch-pill">Archived</span>' : '') + thumbInner +
         '</div><div class="tank-body"><h4>' + escT(t.name) + '</h4>' +
         '<div class="meta">' + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm · started ' + escT(t.started) + '</div>' +
         '<div class="tank-stats"><div><b>' + (live || '—') + '</b><span>' + liveLabel + '</span></div>' +
@@ -4004,7 +4261,17 @@ window.initPortal = function(){
       card.addEventListener('click', function(){ openTank(parseInt(card.getAttribute('data-tank'),10)); });
     });
     document.getElementById('tank-empty').style.display = tanks.length ? 'none' : 'block';
-    grid.style.display = tanks.length ? 'grid' : 'none';
+    grid.style.display = vis.length ? 'grid' : 'none';
+    // Zero tanks and zero *matching* tanks are different problems and deserve
+    // different messages.
+    document.getElementById('tank-nomatch').style.display = (tanks.length && !vis.length) ? 'block' : 'none';
+    var countLabel = document.getElementById('tank-count-label');
+    if (countLabel){
+      var litres = vis.reduce(function(a, e){ return a + (e.t.volume || 0); }, 0);
+      countLabel.textContent = vis.length
+        ? vis.length + ' tank' + (vis.length === 1 ? '' : 's') + (litres ? ' · ' + litres.toLocaleString('en-ZA') + ' ℓ total' : '')
+        : '';
+    }
     if (!tanks.length){
       document.getElementById('tank-empty-h4').textContent = tanksLoading ? 'Loading your aquariums…' : 'No aquariums yet';
       document.getElementById('tank-empty-p').textContent = tanksLoading ? 'Fetching your tanks from your account.' : 'Add your first tank to start logging maintenance, parameters and award entries.';
@@ -4019,11 +4286,14 @@ window.initPortal = function(){
     // capped to 3 so the hub stays a hub rather than a second Tanks page.
     var dashGrid = document.getElementById('dash-tanks-preview');
     if (dashGrid){
-      if (!tanks.length){
+      var dashActive = tanks.filter(function(t){ return !t.archived; });
+      if (!dashActive.length){
         dashGrid.innerHTML = '<div class="reg-empty" style="padding:20px;grid-column:1/-1">' +
-          (tanksLoading ? 'Loading your aquariums…' : 'No aquariums yet — add your first tank to see it here.') + '</div>';
+          (tanksLoading ? 'Loading your aquariums…'
+            : (tanks.length ? 'All your aquariums are archived — open My Aquariums to bring one back.'
+                            : 'No aquariums yet — add your first tank to see it here.')) + '</div>';
       } else {
-        dashGrid.innerHTML = tanks.slice(0, 3).map(function(t){
+        dashGrid.innerHTML = tanks.filter(function(t){ return !t.archived; }).slice(0, 3).map(function(t){
           var st = TYPE_STYLE[t.type] || TYPE_STYLE['Freshwater'];
           var cover = coverUrl(t);
           var thumbInner = cover
@@ -4078,7 +4348,12 @@ window.initPortal = function(){
   function renderDetail(){
     var t = tanks[currentTank];
     document.getElementById('td-name').textContent = t.name;
-    document.getElementById('td-meta').textContent = (t.volume ? t.volume + ' ℓ · ' : '') + t.dims + ' cm · ' + t.type + (t.subtitle ? ' — ' + t.subtitle : '') + ' · started ' + t.started;
+    // Show the water volume alongside the tank volume — it's the figure that
+    // matters for dosing, and it's never the one on the box.
+    var net = netLitres(t);
+    var volBit = t.volume ? (t.volume + ' ℓ' + (net && net !== t.volume ? ' (≈' + net + ' ℓ water)' : '') + ' · ') : '';
+    document.getElementById('td-meta').textContent = volBit + t.dims + ' cm · ' + t.type + (t.subtitle ? ' — ' + t.subtitle : '') + ' · started ' + t.started;
+    setArchBtn(t);
     document.getElementById('td-notes').textContent = t.notes || '';
     document.getElementById('td-tags').innerHTML = t.tags.map(function(x){ return '<span class="tag">' + escT(x) + '</span>'; }).join('');
     document.getElementById('td-params').innerHTML = t.params.map(function(p, i){
@@ -4398,6 +4673,59 @@ window.initPortal = function(){
   // ===== tank add/edit modal =====
   var tankModal = document.getElementById('tank-modal');
   var editingIdx = -1;
+  // --- live volume calculator inside the modal ---
+  var dimEls = ['tf-shape','tf-len','tf-wid','tf-hei','tf-disp'].map(function(id){ return document.getElementById(id); });
+  var calcBox = document.getElementById('tf-volcalc');
+  var calcText = document.getElementById('tf-volcalc-text');
+  var calcApply = document.getElementById('tf-volcalc-apply');
+
+  function shapeLabels(){
+    var shape = document.getElementById('tf-shape').value;
+    var wid = document.getElementById('tf-wid'), hei = document.getElementById('tf-hei');
+    var lenL = document.getElementById('tf-len-label'), widL = document.getElementById('tf-wid-label'), heiL = document.getElementById('tf-hei-label');
+    // The three boxes get reused rather than swapped out, so relabel and grey
+    // out whatever the current shape doesn't need.
+    if (shape === 'cylinder'){
+      lenL.textContent = 'Diameter'; widL.textContent = 'Unused'; heiL.textContent = 'Height';
+      wid.disabled = true; hei.disabled = false;
+    } else if (shape === 'cube'){
+      lenL.textContent = 'Side'; widL.textContent = 'Unused'; heiL.textContent = 'Unused';
+      wid.disabled = true; hei.disabled = true;
+    } else {
+      lenL.textContent = 'Length'; widL.textContent = shape === 'bowfront' ? 'Max depth' : 'Width'; heiL.textContent = 'Height';
+      wid.disabled = false; hei.disabled = false;
+    }
+  }
+  function updateCalc(){
+    shapeLabels();
+    var shape = document.getElementById('tf-shape').value;
+    var l = parseFloat(document.getElementById('tf-len').value) || 0;
+    var w = parseFloat(document.getElementById('tf-wid').value) || 0;
+    var h = parseFloat(document.getElementById('tf-hei').value) || 0;
+    var disp = Math.min(60, Math.max(0, parseFloat(document.getElementById('tf-disp').value) || 0));
+    var gross = grossLitres(shape, l, w, h);
+    if (!gross){
+      calcBox.classList.add('is-empty');
+      calcText.textContent = 'Enter dimensions to work out the volume.';
+      calcApply.style.display = 'none';
+      calcApply.dataset.vol = '';
+      return;
+    }
+    var g = Math.round(gross);
+    var net = Math.round(gross * (1 - disp / 100));
+    calcBox.classList.remove('is-empty');
+    calcText.innerHTML = g + ' ℓ full to the rim' +
+      '<small>About ' + net + ' ℓ of actual water once you allow ' + disp + '% for substrate and hardscape' +
+      (shape === 'bowfront' ? ' — bowfront figures are an estimate' : '') + '.</small>';
+    calcApply.style.display = 'inline-block';
+    calcApply.dataset.vol = String(g);
+  }
+  dimEls.forEach(function(el){ if (el) el.addEventListener('input', updateCalc); });
+  document.getElementById('tf-shape').addEventListener('change', updateCalc);
+  calcApply.addEventListener('click', function(){
+    if (calcApply.dataset.vol) document.getElementById('tf-volume').value = calcApply.dataset.vol;
+  });
+
   function openTankModal(idx){
     editingIdx = (typeof idx === 'number') ? idx : -1;
     var t = editingIdx >= 0 ? tanks[editingIdx] : null;
@@ -4405,16 +4733,36 @@ window.initPortal = function(){
     document.getElementById('tf-name').value = t ? t.name : '';
     document.getElementById('tf-type').value = t ? t.type : 'Freshwater';
     document.getElementById('tf-volume').value = t && t.volume ? t.volume : '';
-    document.getElementById('tf-dims').value = t ? t.dims : '';
+    document.getElementById('tf-shape').value = (t && t.shape) || 'rect';
+    // Fall back to digging the numbers out of the old free-text dims string.
+    var d = t ? (t.length_cm ? { l: t.length_cm, w: t.width_cm || 0, h: t.height_cm || 0 } : parseDims(t.dims)) : null;
+    document.getElementById('tf-len').value = d && d.l ? d.l : '';
+    document.getElementById('tf-wid').value = d && d.w ? d.w : '';
+    document.getElementById('tf-hei').value = d && d.h ? d.h : '';
+    document.getElementById('tf-disp').value = (t && typeof t.displacement === 'number') ? t.displacement : 12;
     document.getElementById('tf-started').value = t ? t.started : '';
     document.getElementById('tf-filter').value = t ? (t.filter || '') : '';
     document.getElementById('tf-light').value = t ? (t.light || '') : '';
+    document.getElementById('tf-substrate').value = t ? (t.substrate || '') : '';
+    document.getElementById('tf-co2').value = t ? (t.co2 || '') : '';
+    document.getElementById('tf-water').value = t ? (t.water_source || '') : '';
     document.getElementById('tf-notes').value = t ? (t.notes || '') : '';
     document.getElementById('tf-error').style.display = 'none';
+    updateCalc();
     tankModal.classList.add('show');
     document.getElementById('tf-name').focus();
   }
   function closeTankModal(){ tankModal.classList.remove('show'); }
+  document.getElementById('tank-filter-type').addEventListener('change', function(){
+    tankView.type = this.value; renderTanks();
+  });
+  document.getElementById('tank-sort').addEventListener('change', function(){
+    tankView.sort = this.value; renderTanks();
+  });
+  document.getElementById('tank-arch-toggle').addEventListener('click', function(){
+    tankView.showArchived = !tankView.showArchived; renderTanks();
+  });
+
   document.getElementById('tank-add-btn').addEventListener('click', function(){ openTankModal(); });
   document.getElementById('fab-add-tank').addEventListener('click', function(){ show('tanks'); openTankModal(); });
   document.getElementById('td-edit-btn').addEventListener('click', function(){ openTankModal(currentTank); });
@@ -4428,21 +4776,45 @@ window.initPortal = function(){
     var name = document.getElementById('tf-name').value.trim();
     if (!name){ document.getElementById('tf-error').style.display = 'block'; return; }
     tfSaving = true;
+    var shape = document.getElementById('tf-shape').value;
+    var L = parseFloat(document.getElementById('tf-len').value) || 0;
+    var W = parseFloat(document.getElementById('tf-wid').value) || 0;
+    var H = parseFloat(document.getElementById('tf-hei').value) || 0;
+    if (shape === 'cube'){ W = L; H = L; }
+    var typedVol = parseInt(document.getElementById('tf-volume').value, 10) || 0;
     var data = {
       name: name,
       type: document.getElementById('tf-type').value,
-      volume: parseInt(document.getElementById('tf-volume').value, 10) || 0,
-      dims: document.getElementById('tf-dims').value.trim() || '—',
+      // Nobody wants to fill in litres twice: if they gave dimensions and left
+      // the volume blank, take the calculated figure.
+      volume: typedVol || Math.round(grossLitres(shape, L, W, H)) || 0,
+      shape: shape,
+      length_cm: L || null, width_cm: W || null, height_cm: H || null,
+      displacement: Math.min(60, Math.max(0, parseInt(document.getElementById('tf-disp').value, 10) || 0)),
+      dims: dimsString(shape, L, W, H) || '—',
       started: document.getElementById('tf-started').value.trim() || todayShort() + ' 2026',
       filter: document.getElementById('tf-filter').value.trim(),
       light: document.getElementById('tf-light').value.trim(),
+      substrate: document.getElementById('tf-substrate').value.trim(),
+      co2: document.getElementById('tf-co2').value,
+      water_source: document.getElementById('tf-water').value,
       notes: document.getElementById('tf-notes').value.trim()
     };
     var saveBtn = document.getElementById('tf-save');
     saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
 
-    var newTags = [data.type].concat(data.filter ? [data.filter] : []).concat(data.light ? [data.light] : []);
-    var dbFields = { name: data.name, type: data.type, volume: data.volume, dims: data.dims, started: data.started, notes: data.notes };
+    var newTags = [data.type]
+      .concat(data.filter ? [data.filter] : [])
+      .concat(data.light ? [data.light] : [])
+      .concat(data.substrate ? [data.substrate] : [])
+      .concat(data.co2 ? [data.co2] : [])
+      .concat(data.water_source ? [data.water_source] : []);
+    var dbFields = {
+      name: data.name, type: data.type, volume: data.volume, dims: data.dims,
+      started: data.started, notes: data.notes,
+      shape: data.shape, length_cm: data.length_cm, width_cm: data.width_cm, height_cm: data.height_cm,
+      displacement: data.displacement, substrate: data.substrate, co2: data.co2, water_source: data.water_source
+    };
 
     if (editingIdx >= 0){
       var t = tanks[editingIdx];
@@ -4459,7 +4831,7 @@ window.initPortal = function(){
       popToast(t.name + ' updated');
       if (currentTank === editingIdx) renderDetail();
     } else {
-      var nt = Object.assign({ subtitle:'', tags:newTags,
+      var nt = Object.assign({ subtitle:'', tags:newTags, archived:false,
         params:[['—','pH'],['—','Temp'],['—','TDS']],
         livestock:[], plants:[], awards:[], photos:[], cover_photo_id:null,
         log:[['Tank set up', 'Welcome to the fishroom', todayShort()]] }, data);
@@ -4493,6 +4865,80 @@ window.initPortal = function(){
     if (window.checkBadgeChanges) window.checkBadgeChanges();
     tfSaving = false;
   });
+
+  // ===== archive / restore =====
+  // Deliberately separate from delete: a tank that's been broken down still
+  // holds photos, log history and award entries worth keeping.
+  var archBtn = document.getElementById('td-arch-btn');
+  archBtn.addEventListener('click', async function(){
+    var t = tanks[currentTank];
+    var next = !t.archived;
+    archBtn.disabled = true;
+    if (sb && t.id){
+      var res = await dbUpdateRow('tanks', t.id, { archived: next });
+      if (res.error){ archBtn.disabled = false; popToast('Could not update — try again'); return; }
+    }
+    t.archived = next;
+    archBtn.disabled = false;
+    // Restoring should land them back on a grid where the tank is visible.
+    if (!next) tankView.showArchived = false;
+    popToast(t.name + (next ? ' archived' : ' restored'));
+    renderDetail();
+    renderTanks();
+  });
+  function setArchBtn(t){
+    var on = !!(t && t.archived);
+    archBtn.innerHTML = on
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg> Restore'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><rect x="2" y="4" width="20" height="5" rx="1.5"/><path d="M4 9v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9M10 13h4"/></svg> Archive';
+    document.getElementById('td-arch-banner').classList.toggle('show', on);
+  }
+
+  // ===== duplicate =====
+  // Copies the setup, not the life in it: livestock, plants, photos and log
+  // history stay with the original.
+  var dupBtn = document.getElementById('td-dup-btn');
+  dupBtn.addEventListener('click', async function(){
+    var t = tanks[currentTank];
+    dupBtn.disabled = true; dupBtn.textContent = 'Duplicating…';
+    var copyName = t.name + ' (copy)';
+    var dbFields = {
+      name: copyName, type: t.type, volume: t.volume, dims: t.dims,
+      started: todayShort() + ' ' + new Date().getFullYear(), notes: t.notes,
+      shape: t.shape || 'rect', length_cm: t.length_cm || null, width_cm: t.width_cm || null,
+      height_cm: t.height_cm || null, displacement: (typeof t.displacement === 'number') ? t.displacement : 12,
+      substrate: t.substrate || '', co2: t.co2 || '', water_source: t.water_source || '', archived: false
+    };
+    var nt = Object.assign({}, dbFields, {
+      subtitle: '', tags: (t.tags || []).slice(), archived: false,
+      params: (t.params || []).map(function(p){ return [p[0], p[1]]; }),
+      livestock: [], plants: [], awards: [], photos: [], cover_photo_id: null,
+      log: [['Tank set up', 'Duplicated from ' + t.name, todayShort()]]
+    });
+    if (sb && window.currentMember){
+      var res = await dbInsertRow('tanks', Object.assign({ owner_id: window.currentMember.id }, dbFields));
+      if (res.error){ dupBtn.disabled = false; setDupBtn(); popToast('Could not duplicate — try again'); return; }
+      nt.id = res.data.id;
+      for (var i = 0; i < nt.tags.length; i++){ await sb.from('tank_tags').insert({ tank_id: nt.id, label: nt.tags[i] }); }
+      var freshParams = [];
+      for (var p = 0; p < nt.params.length; p++){
+        var pr = await dbInsertRow('tank_params', { tank_id: nt.id, label: nt.params[p][1], value: nt.params[p][0], sort_order: p });
+        if (!pr.error && pr.data){ var pa = [pr.data.value, pr.data.label]; pa._id = pr.data.id; freshParams.push(pa); }
+      }
+      nt.params = freshParams;
+      var lr = await dbInsertRow('tank_log', { tank_id: nt.id, entry: 'Tank set up', note: 'Duplicated from ' + t.name });
+      if (!lr.error && lr.data){ var la = [lr.data.entry, lr.data.note || '', fmtLogDate(lr.data.logged_at)]; la._id = lr.data.id; nt.log = [la]; }
+    }
+    dupBtn.disabled = false; setDupBtn();
+    tanks.push(nt);
+    popToast(copyName + ' created');
+    renderTanks();
+    openTank(tanks.length - 1);
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
+  });
+  function setDupBtn(){
+    dupBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Duplicate';
+  }
 
   // delete tank (two-step confirm in the button itself)
   var deleteArmed = false, deleteTimer;
