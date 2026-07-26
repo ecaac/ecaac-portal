@@ -1679,7 +1679,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   <div class="grid admin-split">
     <div class="panel">
       <h3>Log a lot</h3>
-      <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Recording an auction on someone's behalf. For bulk imports from a spreadsheet, use Supabase's Table Editor → auction_lots → Import data instead.</p>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Recording an auction on someone's behalf. For bulk entry from a spreadsheet, use the CSV import below.</p>
       <div class="form-grid" style="grid-template-columns:1fr">
         <div class="field"><label for="al-member">Member *</label><select id="al-member"><option value="">— Select a member —</option></select></div>
         <div class="grid g2">
@@ -1699,6 +1699,17 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <div class="reg-empty" style="padding:20px">Loading…</div>
       </div>
     </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <h3>Import auction lots (CSV)</h3>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Upload an auction night's results to log lots in bulk. Required columns: <b>auction_date</b> (YYYY-MM-DD), <b>item</b>, <b>role</b> (Bought or Sold), <b>amount</b>, and one of <b>membership_number</b>, <b>email</b> or <b>name</b>. Lots already recorded are skipped, so re-importing the same file is safe.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input type="file" id="alot-csv-file" accept=".csv,text/csv" style="font-size:13px">
+      <button class="btn btn-primary btn-sm" id="alot-csv-btn">Import lots</button>
+      <button class="btn btn-outline btn-sm" id="alot-csv-template">Download template</button>
+    </div>
+    <div id="alot-import-log" style="margin-top:14px;font-size:13px"></div>
   </div>
 
   <div class="future" style="margin-top:24px">
@@ -4773,6 +4784,134 @@ window.initPortal = function(){
     var blob = new Blob([csv], { type: 'text/csv' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a'); a.href = url; a.download = 'ecaac-attendance-template.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  });
+
+  // ----- Admin: bulk auction lot import from CSV -----
+  // Reuses attParseCSV / attNormaliseDate / attDateKey from the attendance import.
+  var alotImporting = false;
+  var alotCsvBtn = document.getElementById('alot-csv-btn');
+  if (alotCsvBtn) alotCsvBtn.addEventListener('click', async function(){
+    if (alotImporting) return;
+    if (!sb || !IS_ADMIN){ popToast('Admins only'); return; }
+    var fileEl = document.getElementById('alot-csv-file');
+    var logEl = document.getElementById('alot-import-log');
+    var file = fileEl && fileEl.files && fileEl.files[0];
+    if (!file){ popToast('Choose a CSV file first'); return; }
+    alotImporting = true; alotCsvBtn.disabled = true; alotCsvBtn.textContent = 'Importing…';
+    try {
+      var grid = attParseCSV(await file.text());
+      if (grid.length < 2){ logEl.innerHTML = '<span style="color:var(--coral-dark)">That file has no data rows.</span>'; return; }
+      var header = grid[0].map(function(h){ return h.trim().toLowerCase(); });
+      function col(names){ for (var k = 0; k < names.length; k++){ var idx = header.indexOf(names[k]); if (idx !== -1) return idx; } return -1; }
+      var iNum = col(['membership_number','member_number','membership','memberno']);
+      var iEmail = col(['email','e-mail']);
+      var iName = col(['name','member','full name','member name']);
+      var iDate = col(['auction_date','date','event_date']);
+      var iItem = col(['item','description','lot','lot_item']);
+      var iRole = col(['role','type','buy_sell','bought_sold']);
+      var iAmount = col(['amount','price','value','r','rand']);
+      if (iDate === -1 || iItem === -1 || iRole === -1 || iAmount === -1 || (iNum === -1 && iEmail === -1 && iName === -1)){
+        logEl.innerHTML = '<span style="color:var(--coral-dark)">Missing columns. Need <b>auction_date</b>, <b>item</b>, <b>role</b> and <b>amount</b>, plus one of <b>membership_number</b>, <b>email</b> or <b>name</b>.</span>';
+        return;
+      }
+      // member lookups
+      var byNum = {}, byEmail = {}, byName = {};
+      (window.__liveMemberList || []).forEach(function(mm){
+        if (mm.membership_number) byNum[String(mm.membership_number).trim().toLowerCase()] = mm;
+        if (mm.email) byEmail[String(mm.email).trim().toLowerCase()] = mm;
+        var nm = ((mm.first_name || '') + ' ' + (mm.last_name || '')).trim().toLowerCase();
+        if (nm) byName[nm] = mm;
+      });
+      // resolve each data row
+      var parsed = [], problems = [], datesInFile = {};
+      for (var r = 1; r < grid.length; r++){
+        var rowArr = grid[r];
+        var mem = null, who = '';
+        if (iNum !== -1 && (rowArr[iNum] || '').trim()){ who = rowArr[iNum].trim(); mem = byNum[who.toLowerCase()]; }
+        if (!mem && iEmail !== -1 && (rowArr[iEmail] || '').trim()){ who = rowArr[iEmail].trim(); mem = byEmail[who.toLowerCase()]; }
+        if (!mem && iName !== -1 && (rowArr[iName] || '').trim()){ who = rowArr[iName].trim(); mem = byName[who.toLowerCase()]; }
+        if (!mem){ problems.push('Row ' + (r+1) + ': no member matches \u201C' + (who || '(blank)') + '\u201D'); continue; }
+        var dateKey = attNormaliseDate(rowArr[iDate]);
+        if (!dateKey){ problems.push('Row ' + (r+1) + ': couldn\u2019t read date \u201C' + (rowArr[iDate] || '') + '\u201D'); continue; }
+        var item = (rowArr[iItem] || '').trim();
+        if (!item){ problems.push('Row ' + (r+1) + ': item is blank'); continue; }
+        var roleRaw = (rowArr[iRole] || '').trim().toLowerCase();
+        var role = (roleRaw === 'sold' || roleRaw === 'sell' || roleRaw === 'seller' || roleRaw === 's') ? 'Sold'
+                 : (roleRaw === 'bought' || roleRaw === 'buy' || roleRaw === 'buyer' || roleRaw === 'b') ? 'Bought'
+                 : null;
+        if (!role){ problems.push('Row ' + (r+1) + ': role must be Bought or Sold, got \u201C' + (rowArr[iRole] || '') + '\u201D'); continue; }
+        var amount = parseFloat(String(rowArr[iAmount] || '').replace(/[R\s,]/gi, ''));
+        if (!isFinite(amount) || amount <= 0){ problems.push('Row ' + (r+1) + ': couldn\u2019t read amount \u201C' + (rowArr[iAmount] || '') + '\u201D'); continue; }
+        amount = Math.round(amount * 100) / 100;
+        datesInFile[dateKey] = true;
+        parsed.push({ member_id: mem.id, auction_date: dateKey, item: item, role: role, amount: amount });
+      }
+      // skip lots already recorded (same member, date, item, role and amount)
+      var existingSet = {}, dateList = Object.keys(datesInFile);
+      if (dateList.length){
+        var exRes = await sb.from('auction_lots').select('member_id, auction_date, item, role, amount').in('auction_date', dateList);
+        (exRes.data || []).forEach(function(a){
+          existingSet[[a.member_id, a.auction_date, String(a.item).trim().toLowerCase(), a.role, Number(a.amount)].join('|')] = true;
+        });
+      }
+      var toInsert = [], seen = {}, already = 0;
+      parsed.forEach(function(p){
+        var key = [p.member_id, p.auction_date, p.item.toLowerCase(), p.role, p.amount].join('|');
+        if (existingSet[key]){ already++; return; }
+        if (seen[key]) return;
+        seen[key] = true;
+        toInsert.push({ member_id: p.member_id, auction_date: p.auction_date, item: p.item, role: p.role, amount: p.amount, created_by: window.currentMember.id });
+      });
+      var inserted = 0, insertErr = null;
+      if (toInsert.length){
+        var insRes = await sb.from('auction_lots').insert(toInsert).select('id');
+        if (insRes.error) insertErr = insRes.error; else inserted = (insRes.data || []).length;
+      }
+      // report
+      var html;
+      if (insertErr){
+        html = '<div style="color:var(--coral-dark);font-weight:700">Import failed: ' + escT(insertErr.message || 'database error') + '. Check that the auction_lots table allows admin inserts.</div>';
+      } else {
+        var parts = ['<b>' + inserted + '</b> lot' + (inserted === 1 ? '' : 's') + ' added.'];
+        if (already) parts.push('<b>' + already + '</b> already recorded (skipped).');
+        if (problems.length) parts.push('<b>' + problems.length + '</b> row' + (problems.length === 1 ? '' : 's') + ' couldn\u2019t be imported.');
+        html = '<div style="color:var(--leaf-dark);font-weight:700;margin-bottom:6px">' + parts.join(' ') + '</div>';
+        if (problems.length){
+          html += '<details style="margin-top:6px"><summary style="cursor:pointer;color:var(--ink-soft)">Show skipped rows</summary>' +
+            '<ul style="margin:8px 0 0;padding-left:18px;color:var(--ink-soft)">' +
+            problems.slice(0, 50).map(function(p){ return '<li>' + escT(p) + '</li>'; }).join('') +
+            (problems.length > 50 ? '<li>\u2026and ' + (problems.length - 50) + ' more</li>' : '') +
+            '</ul></details>';
+        }
+      }
+      logEl.innerHTML = html;
+      if (inserted){
+        popToast(inserted + ' auction lot' + (inserted === 1 ? '' : 's') + ' imported');
+        if (fileEl) fileEl.value = '';
+        loadAdminAuctionList();
+        loadMyAuctionLots();
+      }
+    } catch (err){
+      document.getElementById('alot-import-log').innerHTML = '<span style="color:var(--coral-dark)">Could not read that file \u2014 is it a valid CSV?</span>';
+    } finally {
+      alotImporting = false; alotCsvBtn.disabled = false; alotCsvBtn.textContent = 'Import lots';
+    }
+  });
+
+  var alotTemplateBtn = document.getElementById('alot-csv-template');
+  if (alotTemplateBtn) alotTemplateBtn.addEventListener('click', function(){
+    var sampleNum = 'ECAAC-0001';
+    var m0 = (window.__liveMemberList || [])[0];
+    if (m0 && m0.membership_number) sampleNum = m0.membership_number;
+    var sampleDate = attDateKey(new Date());
+    var csv = 'membership_number,auction_date,item,role,amount\n' +
+      sampleNum + ',' + sampleDate + ',"Pair of Apistogramma cacatuoides",Sold,250\n' +
+      sampleNum + ',' + sampleDate + ',"Bag of Java moss",Bought,40\n';
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url; a.download = 'ecaac-auction-lots-template.csv';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
   });
