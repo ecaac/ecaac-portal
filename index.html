@@ -2879,7 +2879,13 @@ window.initPortal = function(){
       .eq('owner_id', window.currentMember.id)
       .order('created_at', { ascending: true });
     tanksLoading = false;
-    if (res.error || !res.data) { renderTanks(); return; }
+    if (res.error) { renderTanks(); return; }
+    if (!res.data) { renderTanks(); return; }
+    // Defensive: if we already have tanks showing locally and this refresh comes
+    // back with zero rows, treat it as a failed/racy fetch rather than trusting
+    // it — never let a suspicious empty response wipe data that's already correct
+    // on screen (this is what caused newly-created tanks to vanish before).
+    if (res.data.length === 0 && tanks.length > 0) { return; }
     tanks.length = 0;
     res.data.forEach(function(row){
       var params = (row.tank_params || []).slice().sort(function(a,b){ return (a.sort_order||0) - (b.sort_order||0); })
