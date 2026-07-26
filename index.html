@@ -1076,20 +1076,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       <p style="font-size:13.5px;color:var(--ink-soft);line-height:1.75;margin:0">Membership is per household, not per individual — family members living in the same household are all covered under a single membership. Fees are payable by the end of February each year, and the committee is happy to discuss arrangements if needed.</p>
     </div>
     <div class="panel">
-      <h3>2027 fee structure</h3>
-      <div class="rows" style="box-shadow:none;border:1px solid #F0EADB">
-        <div class="row"><div class="row-body"><b>R270 · Full members</b><span>Local households — Gqeberha (PE), Jeffreys Bay, Humansdorp, Uitenhage &amp; Despatch</span></div></div>
-        <div class="row"><div class="row-body"><b>R100 · Country members</b><span>Households outside the local areas above</span></div></div>
-        <div class="row"><div class="row-body"><b>R100 · Scholars</b><span>Full member benefits at the reduced scholar rate</span></div></div>
-      </div>
+      <h3 id="fee-heading">Fee structure</h3>
+      <div class="rows" style="box-shadow:none;border:1px solid #F0EADB" id="fee-rows"></div>
     </div>
-  </div>
-
-  <div class="sec-title"><h3>Payment history</h3><button class="linkish toastable" data-toast="Invoice download is a demo placeholder">Download latest invoice</button></div>
-  <div class="rows">
-    <div class="row"><div class="row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div><div class="row-body"><b>2026 annual membership · R270</b><span>Invoice #INV-2026-014 · EFT · local household rate</span></div><div class="row-end"><span class="badge ok">Paid</span><div style="margin-top:4px">01 Feb 2026</div></div></div>
-    <div class="row"><div class="row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div><div class="row-body"><b>2025 annual membership · R270</b><span>Invoice #INV-2025-009 · EFT</span></div><div class="row-end"><span class="badge ok">Paid</span><div style="margin-top:4px">03 Feb 2025</div></div></div>
-    <div class="row"><div class="row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div><div class="row-body"><b>2024 annual membership · R270</b><span>Invoice #INV-2024-011 · Cash at meeting</span></div><div class="row-end"><span class="badge ok">Paid</span><div style="margin-top:4px">02 Feb 2024</div></div></div>
   </div>
 
   <div class="sec-title"><h3>Membership timeline</h3></div>
@@ -1525,7 +1514,42 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <div class="reg-empty" id="reg-empty" style="display:none">Nothing matches those filters — try clearing the search or picking another category.</div>
   </div>
   <p class="reg-count" id="reg-count"></p>
-  <p class="reg-count">Register last updated 29 Jun 2026 · Contact a breeder through the committee to arrange a swap or collection. To list your own spawns, message the committee on WhatsApp.</p>
+  <p class="reg-count" id="reg-updated">Contact a breeder through the committee to arrange a swap or collection.</p>
+
+  <div class="grid admin-split" id="my-listings-wrap" style="margin-top:26px;display:none">
+    <div class="panel">
+      <h3>Add a listing</h3>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">List what you're breeding or growing so other members can find you for a swap.</p>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="field"><label for="bl-species">Species / item *</label><input id="bl-species" placeholder="e.g. Crystal Red Caridina"></div>
+        <div class="grid g2">
+          <div class="field"><label for="bl-category">Category *</label>
+            <select id="bl-category"><option>Fish</option><option>Invertebrate</option><option>Plant</option><option>Live Food</option></select>
+          </div>
+          <div class="field"><label for="bl-status">Status *</label>
+            <select id="bl-status"><option value="Current">Breeding now</option><option value="Future">Planned</option></select>
+          </div>
+        </div>
+        <div class="grid g2">
+          <div class="field"><label for="bl-pref">Sales preference</label>
+            <select id="bl-pref"><option>Unknown</option><option>Direct</option><option>Deal through ECAAC</option><option>Either</option></select>
+          </div>
+          <div class="field"><label for="bl-shipping">Shipping</label>
+            <select id="bl-shipping"><option value="No">Collection only</option><option value="Yes">Can ship</option></select>
+          </div>
+        </div>
+      </div>
+      <p id="bl-error" style="display:none;font-size:12.5px;font-weight:700;color:var(--coral-dark);margin:12px 0 0">Enter the species or item before saving.</p>
+      <div style="margin-top:16px"><button class="btn btn-primary" id="bl-add-btn">Add listing</button></div>
+    </div>
+    <div class="panel">
+      <h3>My listings</h3>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Only you can edit these. Remove anything you're no longer working with.</p>
+      <div class="rows" style="box-shadow:none;border:1px solid #F0EADB" id="my-listings">
+        <div class="reg-empty" style="padding:20px">Loading…</div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ============ RESOURCES ============ -->
@@ -1677,15 +1701,11 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 
   <div class="sec-title" style="margin-top:26px"><h3>Membership types</h3></div>
   <div class="panel">
-    <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">Set a member's tier. Full members pay R270 a year; country members and scholars pay R100. The member's card, role line and renewal amount all follow this setting.</p>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px" id="mt-blurb">Set a member's tier. The member's card, role line and renewal amount all follow this setting.</p>
     <div class="form-grid mt-form">
       <div class="field"><label for="mt-member">Member *</label><select id="mt-member"><option value="">— Select a member —</option></select></div>
       <div class="field"><label for="mt-type">Membership type</label>
-        <select id="mt-type">
-          <option value="Full">Full — R270</option>
-          <option value="Country">Country — R100</option>
-          <option value="Scholar">Scholar — R100</option>
-        </select>
+        <select id="mt-type"></select>
       </div>
       <div class="field"><button class="btn btn-primary" id="mt-save-btn">Save type</button></div>
     </div>
@@ -1929,10 +1949,10 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       <p style="font-size:13px;color:var(--ink-soft);margin:0 0 14px">Pay by EFT using the details below, using your member number as the reference. Membership is per household and fees are due by the end of February.</p>
 
       <div style="background:var(--sand);border-radius:14px;padding:14px 0;margin-bottom:6px">
-        <div class="eft-row"><span>Bank</span><b>Nedbank</b></div>
-        <div class="eft-row"><span>Account name</span><b>Eastern Cape Aquarium &amp; Aquascaping Club</b></div>
-        <div class="eft-row"><span>Account number</span><b>1198 234 5017</b><button class="copy-btn" data-copy="1198234 5017" aria-label="Copy account number"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
-        <div class="eft-row"><span>Branch code</span><b>198765</b></div>
+        <div class="eft-row"><span>Bank</span><b id="eft-bank">—</b></div>
+        <div class="eft-row"><span>Account name</span><b id="eft-account-name">—</b></div>
+        <div class="eft-row"><span>Account number</span><b id="eft-account-no">—</b><button class="copy-btn" id="eft-copy-no" aria-label="Copy account number"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
+        <div class="eft-row"><span>Branch code</span><b id="eft-branch">—</b></div>
         <div class="eft-row"><span>Reference</span><b id="renew-ref">ECAAC-0002</b><button class="copy-btn" id="renew-copy-ref" aria-label="Copy reference"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
         <div class="eft-row"><span>Amount due</span><b id="renew-amount" style="color:var(--leaf-dark);font-size:17px">R270.00</b></div>
       </div>
@@ -2218,6 +2238,30 @@ window.initPortal = function(){
   // Single source of truth for tiers, pills and annual fees. Adding a future tier
   // means adding one entry here — every display site below reads from this map.
   // Committee members are always Full, so the role line never has to show both.
+  // ===== Club details =====
+  // One place for the facts that were previously repeated across the markup:
+  // venue strings, banking details and the annual fee deadline. Fees themselves
+  // live in MEMBER_TYPES below, which is the single source for amounts.
+  var CLUB = {
+    name: 'Eastern Cape Aquarium & Aquascaping Club',
+    venue: 'The Italian Club, 17 Harold Road, Broadwood, Gqeberha',
+    venueShort: 'The Italian Club, Broadwood',
+    localAreas: 'Gqeberha (PE), Jeffreys Bay, Humansdorp, Uitenhage & Despatch',
+    feesDueMonth: 'February',                   // fees due by the end of this month
+    bank: {
+      name: 'Nedbank',
+      accountName: 'Eastern Cape Aquarium & Aquascaping Club',
+      accountNumber: '1198 234 5017',
+      branchCode: '198765'
+    }
+  };
+  // The year fees are next due: this year until March, then next year.
+  function feesDueYear(){
+    var now = new Date();
+    return now.getMonth() >= 2 ? now.getFullYear() + 1 : now.getFullYear();
+  }
+  function feesDueText(){ return 'fees due end ' + CLUB.feesDueMonth.slice(0, 3) + ' ' + feesDueYear(); }
+
   var MEMBER_TYPES = {
     'Full': {
       label: 'Full', pill: 'Member', fee: 270,
@@ -2985,6 +3029,44 @@ window.initPortal = function(){
   document.querySelectorAll('#renew-modal .copy-btn[data-copy]').forEach(function(b){
     b.addEventListener('click', function(){ copyText(b.getAttribute('data-copy'), b); });
   });
+
+  // ===== Club config into the UI =====
+  // Fees render from MEMBER_TYPES and banking from CLUB.bank, so these facts are
+  // stated once in config rather than repeated across the markup.
+  (function(){
+    var feeRows = document.getElementById('fee-rows');
+    if (feeRows){
+      var areaNote = { 'Full': 'Local households — ' + CLUB.localAreas,
+                       'Country': 'Households outside the local areas above',
+                       'Scholar': 'Full member benefits at the reduced scholar rate' };
+      feeRows.innerHTML = Object.keys(MEMBER_TYPES).map(function(k){
+        var t = MEMBER_TYPES[k];
+        return '<div class="row"><div class="row-body"><b>R' + t.fee + ' · ' + escT(t.label) +
+          ' members</b><span>' + (areaNote[k] || '') + '</span></div></div>';
+      }).join('');
+    }
+    var feeHeading = document.getElementById('fee-heading');
+    if (feeHeading) feeHeading.textContent = feesDueYear() + ' fee structure';
+
+    var mtSel = document.getElementById('mt-type');
+    if (mtSel){
+      mtSel.innerHTML = Object.keys(MEMBER_TYPES).map(function(k){
+        return '<option value="' + k + '">' + escT(MEMBER_TYPES[k].label) + ' — R' + MEMBER_TYPES[k].fee + '</option>';
+      }).join('');
+    }
+
+    var setTxt = function(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; };
+    setTxt('eft-bank', CLUB.bank.name);
+    setTxt('eft-account-name', CLUB.bank.accountName);
+    setTxt('eft-account-no', CLUB.bank.accountNumber);
+    setTxt('eft-branch', CLUB.bank.branchCode);
+    var copyNo = document.getElementById('eft-copy-no');
+    if (copyNo) copyNo.addEventListener('click', function(){
+      // Copy digits only — the displayed spacing is for reading, not for pasting
+      // into a banking form. The old markup copied a differently-spaced string.
+      copyText(CLUB.bank.accountNumber.replace(/\s+/g, ''), copyNo);
+    });
+  })();
   document.getElementById('renew-copy-ref').addEventListener('click', function(){
     copyText(document.getElementById('renew-ref').textContent, this);
   });
@@ -3013,7 +3095,7 @@ window.initPortal = function(){
     if (!fabWrap.contains(e.target)) fabWrap.classList.remove('open');
   });
 
-  var BREG = [{"member":"Adam Trotter","category":"Invertebrate","species":"Amano Shrimp","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Fish","species":"Celestial Pearl Danios","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Fish","species":"Emerald Rasbora","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Fish","species":"Rainbow Shiners","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Fish","species":"Vietnamese Cardinals","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Live Food","species":"Microworms","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Live Food","species":"Vinegar Eels","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Anubias barteri","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Java Moss","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Limnophila sessiliflora","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Ludwigia inclinata","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Mayaca fluviatilis","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Mermaid Weed","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Sagittaria","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Charl van Zyl","category":"Fish","species":"Black Ghost Knife","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Darion Christians","category":"Invertebrate","species":"Blue Dream Neocaridina","status":"Future","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Invertebrate","species":"Orange Sunkist Neocaridina","status":"Future","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Begonia 'Tiger Paw'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Coleus Hybrid","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Monstera adansonii 'Albo Variegated'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Monstera obliqua 'Peru'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"N'Joy Pothos","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Neon Pothos","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Philodendron 'Florida Ghost'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Philodendron 'Silver Sword'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Syngonium 'Galaxy Panda'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Syngonium 'Maria'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Syngonium 'Milk Confetti'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Syngonium 'Pink Lava'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Donaven Campodonica","category":"Fish","species":"Blue Moscow Guppies","status":"Future","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Donaven Campodonica","category":"Fish","species":"Electric Blue Acara (Breeding Pair)","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Donaven Campodonica","category":"Fish","species":"Electric Blue Acara Fry","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Donna-Lee Duncan","category":"Fish","species":"Blue Moscow Guppies","status":"Future","shipping":"No","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"African Banded Barb","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"African Glass Shrimp","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Bronze Corydoras","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Gardneri Killifish","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Julii Corydoras","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Panda Corydoras","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Pygmy Corydoras","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Rocket Killifish","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Santa Maria Endlers","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Assassin Snails","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Crystal Red Caridina","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Horned Nerites","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Pure Red Line Caridina","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Red Galaxy/Stardust Caridina","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Red Snowflake Caridina","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Plant","species":"Anubias spp.","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Plant","species":"Bucephalandra spp.","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Plant","species":"Helicopter Fern (Marsilea macroparpa)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Plant","species":"Indigenous Aquatic Plants","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Plant","species":"Oxygen Weed (Lagarosiphon major)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Kristen Van Staden","category":"Invertebrate","species":"Black Apple Snails","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Kristen Van Staden","category":"Invertebrate","species":"Gold Apple Snails","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Kristen Van Staden","category":"Plant","species":"Java Fern 'Trident'","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Malcolm Logan","category":"Fish","species":"Ancistrus - Common","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Malcolm Logan","category":"Fish","species":"Ancistrus - Lemon","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Malcolm Logan","category":"Fish","species":"Ancistrus - Red","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Malcolm Logan","category":"Fish","species":"Longfin Common Ancistrus","status":"Future","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Malcolm Logan","category":"Fish","species":"Longfin Lemon Ancistrus","status":"Future","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Blue Wag Platy","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Brown Sword (Wild Type)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Ginga Rubra Guppy","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Green Sword (Wild Type)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Poecilia wingei - Black Bar (questionable purity)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Poecilia wingei - Campoma 48","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Poecilia wingei - Campoma No. 7","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Poecilia wingei - Cumana Rainbow","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Santa Maria Endler (Hybrid)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Tiger Endler (Hybrid)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Pierre Gerber","category":"Fish","species":"Bronze Corydoras","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Fish","species":"Green Cobra Guppies","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Fish","species":"Peppered Corydoras","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Fish","species":"Red Cobra Guppies","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Invertebrate","species":"Blue Neocaridina","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Invertebrate","species":"Galaxy Caridina (Fishbone Pattern)","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Invertebrate","species":"Galaxy Caridina (Pinto Pattern)","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Steven Mitchley","category":"Fish","species":"Guppies","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Steven Mitchley","category":"Fish","species":"Platys","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Steven Mitchley","category":"Fish","species":"Veiltail Angelfish","status":"Future","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Fish","species":"Black Rams","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Fish","species":"Blue Moscow Guppies","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Fish","species":"Golden Laser Cory","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Fish","species":"Longfin Albino Ancistrus","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Fish","species":"Super Red Shortfin Ancistrus","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Invertebrate","species":"Black Galaxy Pinto Shrimp","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Invertebrate","species":"Crystal Red Shrimp","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Invertebrate","species":"Red Galaxy Pinto Shrimp","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Live Food","species":"Daphnia","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Live Food","species":"Microworms","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Live Food","species":"Vinegar Eels","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"}];
+  var BREG = IS_LIVE ? [] : [{"member":"Adam Trotter","category":"Invertebrate","species":"Amano Shrimp","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Fish","species":"Celestial Pearl Danios","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Fish","species":"Emerald Rasbora","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Fish","species":"Rainbow Shiners","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Fish","species":"Vietnamese Cardinals","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Live Food","species":"Microworms","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Live Food","species":"Vinegar Eels","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Anubias barteri","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Java Moss","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Limnophila sessiliflora","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Ludwigia inclinata","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Mayaca fluviatilis","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Mermaid Weed","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Brenton Simpson","category":"Plant","species":"Sagittaria","status":"Current","shipping":"No","pref":"Direct","updated":"2026-06-28"},{"member":"Charl van Zyl","category":"Fish","species":"Black Ghost Knife","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Darion Christians","category":"Invertebrate","species":"Blue Dream Neocaridina","status":"Future","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Invertebrate","species":"Orange Sunkist Neocaridina","status":"Future","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Begonia 'Tiger Paw'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Coleus Hybrid","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Monstera adansonii 'Albo Variegated'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Monstera obliqua 'Peru'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"N'Joy Pothos","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Neon Pothos","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Philodendron 'Florida Ghost'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Philodendron 'Silver Sword'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Syngonium 'Galaxy Panda'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Syngonium 'Maria'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Syngonium 'Milk Confetti'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Darion Christians","category":"Plant","species":"Syngonium 'Pink Lava'","status":"Current","shipping":"Yes","pref":"Either","updated":"2026-06-28"},{"member":"Donaven Campodonica","category":"Fish","species":"Blue Moscow Guppies","status":"Future","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Donaven Campodonica","category":"Fish","species":"Electric Blue Acara (Breeding Pair)","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Donaven Campodonica","category":"Fish","species":"Electric Blue Acara Fry","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Donna-Lee Duncan","category":"Fish","species":"Blue Moscow Guppies","status":"Future","shipping":"No","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"African Banded Barb","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"African Glass Shrimp","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Bronze Corydoras","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Gardneri Killifish","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Julii Corydoras","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Panda Corydoras","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Pygmy Corydoras","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Rocket Killifish","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Fish","species":"Santa Maria Endlers","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Assassin Snails","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Crystal Red Caridina","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Horned Nerites","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Pure Red Line Caridina","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Red Galaxy/Stardust Caridina","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Invertebrate","species":"Red Snowflake Caridina","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Plant","species":"Anubias spp.","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Plant","species":"Bucephalandra spp.","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Plant","species":"Helicopter Fern (Marsilea macroparpa)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Plant","species":"Indigenous Aquatic Plants","status":"Future","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Jonathan Balmer","category":"Plant","species":"Oxygen Weed (Lagarosiphon major)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Kristen Van Staden","category":"Invertebrate","species":"Black Apple Snails","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Kristen Van Staden","category":"Invertebrate","species":"Gold Apple Snails","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Kristen Van Staden","category":"Plant","species":"Java Fern 'Trident'","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Malcolm Logan","category":"Fish","species":"Ancistrus - Common","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Malcolm Logan","category":"Fish","species":"Ancistrus - Lemon","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Malcolm Logan","category":"Fish","species":"Ancistrus - Red","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Malcolm Logan","category":"Fish","species":"Longfin Common Ancistrus","status":"Future","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Malcolm Logan","category":"Fish","species":"Longfin Lemon Ancistrus","status":"Future","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Blue Wag Platy","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Brown Sword (Wild Type)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Ginga Rubra Guppy","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Green Sword (Wild Type)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Poecilia wingei - Black Bar (questionable purity)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Poecilia wingei - Campoma 48","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Poecilia wingei - Campoma No. 7","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Poecilia wingei - Cumana Rainbow","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Santa Maria Endler (Hybrid)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Michael Serfontein","category":"Fish","species":"Tiger Endler (Hybrid)","status":"Current","shipping":"Yes","pref":"Deal through ECAAC","updated":"2026-06-28"},{"member":"Pierre Gerber","category":"Fish","species":"Bronze Corydoras","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Fish","species":"Green Cobra Guppies","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Fish","species":"Peppered Corydoras","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Fish","species":"Red Cobra Guppies","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Invertebrate","species":"Blue Neocaridina","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Invertebrate","species":"Galaxy Caridina (Fishbone Pattern)","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Pierre Gerber","category":"Invertebrate","species":"Galaxy Caridina (Pinto Pattern)","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-29"},{"member":"Steven Mitchley","category":"Fish","species":"Guppies","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Steven Mitchley","category":"Fish","species":"Platys","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Steven Mitchley","category":"Fish","species":"Veiltail Angelfish","status":"Future","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Fish","species":"Black Rams","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Fish","species":"Blue Moscow Guppies","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Fish","species":"Golden Laser Cory","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Fish","species":"Longfin Albino Ancistrus","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Fish","species":"Super Red Shortfin Ancistrus","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Invertebrate","species":"Black Galaxy Pinto Shrimp","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Invertebrate","species":"Crystal Red Shrimp","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Invertebrate","species":"Red Galaxy Pinto Shrimp","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Live Food","species":"Daphnia","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Live Food","species":"Microworms","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"},{"member":"Venesh Pillay","category":"Live Food","species":"Vinegar Eels","status":"Current","shipping":"Yes","pref":"Unknown","updated":"2026-06-28"}];
 
   // ===== Members directory (derived from register + club roles) =====
   var gradients = ['linear-gradient(135deg,var(--deep),var(--leaf))','linear-gradient(135deg,var(--leaf),var(--leaf-dark))','linear-gradient(135deg,var(--deep-2),var(--deep))','linear-gradient(135deg,var(--leaf-dark),var(--deep))','linear-gradient(135deg,var(--deep),var(--deep-3))'];
@@ -3309,19 +3391,32 @@ window.initPortal = function(){
   var regCount = document.getElementById('reg-count');
   var regSearch = document.getElementById('reg-search');
   var regCat = 'All', regStat = 'All', regSortKey = 'member', regSortAsc = true;
+  var regLoading = IS_LIVE;                     // true until the first live fetch resolves
+  var REG_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtRegDate(iso){
+    var d = new Date(String(iso).slice(0, 10) + 'T00:00:00');
+    if (isNaN(d.getTime())) return String(iso).slice(0, 10);
+    return d.getDate() + ' ' + REG_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  }
 
-  // stats
-  (function(){
-    var breeders = Object.keys(byMember).length;
+  // Register stats. Computed from BREG so it works identically for demo data and
+  // for live rows loaded from breeder_listings.
+  function renderRegStats(){
+    var el = document.getElementById('reg-stats');
+    if (!el) return;
+    var seen = {};
+    BREG.forEach(function(d){ if (d.member) seen[d.member] = true; });
+    var breeders = Object.keys(seen).length;
     var species = BREG.length;
     var current = BREG.filter(function(d){ return d.status === 'Current'; }).length;
     var ship = BREG.filter(function(d){ return d.shipping === 'Yes'; }).length;
-    document.getElementById('reg-stats').innerHTML =
+    el.innerHTML =
       '<div class="card t-leaf"><div class="stat-num">' + breeders + '</div><div class="stat-label">Active breeders listed</div></div>' +
       '<div class="card t-deep"><div class="stat-num">' + species + '</div><div class="stat-label">Species &amp; items on the register</div></div>' +
       '<div class="card t-gold"><div class="stat-num">' + current + '</div><div class="stat-label">Breeding or growing right now</div></div>' +
       '<div class="card t-coral"><div class="stat-num">' + ship + '</div><div class="stat-label">Listings that can ship</div></div>';
-  })();
+  }
+  renderRegStats();
 
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -3351,8 +3446,23 @@ window.initPortal = function(){
         '<td>' + esc(d.pref) + '</td>' +
         '<td>' + shipHtml + '</td></tr>';
     }).join('');
+    // Distinguish "still loading", "register is empty" and "filters match nothing".
+    if (regLoading) regEmpty.textContent = 'Loading the register\u2026';
+    else if (!BREG.length) regEmpty.textContent = IS_LIVE
+      ? 'Nothing on the register yet \u2014 add what you\u2019re breeding using the panel below.'
+      : 'Nothing on the register yet.';
+    else regEmpty.textContent = 'Nothing matches those filters \u2014 try clearing the search or picking another category.';
     regEmpty.style.display = rows.length ? 'none' : 'block';
-    regCount.textContent = 'Showing ' + rows.length + ' of ' + BREG.length + ' listings';
+    regCount.textContent = regLoading ? '' : 'Showing ' + rows.length + ' of ' + BREG.length + ' listings';
+    // "Last updated" derived from the newest listing rather than a fixed date.
+    var updEl = document.getElementById('reg-updated');
+    if (updEl){
+      var newest = BREG.reduce(function(acc, d){
+        return (d.updated && (!acc || d.updated > acc)) ? d.updated : acc;
+      }, null);
+      updEl.textContent = (newest ? 'Register last updated ' + fmtRegDate(newest) + ' \u00B7 ' : '') +
+        'Contact a breeder through the committee to arrange a swap or collection.';
+    }
     document.querySelectorAll('.reg-table thead th').forEach(function(th){
       var on = th.getAttribute('data-key') === regSortKey;
       th.classList.toggle('sorted', on);
@@ -3381,6 +3491,107 @@ window.initPortal = function(){
     });
   });
   renderReg();
+
+  // ===== Breeders register: live data + member self-service =====
+  // BREG is the single array the table renders from. In demo mode it holds the
+  // sample data; in live mode it is filled from breeder_listings below, so all the
+  // existing filter, sort and render code above works unchanged.
+  function blRowToReg(r){
+    var nm = r.members
+      ? ((r.members.first_name || '') + ' ' + (r.members.last_name || '')).trim()
+      : '';
+    return {
+      id: r.id,
+      member: nm || 'ECAAC member',
+      memberId: r.member_id,
+      category: r.category || 'Fish',
+      species: r.species || '',
+      status: r.status === 'Future' ? 'Future' : 'Current',
+      shipping: r.shipping ? 'Yes' : 'No',
+      pref: r.pref || 'Unknown',
+      updated: (r.updated_at || r.created_at || '').slice(0, 10)
+    };
+  }
+
+  async function loadBreederListings(){
+    if (!sb || !window.currentMember){ regLoading = false; renderReg(); return; }
+    var res = await sb.from('breeder_listings')
+      .select('*, members!member_id(first_name,last_name)')
+      .order('species', { ascending: true });
+    regLoading = false;
+    if (res.error){
+      // Don't leave a failed fetch looking like "nobody is breeding anything".
+      renderRegStats();
+      renderReg();
+      regEmpty.textContent = 'Could not load the register just now \u2014 try refreshing.';
+      regEmpty.style.display = 'block';
+      return;
+    }
+    BREG.length = 0;
+    (res.data || []).forEach(function(r){ BREG.push(blRowToReg(r)); });
+    renderRegStats();
+    renderReg();
+    renderMyListings();
+  }
+
+  function renderMyListings(){
+    var wrap = document.getElementById('my-listings-wrap');
+    var list = document.getElementById('my-listings');
+    if (!wrap || !list) return;
+    if (!sb || !window.currentMember){ wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+    var mine = BREG.filter(function(d){ return d.memberId === window.currentMember.id; });
+    if (!mine.length){
+      list.innerHTML = '<div class="reg-empty" style="padding:20px">You haven\u2019t listed anything yet.</div>';
+      return;
+    }
+    list.innerHTML = mine.map(function(d){
+      var badge = d.status === 'Current'
+        ? '<span class="badge ok">Breeding now</span>'
+        : '<span class="badge pend">Planned</span>';
+      return '<div class="row"><div class="row-body"><b>' + esc(d.species) + '</b>' +
+        '<span>' + esc(d.category) + ' \u00B7 ' + (d.shipping === 'Yes' ? 'can ship' : 'collection only') +
+        ' \u00B7 ' + esc(d.pref) + '</span></div>' + badge +
+        '<button class="rm-btn" data-bl-id="' + escA(d.id) + '" aria-label="Remove ' + escA(d.species) + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>';
+    }).join('');
+    list.querySelectorAll('[data-bl-id]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        b.disabled = true;
+        var res = await dbDeleteRow('breeder_listings', b.getAttribute('data-bl-id'));
+        if (res && res.error){ b.disabled = false; popToast('Could not remove that listing'); return; }
+        popToast('Listing removed');
+        loadBreederListings();
+      });
+    });
+  }
+
+  var addingListing = false;
+  var blAddBtn = document.getElementById('bl-add-btn');
+  if (blAddBtn) blAddBtn.addEventListener('click', async function(){
+    if (addingListing) return;
+    if (!sb || !window.currentMember){ popToast('Sign in to add a listing'); return; }
+    var species = document.getElementById('bl-species').value.trim();
+    var errEl = document.getElementById('bl-error');
+    if (!species){ errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    addingListing = true;
+    blAddBtn.disabled = true; blAddBtn.textContent = 'Adding\u2026';
+    var res = await dbInsertRow('breeder_listings', {
+      member_id: window.currentMember.id,
+      species: species,
+      category: document.getElementById('bl-category').value,
+      status: document.getElementById('bl-status').value,
+      pref: document.getElementById('bl-pref').value,
+      shipping: document.getElementById('bl-shipping').value === 'Yes'
+    });
+    blAddBtn.disabled = false; blAddBtn.textContent = 'Add listing';
+    if (res.error){ popToast('Could not add that listing \u2014 try again'); addingListing = false; return; }
+    document.getElementById('bl-species').value = '';
+    popToast(species + ' added to the register');
+    loadBreederListings();
+    addingListing = false;
+  });
 
   // ===== My Aquariums: working data + CRUD =====
   // Note: demo state lives in memory; the production build persists to the member account.
@@ -6265,7 +6476,7 @@ window.initPortal = function(){
       'If this wasn\u2019t you, contact the committee straight away.', window.currentMember.id);
   });
 
-  if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); }
+  if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); loadBreederListings(); }
 
   applyLiveMember();
 
