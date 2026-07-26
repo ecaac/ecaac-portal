@@ -814,8 +814,8 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   <div class="grid g4">
     <div class="card t-leaf">
       <div class="card-icon bg-leaf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></div>
-      <div class="stat-num">Active</div>
-      <div class="stat-label">Membership · fees due end Feb 2027</div>
+      <div class="stat-num" data-live="mem-status">Active</div>
+      <div class="stat-label" data-live="mem-status-label">Membership · fees due end Feb 2027</div>
     </div>
     <div class="card t-deep">
       <div class="card-icon bg-deep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/></svg></div>
@@ -829,8 +829,8 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     </div>
     <div class="card t-coral">
       <div class="card-icon bg-coral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
-      <div class="stat-num">1 Aug</div>
-      <div class="stat-label">Next meeting · Sat 14:00 · The Italian Club</div>
+      <div class="stat-num" id="dash-next-date">1 Aug</div>
+      <div class="stat-label" id="dash-next-label">Next meeting · Sat 14:00 · The Italian Club</div>
     </div>
   </div>
 
@@ -1021,9 +1021,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 
   <div class="grid g4">
     <div class="card t-leaf"><div class="stat-num" data-live="member-number" style="font-size:22px">ECAAC-0002</div><div class="stat-label">Membership number</div></div>
-    <div class="card t-deep"><div class="stat-num">Full</div><div class="stat-label">Annual membership type</div></div>
+    <div class="card t-deep"><div class="stat-num" data-live="mem-type">Full</div><div class="stat-label" data-live="mem-type-label">Annual membership type</div></div>
     <div class="card t-gold"><div class="stat-num" data-live="years-num">8</div><div class="stat-label" data-live="joined-label">Years as member · joined 2018</div></div>
-    <div class="card t-coral"><div class="stat-num">219</div><div class="stat-label">Days until renewal · fees due end Feb 2027</div></div>
+    <div class="card t-coral"><div class="stat-num" data-live="renew-days">219</div><div class="stat-label" data-live="renew-label">Days until renewal · fees due end Feb 2027</div></div>
   </div>
 
   <div class="sec-title"><h3>Digital membership card</h3></div>
@@ -2239,6 +2239,39 @@ window.initPortal = function(){
   }
   function memberTypeInfo(raw){ return MEMBER_TYPES[memberTypeKey(raw)]; }
   function memberFee(raw){ return memberTypeInfo(raw).fee; }
+
+  // ===== Membership status & renewal =====
+  // members.status and members.renewal_date were previously never read, so the
+  // dashboard and membership cards showed fixed placeholder text to everyone.
+  var MEMBER_STATUS = { active:'Active', lapsed:'Lapsed', pending:'Pending', suspended:'Suspended', resigned:'Resigned' };
+  function memStatusLabel(raw){
+    var k = String(raw || '').trim().toLowerCase();
+    return MEMBER_STATUS[k] || (raw ? String(raw).charAt(0).toUpperCase() + String(raw).slice(1) : 'Unknown');
+  }
+  function renewalDaysLeft(raw){
+    if (!raw) return null;
+    var d = new Date(String(raw).slice(0, 10) + 'T00:00:00');
+    if (isNaN(d.getTime())) return null;
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    return Math.round((d - today) / 86400000);
+  }
+  // The big number: days remaining, or a short word when that reads oddly.
+  function renewalDaysText(raw){
+    var n = renewalDaysLeft(raw);
+    if (n === null) return '—';
+    if (n < 0) return 'Overdue';
+    if (n === 0) return 'Today';
+    return String(n);
+  }
+  // The supporting line: when the renewal actually falls due.
+  function renewalText(raw){
+    var n = renewalDaysLeft(raw);
+    if (n === null) return '';
+    var d = new Date(String(raw).slice(0, 10) + 'T00:00:00');
+    var when = d.toLocaleDateString('en-ZA', { day:'numeric', month:'long', year:'numeric' });
+    if (n < 0) return 'renewal was due ' + when;
+    return 'fees due ' + when;
+  }
   function fmtRand(n){ return 'R' + Number(n).toFixed(2); }
   // First segment of the role line: Committee for admins, otherwise the tier.
   // Second segment stays "Full Member" — that's paid-up status, not the tier.
@@ -2527,6 +2560,27 @@ window.initPortal = function(){
       '<div class="row-actions">' + icsButton + action + '</div></div>';
   }
 
+  // Dashboard "Next meeting" card. Previously hardcoded to "1 Aug · The Italian
+  // Club" even though MEETINGS already held the real schedule.
+  function renderNextMeeting(){
+    var numEl = document.getElementById('dash-next-date');
+    var lblEl = document.getElementById('dash-next-label');
+    if (!numEl || !lblEl) return;
+    var now = new Date();
+    var next = MEETINGS.filter(function(m){ return m.date >= now; })
+      .sort(function(a, b){ return a.date - b.date; })[0];
+    if (!next){
+      numEl.textContent = '—';
+      lblEl.textContent = IS_LIVE ? 'No upcoming events yet' : 'No upcoming events';
+      return;
+    }
+    numEl.textContent = next.dateLabel[0] + ' ' + next.dateLabel[1];
+    var bits = [next.date.toLocaleDateString('en-ZA', { weekday:'short' }) + ' ' +
+                next.date.toLocaleTimeString('en-ZA', { hour:'2-digit', minute:'2-digit', hour12:false })];
+    if (next.location) bits.push(next.location);
+    lblEl.textContent = next.name + ' · ' + bits.join(' · ');
+  }
+
   // Dashboard "Upcoming events" preview — the next three real events, same pill
   // vocabulary as the Events view. Kept independent of renderEvents' own guards
   // so it still renders on views where #events-rows isn't present.
@@ -2556,6 +2610,7 @@ window.initPortal = function(){
 
   function renderEvents(){
     renderDashEvents();
+    renderNextMeeting();
     var el = document.getElementById('events-rows');
     var pastEl = document.getElementById('events-past-rows');
     if (!el) return;
@@ -4686,6 +4741,14 @@ window.initPortal = function(){
       'years-badge': years + ' year' + (years===1?'':'s') + ' a member',
       'years-num': String(years),
       'joined-label': 'Years as member · joined ' + joinYear,
+      // Membership status, tier and renewal — previously hardcoded in the markup,
+      // so every live member saw "Active", "Full" and "219 days" regardless.
+      'mem-status': memStatusLabel(cm.status),
+      'mem-status-label': 'Membership' + (renewalText(cm.renewal_date) ? ' · ' + renewalText(cm.renewal_date) : ''),
+      'mem-type': memberTypeInfo(cm.membership_type).label,
+      'mem-type-label': 'Annual membership type · ' + fmtRand(memberFee(cm.membership_type)),
+      'renew-days': renewalDaysText(cm.renewal_date),
+      'renew-label': renewalText(cm.renewal_date) || 'Renewal date not recorded',
       // Placeholders, not real values — these scrub the demo figures at login and
       // are replaced by refreshAwardStats() / renderBadgeCategories() once the
       // member's entries land. A dash reads as "loading", where 0 read as fact.
