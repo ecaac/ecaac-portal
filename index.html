@@ -249,10 +249,39 @@ button{font-family:inherit}
 .detail-hero h2{color:#fff;font-size:26px;margin:8px 0 6px}
 .detail-hero p{color:#B9C1D6;font-size:13.5px;margin:0}
 .tag{display:inline-block;font-size:11px;font-weight:700;color:var(--leaf-light);background:rgba(143,217,161,0.12);border:1px solid rgba(143,217,161,0.25);padding:5px 12px;border-radius:14px;margin:14px 8px 0 0}
-.params{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:16px}
-.param{background:var(--paper);border-radius:14px;padding:24px 14px;min-height:104px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border-top:3px solid var(--leaf);box-shadow:0 10px 22px -16px rgba(11,59,76,0.18)}
+.params{display:grid;grid-template-columns:repeat(auto-fit,minmax(124px,1fr));gap:12px;margin-top:16px}
+.param{background:var(--paper);border-radius:14px;padding:18px 12px 14px;min-height:104px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border-top:3px solid var(--leaf);box-shadow:0 10px 22px -16px rgba(11,59,76,0.18)}
 .param b{font-family:'Fraunces',Georgia,serif;font-size:20px;display:block;color:var(--deep)}
+.param b .p-unit{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:var(--ink-soft);margin-left:3px}
 .param span{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft)}
+.param.st-ok{border-top-color:var(--leaf)}
+.param.st-warn{border-top-color:var(--gold)}
+.param.st-bad{border-top-color:var(--coral)}
+.param.st-none{border-top-color:var(--sand-line)}
+.param.st-none b{font-size:15px;color:#A9A395}
+.p-status{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:7px;font-size:10px;font-weight:700;letter-spacing:.02em;text-transform:none}
+.p-status i{width:7px;height:7px;border-radius:50%;flex:none;display:block}
+.p-status.st-ok{color:var(--teal-dark)} .p-status.st-ok i{background:var(--leaf)}
+.p-status.st-warn{color:var(--gold-dark)} .p-status.st-warn i{background:var(--gold)}
+.p-status.st-bad{color:var(--coral-dark)} .p-status.st-bad i{background:var(--coral)}
+.p-status.st-none{color:#A9A395} .p-status.st-none i{background:#D8D1C0}
+.param-alert{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-radius:14px;background:#FCEBDD;border:1px solid var(--coral);color:var(--coral-dark);font-size:12.5px;font-weight:600;line-height:1.5;margin-top:12px}
+.param-alert svg{width:17px;height:17px;flex:none;margin-top:1px}
+.param-alert b{font-weight:800}
+
+/* ===== tank quick actions + setup panel ===== */
+.quick-bar{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.spec-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1px;background:var(--sand-line);border:1px solid var(--sand-line);border-radius:14px;overflow:hidden}
+.spec-item{background:var(--paper);padding:13px 16px;display:flex;flex-direction:column;gap:3px}
+.spec-item dt{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
+.spec-item dd{margin:0;font-size:13.5px;font-weight:600;color:var(--deep)}
+.spec-item dd small{display:block;font-size:11.5px;font-weight:500;color:var(--ink-soft);margin-top:2px}
+.test-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+.test-row label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px}
+.test-row .ti-wrap{display:flex;align-items:center;gap:8px}
+.test-row input{flex:1;min-width:0;padding:10px 12px;border-radius:11px;border:1px solid var(--sand-line);font:inherit;font-size:13.5px}
+.test-row .ti-unit{font-size:11.5px;font-weight:700;color:var(--ink-soft);min-width:34px}
+.test-row .ti-hint{font-size:10.5px;font-weight:600;color:#A9A395;margin-top:4px;display:block}
 
 /* ===== awards ===== */
 .progress{height:9px;border-radius:6px;background:#EFE9DA;overflow:hidden;margin-top:10px}
@@ -1364,8 +1393,29 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <p id="td-notes" style="margin-top:14px;font-size:13px;color:#B9C1D6"></p>
   </div>
 
+  <div class="quick-bar">
+    <button class="btn btn-primary btn-sm" id="qa-test">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3h6M10 3v7.5L5.6 18a2.5 2.5 0 0 0 2.1 3.8h8.6a2.5 2.5 0 0 0 2.1-3.8L14 10.5V3"/><path d="M7.2 15h9.6"/></svg>
+      Log a test
+    </button>
+    <button class="btn btn-outline btn-sm" id="qa-wc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3s6 6.4 6 10.5A6 6 0 0 1 6 13.5C6 9.4 12 3 12 3Z"/></svg>
+      Log water change
+    </button>
+    <button class="btn btn-outline btn-sm" id="qa-live">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add livestock
+    </button>
+  </div>
+
   <div class="params" id="td-params"></div>
+  <div id="td-param-alert"></div>
   <p style="font-size:12px;color:var(--ink-soft);margin:8px 4px 0">Tap a parameter to update or remove it, or add a new one.</p>
+
+  <div class="panel" style="margin-top:20px">
+    <h3>Setup</h3>
+    <dl class="spec-list" id="td-spec" style="margin:12px 0 0"></dl>
+  </div>
 
   <div class="grid g2" style="margin-top:20px">
     <div class="panel">
@@ -2189,7 +2239,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <div class="field full"><label for="tf-name">Tank name *</label><input id="tf-name" placeholder="e.g. Sunset Shallows"></div>
         <div class="field"><label for="tf-type">Type *</label>
           <select id="tf-type">
-            <option>Freshwater</option><option>Aquascape</option><option>Marine</option><option>Brackish</option>
+            <option>Freshwater</option><option>Shrimp</option><option>Aquascape</option><option>Marine</option><option>Brackish</option>
             <option>Blackwater</option><option>Biotope</option><option>Paludarium</option><option>Vivarium</option><option>Terrarium</option>
           </select>
         </div>
@@ -2219,7 +2269,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
             <span>%</span>
           </div>
         </div>
-        <div class="field"><label for="tf-started">Date started</label><input id="tf-started" placeholder="e.g. Jul 2026"></div>
+        <div class="field"><label for="tf-started-on">Date started</label><input id="tf-started-on" type="date"><span id="tf-started-legacy" style="display:none;font-size:11.5px;color:var(--ink-soft);margin-top:5px"></span></div>
         <div class="field"><label for="tf-filter">Filter</label><input id="tf-filter" placeholder="e.g. Canister, sponge…"></div>
         <div class="field"><label for="tf-light">Lighting</label><input id="tf-light" placeholder="e.g. RGB LED, 8h"></div>
         <div class="field"><label for="tf-substrate">Substrate</label>
@@ -2255,6 +2305,49 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       <div style="margin-top:18px;display:flex;gap:10px">
         <button class="btn btn-primary" id="tf-save">Save aquarium</button>
         <button class="btn btn-outline" id="tf-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Log a test modal -->
+<div class="card-modal" id="test-modal" role="dialog" aria-modal="true" aria-label="Log a water test">
+  <div class="card-modal-inner" style="max-width:540px">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h3 style="margin:0">Log a water test</h3>
+        <button class="card-modal-close" id="test-modal-close" aria-label="Close" style="border-color:var(--sand-line);background:var(--sand);color:var(--deep)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 16px">Fill in whatever you tested — leave the rest blank and they'll stay as they are.</p>
+      <div class="test-grid" id="test-fields"></div>
+      <div style="margin-top:18px;display:flex;gap:10px">
+        <button class="btn btn-primary" id="test-save">Save readings</button>
+        <button class="btn btn-outline" id="test-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Log a water change modal -->
+<div class="card-modal" id="wc-modal" role="dialog" aria-modal="true" aria-label="Log a water change">
+  <div class="card-modal-inner" style="max-width:420px">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="margin:0">Log a water change</h3>
+        <button class="card-modal-close" id="wc-modal-close" aria-label="Close" style="border-color:var(--sand-line);background:var(--sand);color:var(--deep)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label for="wc-pct">How much</label><input id="wc-pct" type="number" min="1" max="100" value="30"></div>
+        <div class="field"><label for="wc-litres">Litres</label><input id="wc-litres" type="number" min="1" placeholder="—" readonly style="background:#F3EFE6"></div>
+        <div class="field full"><label for="wc-note">Note (optional)</label><input id="wc-note" placeholder="Gravel vac, filter rinse…"></div>
+      </div>
+      <div style="margin-top:18px;display:flex;gap:10px">
+        <button class="btn btn-primary" id="wc-save">Log it</button>
+        <button class="btn btn-outline" id="wc-cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -3985,6 +4078,7 @@ window.initPortal = function(){
   // Note: demo state lives in memory; the production build persists to the member account.
   var TYPE_STYLE = {
     'Freshwater':   ['#082A3E','#041826','fish'],
+    'Shrimp':       ['#3A1226','#1A0713','shrimp'],
     'Aquascape':    ['#0A1D0F','#0F2B15','plant'],
     'Marine':       ['#0B2C52','#051228','fish'],
     'Brackish':     ['#2B2A12','#121106','fish'],
@@ -3997,6 +4091,7 @@ window.initPortal = function(){
   var ICONS = {
     fish: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg>',
     plant: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21V9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7Z"/><path d="M12 15c0-4-3-6-7-6 0 4 3 6 7 6Z"/></svg>',
+    shrimp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7c-4.5 0-8 1.6-9.8 4.3C7.6 13.5 5.4 15 3 15c0 2.8 2.4 5 5.4 5 4.6 0 8.3-3.1 9.6-7.3"/><path d="M19 7c-2 0-3.6 1.3-3.6 3M8.4 20c-.6-1.2-.6-2.6 0-3.9M12 15.5c-.8-.8-1.2-1.9-1.1-3"/><circle cx="20.4" cy="6.2" r=".7" fill="currentColor" stroke="none"/></svg>',
     terra: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M4 8c4 2 12 2 16 0M4 16c4-2 12-2 16 0"/></svg>'
   };
   var fishRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg>';
@@ -4104,6 +4199,8 @@ window.initPortal = function(){
         id: row.id, name: row.name, type: row.type, subtitle: row.subtitle || '',
         volume: row.volume || 0, dims: row.dims || '—', started: row.started || '', notes: row.notes || '',
         shape: row.shape || 'rect',
+        started_on: row.started_on || null,
+        filter: row.filter || '', light: row.light || '',
         length_cm: row.length_cm || 0, width_cm: row.width_cm || 0, height_cm: row.height_cm || 0,
         displacement: (typeof row.displacement === 'number') ? row.displacement : 12,
         substrate: row.substrate || '', co2: row.co2 || '', water_source: row.water_source || '',
@@ -4234,6 +4331,152 @@ window.initPortal = function(){
     document.getElementById('tank-toolbar').style.display = tanks.length > 1 ? 'flex' : 'none';
   }
 
+  // ===== parameter library =====
+  // Keyed by the uppercase label already used in tank_params, so existing rows
+  // (PH, TEMP, TDS) light up without a data migration. Anything not in here is
+  // still allowed — it just renders without a unit or a safe band.
+  // `range` is the general freshwater band; `byType` narrows it where the tank
+  // type genuinely changes what "good" means. `critical` params are the ones
+  // where any reading above zero means act today, not adjust gradually.
+  var PARAM_LIB = {
+    PH:   { name:'pH',   unit:'',    range:[6.4,7.8], dp:1,
+            byType:{ Marine:[8.0,8.4], Shrimp:[6.2,7.5], Blackwater:[4.5,6.5], Brackish:[7.6,8.4] } },
+    TEMP: { name:'Temp', unit:'°C',  range:[22,27],   dp:1,
+            byType:{ Shrimp:[20,25], Marine:[24,27], Terrarium:[20,28], Vivarium:[20,28] } },
+    KH:   { name:'KH',   unit:'dKH', range:[2,8],     dp:1,
+            byType:{ Marine:[7,11], Shrimp:[1,5], Blackwater:[0,3] } },
+    GH:   { name:'GH',   unit:'dGH', range:[4,12],    dp:1,
+            byType:{ Shrimp:[4,8], Blackwater:[0,4] } },
+    NH3:  { name:'Ammonia', unit:'ppm', range:[0,0], dp:2, critical:true },
+    NO2:  { name:'Nitrite', unit:'ppm', range:[0,0], dp:2, critical:true },
+    NO3:  { name:'Nitrate', unit:'ppm', range:[0,30], dp:0,
+            byType:{ Marine:[0,10], Shrimp:[0,20] } },
+    PO4:  { name:'Phosphate', unit:'ppm', range:[0,1.5], dp:2, byType:{ Marine:[0,0.1] } },
+    TDS:  { name:'TDS',  unit:'ppm', range:[100,300], dp:0, byType:{ Shrimp:[120,250] } },
+    // Copper is fatal to shrimp and inverts at doses fish shrug off, so it gets
+    // the same treatment as ammonia rather than a soft range.
+    CU:   { name:'Copper', unit:'ppm', range:[0,0], dp:2, critical:true },
+    ALK:  { name:'Alkalinity', unit:'dKH', range:[7,11], dp:1 },
+    CA:   { name:'Calcium', unit:'ppm', range:[400,450], dp:0 },
+    MG:   { name:'Magnesium', unit:'ppm', range:[1250,1350], dp:0 },
+    SAL:  { name:'Salinity', unit:'ppt', range:[33,35], dp:1, byType:{ Brackish:[5,15] } },
+    HUM:  { name:'Humidity', unit:'%', range:[60,90], dp:0 }
+  };
+
+  // What a new tank starts with. Freshwater tanks begin with the cycling set —
+  // a tank on day one is cycling, and ammonia and nitrite are the readings that
+  // matter until it isn't.
+  var STARTER_PARAMS = {
+    'Freshwater': ['PH','TEMP','NH3','NO2','NO3'],
+    'Aquascape':  ['PH','TEMP','KH','GH','NO3','PO4'],
+    'Shrimp':     ['TEMP','GH','KH','TDS','PH','CU'],
+    'Marine':     ['TEMP','SAL','ALK','CA','MG'],
+    'Brackish':   ['TEMP','SAL','PH','NO3'],
+    'Blackwater': ['PH','TEMP','TDS','KH'],
+    'Biotope':    ['PH','TEMP','KH','NO3'],
+    'Paludarium': ['TEMP','PH','HUM'],
+    'Vivarium':   ['TEMP','HUM'],
+    'Terrarium':  ['TEMP','HUM']
+  };
+  function starterParams(type){ return (STARTER_PARAMS[type] || STARTER_PARAMS['Freshwater']).slice(); }
+
+  // Labels are free text and always have been, so map the spellings people
+  // actually type onto the canonical keys.
+  var PARAM_ALIAS = {
+    'TEMPERATURE':'TEMP', 'TEMP.':'TEMP', 'WATER TEMP':'TEMP', '°C':'TEMP',
+    'AMMONIA':'NH3', 'NH4':'NH3', 'NH3/NH4':'NH3',
+    'NITRITE':'NO2', 'NITRATE':'NO3', 'NITRATES':'NO3',
+    'PHOSPHATE':'PO4', 'PHOSPHATES':'PO4',
+    'HUMIDITY':'HUM', 'RH':'HUM',
+    'ALKALINITY':'ALK', 'DKH':'KH',
+    'CALCIUM':'CA', 'MAGNESIUM':'MG', 'COPPER':'CU',
+    'SALINITY':'SAL', 'SG':'SAL',
+    'HARDNESS':'GH', 'CARBONATE HARDNESS':'KH'
+  };
+  function paramKey(label){
+    var k = String(label || '').trim().toUpperCase();
+    return PARAM_ALIAS[k] || k;
+  }
+  function paramDef(label){ return PARAM_LIB[paramKey(label)] || null; }
+  function paramRange(label, tankType){
+    var def = paramDef(label);
+    if (!def) return null;
+    if (def.byType && def.byType[tankType]) return def.byType[tankType];
+    return def.range;
+  }
+  function isUntested(v){
+    var s = String(v == null ? '' : v).trim();
+    return s === '' || s === '—' || s === '-' || s === '–';
+  }
+  // Readings get typed in as "7.2", "7,2", "~25", "25 °C" — pull the number out
+  // rather than rejecting anything that isn't clean.
+  function paramNumber(v){
+    var m = String(v).replace(',', '.').match(/-?\d+(\.\d+)?/);
+    return m ? parseFloat(m[0]) : null;
+  }
+  function paramStatus(label, value, tankType){
+    if (isUntested(value)) return { state:'none', text:'Not tested yet' };
+    var def = paramDef(label);
+    var range = paramRange(label, tankType);
+    var n = paramNumber(value);
+    if (!def || !range || n === null) return { state:'plain', text:'' };
+    if (def.critical){
+      if (n > 0) return { state:'bad', text:'Should be zero', critical:true };
+      return { state:'ok', text:'Zero — good' };
+    }
+    var lo = range[0], hi = range[1];
+    if (n >= lo && n <= hi) return { state:'ok', text:'In range' };
+    // A hair outside the band is a nudge, not an emergency. 15% of the band's
+    // width (or of the limit itself for bands that start at zero) is the margin.
+    var span = (hi - lo) || hi || 1;
+    var margin = Math.abs(span) * 0.15;
+    var over = n > hi;
+    var drift = over ? n - hi : lo - n;
+    var word = over ? 'Above' : 'Below';
+    return {
+      state: drift <= margin ? 'warn' : 'bad',
+      text: word + ' ' + (over ? hi : lo) + (def.unit ? ' ' + def.unit : '')
+    };
+  }
+  function paramDisplay(label, value){
+    var def = paramDef(label);
+    if (isUntested(value)) return { value:'Not tested yet', unit:'' };
+    var s = String(value).trim();
+    // Plenty of existing readings were typed as "26 °C" or "14°". Only append
+    // the unit chip when the value is a bare number, or it reads "26 °C °C".
+    var bare = /^-?\d+(\.\d+)?$/.test(s.replace(',', '.'));
+    return { value: s, unit: (bare && def) ? def.unit : '' };
+  }
+  function paramTitle(label){
+    var def = paramDef(label);
+    // Respect what the member typed if it isn't one of the known presets —
+    // "Photoperiod" shouldn't come back as "PHOTOPERIOD".
+    return def ? def.name : String(label);
+  }
+
+  function monthYear(iso){
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getFullYear();
+  }
+  // Maturity is what people actually want to know — "14 months" says more about
+  // a tank's biology than the date it was filled.
+  function tankAge(iso){
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    var now = new Date();
+    var days = Math.floor((now - d) / 86400000);
+    if (days < 0) return 'Not set up yet';
+    if (days < 14) return days + (days === 1 ? ' day old' : ' days old') + ' — still cycling';
+    if (days < 60) return Math.floor(days / 7) + ' weeks old';
+    var months = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+    if (now.getDate() < d.getDate()) months--;
+    if (months < 12) return months + ' months mature';
+    var years = Math.floor(months / 12), rem = months % 12;
+    return years + (years === 1 ? ' year' : ' years') + (rem ? ' ' + rem + ' month' + (rem === 1 ? '' : 's') : '') + ' mature';
+  }
+
   function renderTanks(){
     var grid = document.getElementById('tank-grid');
     syncTankToolbar();
@@ -4242,7 +4485,7 @@ window.initPortal = function(){
       var t = entry.t, i = entry.i;
       var st = TYPE_STYLE[t.type] || TYPE_STYLE['Freshwater'];
       var live = t.livestock.reduce(function(a, l){ var n = parseInt(l[2],10); return a + (isNaN(n) ? (l[2] ? 1 : 0) : n); }, 0);
-      var liveLabel = /shrimp|caridina/i.test(t.livestock.map(function(l){return l[0];}).join(' ')) && t.type==='Freshwater' ? 'Shrimp' : (t.type==='Terrarium' ? 'Fauna' : 'Fish');
+      var liveLabel = (t.type === 'Shrimp' || (/shrimp|caridina|neocaridina/i.test(t.livestock.map(function(l){return l[0];}).join(' ')) && t.type==='Freshwater')) ? 'Shrimp' : (t.type==='Terrarium' ? 'Fauna' : 'Fish');
       var cover = coverUrl(t);
       var thumbInner = cover
         ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
@@ -4345,6 +4588,55 @@ window.initPortal = function(){
     });
   }
 
+  // ===== setup panel =====
+  // The tag pills lose the label — "RO remineralised" as a bare chip doesn't
+  // tell you it's the water source. These are the same facts with their names
+  // attached, and rows with nothing in them are left out entirely.
+  function renderSpec(t){
+    var el = document.getElementById('td-spec');
+    if (!el) return;
+    var net = netLitres(t);
+    var age = tankAge(t.started_on);
+    var rows = [
+      ['Volume', t.volume ? t.volume + ' ℓ' : '', net && net !== t.volume ? '≈' + net + ' ℓ of water after ' + (t.displacement || 12) + '% displacement' : ''],
+      ['Dimensions', t.dims && t.dims !== '—' ? t.dims + ' cm' : '', SHAPE_LABEL[t.shape || 'rect'] || ''],
+      ['Set up', t.started || '', age],
+      ['Filter', t.filter || '', ''],
+      ['Lighting', t.light || '', ''],
+      ['Substrate', t.substrate || '', ''],
+      ['CO₂', t.co2 || '', ''],
+      ['Water source', t.water_source || '', '']
+    ].filter(function(r){ return r[1]; });
+    if (!rows.length){
+      el.innerHTML = '<div class="spec-item" style="grid-column:1/-1"><dd style="font-weight:500;color:var(--ink-soft)">Nothing recorded yet — use Edit tank to fill in the setup.</dd></div>';
+      return;
+    }
+    el.innerHTML = rows.map(function(r){
+      return '<div class="spec-item"><dt>' + escT(r[0]) + '</dt><dd>' + escT(r[1]) +
+        (r[2] ? '<small>' + escT(r[2]) + '</small>' : '') + '</dd></div>';
+    }).join('');
+  }
+
+  // ===== critical parameter alert =====
+  // Ammonia, nitrite and copper aren't "a bit high" problems. A coloured dot on
+  // a tile is easy to scroll past, so they get said out loud.
+  function renderParamAlert(t){
+    var el = document.getElementById('td-param-alert');
+    if (!el) return;
+    var bad = t.params.filter(function(p){
+      var s = paramStatus(p[1], p[0], t.type);
+      return s.critical;
+    });
+    if (!bad.length){ el.innerHTML = ''; return; }
+    var names = bad.map(function(p){ return paramTitle(p[1]) + ' at ' + p[0]; });
+    var advice = bad.some(function(p){ return String(p[1]).toUpperCase() === 'CU'; })
+      ? 'Copper is lethal to shrimp and other invertebrates even in trace amounts — find the source before anything else.'
+      : 'Test again to confirm, then water change and hold off feeding. Livestock is at risk while this reads above zero.';
+    el.innerHTML = '<div class="param-alert">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 9v5M12 17.5v.01"/><path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>' +
+      '<div><b>Act today:</b> ' + escT(names.join(', ')) + '. ' + escT(advice) + '</div></div>';
+  }
+
   function renderDetail(){
     var t = tanks[currentTank];
     document.getElementById('td-name').textContent = t.name;
@@ -4357,10 +4649,19 @@ window.initPortal = function(){
     document.getElementById('td-notes').textContent = t.notes || '';
     document.getElementById('td-tags').innerHTML = t.tags.map(function(x){ return '<span class="tag">' + escT(x) + '</span>'; }).join('');
     document.getElementById('td-params').innerHTML = t.params.map(function(p, i){
-      return '<div class="param" data-p="' + i + '">' +
-        '<div class="param-view" tabindex="0" role="button" aria-label="Edit ' + escT(p[1]) + '"><b>' + escT(p[0]) + '</b><span>' + escT(p[1]) + '</span></div>' +
+      var status = paramStatus(p[1], p[0], t.type);
+      var disp = paramDisplay(p[1], p[0]);
+      var cls = (status.state === 'plain') ? '' : ' st-' + status.state;
+      var statusRow = status.text
+        ? '<div class="p-status st-' + status.state + '"><i></i>' + escT(status.text) + '</div>'
+        : '';
+      return '<div class="param' + cls + '" data-p="' + i + '">' +
+        '<div class="param-view" tabindex="0" role="button" aria-label="Edit ' + escT(paramTitle(p[1])) + '">' +
+          '<b>' + escT(disp.value) + (disp.unit ? '<span class="p-unit">' + escT(disp.unit) + '</span>' : '') + '</b>' +
+          '<span>' + escT(paramTitle(p[1])) + '</span>' + statusRow +
+        '</div>' +
         '<div class="param-edit">' +
-          '<input type="text" class="param-input" value="' + escT(p[0]) + '" aria-label="New reading for ' + escT(p[1]) + '">' +
+          '<input type="text" class="param-input" value="' + (isUntested(p[0]) ? '' : escT(p[0])) + '" aria-label="New reading for ' + escT(paramTitle(p[1])) + '">' +
           '<div class="param-edit-actions">' +
             '<button class="param-save" aria-label="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></button>' +
             '<button class="param-cancel" aria-label="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
@@ -4381,7 +4682,8 @@ window.initPortal = function(){
         tile.classList.add('editing');
         viewEl.style.display = 'none';
         editEl.style.display = 'flex';
-        input.value = tanks[currentTank].params[i][0];
+        var cur = tanks[currentTank].params[i][0];
+        input.value = isUntested(cur) ? '' : cur;
         input.focus(); input.select();
       }
       function cancelEdit(target){
@@ -4446,7 +4748,12 @@ window.initPortal = function(){
       var form = document.createElement('div');
       form.className = 'param-new';
       form.innerHTML =
-        '<input type="text" class="param-new-label" placeholder="LABEL (e.g. GH)" maxlength="14">' +
+        '<input type="text" class="param-new-label" list="param-preset-list" placeholder="Parameter (e.g. GH)" maxlength="14">' +
+        '<datalist id="param-preset-list">' +
+          Object.keys(PARAM_LIB).map(function(k){
+            return '<option value="' + k + '">' + escT(PARAM_LIB[k].name) + (PARAM_LIB[k].unit ? ' (' + PARAM_LIB[k].unit + ')' : '') + '</option>';
+          }).join('') +
+        '</datalist>' +
         '<input type="text" class="param-new-value" placeholder="Value (e.g. 8)">' +
         '<div class="param-edit-actions" style="justify-content:center">' +
           '<button class="param-save" aria-label="Save new parameter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></button>' +
@@ -4459,24 +4766,28 @@ window.initPortal = function(){
       function commitNew(){
         var label = labelInput.value.trim();
         var value = valueInput.value.trim();
-        if (!label || !value){ (label ? valueInput : labelInput).focus(); return; }
+        if (!label){ labelInput.focus(); return; }
         var t = tanks[currentTank];
+        // A parameter can exist before it has a reading — the tile just says
+        // "Not tested yet" until someone fills it in.
+        var stored = label.toUpperCase();
+        var entryText = value ? ('Added parameter ' + stored + ': ' + value) : ('Started tracking ' + stored);
         var doCreate = async function(){
           if (sb && t.id){
-            var res = await dbInsertRow('tank_params', { tank_id: t.id, label: label.toUpperCase(), value: value, sort_order: t.params.length });
+            var res = await dbInsertRow('tank_params', { tank_id: t.id, label: stored, value: value, sort_order: t.params.length });
             if (res.error){ popToast('Could not save — try again'); return; }
             var arr = [res.data.value, res.data.label]; arr._id = res.data.id;
             t.params.push(arr);
-            var logRes = await dbInsertRow('tank_log', { tank_id: t.id, entry: 'Added parameter ' + label.toUpperCase() + ': ' + value, note: 'Parameter added' });
+            var logRes = await dbInsertRow('tank_log', { tank_id: t.id, entry: entryText, note: 'Parameter added' });
             if (!logRes.error && logRes.data){
               var la = [logRes.data.entry, logRes.data.note || '', fmtLogDate(logRes.data.logged_at)]; la._id = logRes.data.id;
               t.log.unshift(la);
             }
           } else {
-            t.params.push([value, label.toUpperCase()]);
-            t.log.unshift(['Added parameter ' + label.toUpperCase() + ': ' + value, 'Parameter added', todayShort()]);
+            t.params.push([value, stored]);
+            t.log.unshift([entryText, 'Parameter added', todayShort()]);
           }
-          popToast(label.toUpperCase() + ' added to this tank');
+          popToast(paramTitle(stored) + ' added to this tank');
           renderDetail(); renderTanks();
         };
         doCreate();
@@ -4490,6 +4801,9 @@ window.initPortal = function(){
         });
       });
     });
+
+    renderSpec(t);
+    renderParamAlert(t);
 
     editableRows(t.livestock, fishRowIcon, 'td-livestock', 'livestock');
     editableRows(t.plants, plantRowIcon, 'td-plants', 'plants');
@@ -4740,7 +5054,15 @@ window.initPortal = function(){
     document.getElementById('tf-wid').value = d && d.w ? d.w : '';
     document.getElementById('tf-hei').value = d && d.h ? d.h : '';
     document.getElementById('tf-disp').value = (t && typeof t.displacement === 'number') ? t.displacement : 12;
-    document.getElementById('tf-started').value = t ? t.started : '';
+    var startedOn = document.getElementById('tf-started-on');
+    startedOn.value = (t && t.started_on) ? String(t.started_on).slice(0, 10) : '';
+    // Tanks created before this field existed only have free text like
+    // "Jul 2026" — show it so the member knows what they're replacing.
+    var legacy = document.getElementById('tf-started-legacy');
+    if (t && !t.started_on && t.started){
+      legacy.textContent = 'Currently recorded as "' + t.started + '"';
+      legacy.style.display = 'block';
+    } else { legacy.style.display = 'none'; }
     document.getElementById('tf-filter').value = t ? (t.filter || '') : '';
     document.getElementById('tf-light').value = t ? (t.light || '') : '';
     document.getElementById('tf-substrate').value = t ? (t.substrate || '') : '';
@@ -4782,6 +5104,8 @@ window.initPortal = function(){
     var H = parseFloat(document.getElementById('tf-hei').value) || 0;
     if (shape === 'cube'){ W = L; H = L; }
     var typedVol = parseInt(document.getElementById('tf-volume').value, 10) || 0;
+    var startedOnVal = document.getElementById('tf-started-on').value || null;
+    var existingStarted = (editingIdx >= 0 && tanks[editingIdx]) ? tanks[editingIdx].started : '';
     var data = {
       name: name,
       type: document.getElementById('tf-type').value,
@@ -4792,7 +5116,8 @@ window.initPortal = function(){
       length_cm: L || null, width_cm: W || null, height_cm: H || null,
       displacement: Math.min(60, Math.max(0, parseInt(document.getElementById('tf-disp').value, 10) || 0)),
       dims: dimsString(shape, L, W, H) || '—',
-      started: document.getElementById('tf-started').value.trim() || todayShort() + ' 2026',
+      started_on: startedOnVal,
+      started: startedOnVal ? monthYear(startedOnVal) : (existingStarted || (todayShort() + ' ' + new Date().getFullYear())),
       filter: document.getElementById('tf-filter').value.trim(),
       light: document.getElementById('tf-light').value.trim(),
       substrate: document.getElementById('tf-substrate').value.trim(),
@@ -4811,9 +5136,10 @@ window.initPortal = function(){
       .concat(data.water_source ? [data.water_source] : []);
     var dbFields = {
       name: data.name, type: data.type, volume: data.volume, dims: data.dims,
-      started: data.started, notes: data.notes,
+      started: data.started, started_on: data.started_on, notes: data.notes,
       shape: data.shape, length_cm: data.length_cm, width_cm: data.width_cm, height_cm: data.height_cm,
-      displacement: data.displacement, substrate: data.substrate, co2: data.co2, water_source: data.water_source
+      displacement: data.displacement, substrate: data.substrate, co2: data.co2, water_source: data.water_source,
+      filter: data.filter, light: data.light
     };
 
     if (editingIdx >= 0){
@@ -4832,7 +5158,7 @@ window.initPortal = function(){
       if (currentTank === editingIdx) renderDetail();
     } else {
       var nt = Object.assign({ subtitle:'', tags:newTags, archived:false,
-        params:[['—','pH'],['—','Temp'],['—','TDS']],
+        params: starterParams(data.type).map(function(k){ return ['', k]; }),
         livestock:[], plants:[], awards:[], photos:[], cover_photo_id:null,
         log:[['Tank set up', 'Welcome to the fishroom', todayShort()]] }, data);
 
@@ -4844,10 +5170,10 @@ window.initPortal = function(){
         // default tags
         for (var tj = 0; tj < newTags.length; tj++){ await sb.from('tank_tags').insert({ tank_id: nt.id, label: newTags[tj] }); }
         // default params
-        var defaultParams = [['—','pH'],['—','Temp'],['—','TDS']];
+        var defaultParams = starterParams(data.type);
         nt.params = [];
         for (var pi = 0; pi < defaultParams.length; pi++){
-          var pr = await dbInsertRow('tank_params', { tank_id: nt.id, label: defaultParams[pi][1], value: defaultParams[pi][0], sort_order: pi });
+          var pr = await dbInsertRow('tank_params', { tank_id: nt.id, label: defaultParams[pi], value: '', sort_order: pi });
           if (!pr.error && pr.data){ var pa = [pr.data.value, pr.data.label]; pa._id = pr.data.id; nt.params.push(pa); }
         }
         // welcome log entry
@@ -4864,6 +5190,132 @@ window.initPortal = function(){
     if (editingIdx < 0){ openTank(tanks.length - 1); }
     if (window.checkBadgeChanges) window.checkBadgeChanges();
     tfSaving = false;
+  });
+
+  // ===== quick actions =====
+  // A test session is one sitting with the kit, not eight separate taps on
+  // eight tiles, so this collects the lot and writes a single log entry.
+  var testModal = document.getElementById('test-modal');
+  function openTestModal(){
+    var t = tanks[currentTank];
+    var wrap = document.getElementById('test-fields');
+    wrap.innerHTML = t.params.map(function(p, i){
+      var def = paramDef(p[1]);
+      var range = paramRange(p[1], t.type);
+      var hint = range
+        ? (def && def.critical ? 'Should read 0' : 'Target ' + range[0] + '–' + range[1] + (def && def.unit ? ' ' + def.unit : ''))
+        : '';
+      return '<div class="test-row"><label for="ti-' + i + '">' + escT(paramTitle(p[1])) + '</label>' +
+        '<div class="ti-wrap"><input id="ti-' + i + '" data-p="' + i + '" inputmode="decimal" placeholder="' +
+        (isUntested(p[0]) ? '—' : escT(p[0])) + '">' +
+        '<span class="ti-unit">' + escT(def ? def.unit : '') + '</span></div>' +
+        (hint ? '<span class="ti-hint">' + escT(hint) + '</span>' : '') + '</div>';
+    }).join('');
+    if (!t.params.length){
+      wrap.innerHTML = '<div class="reg-empty" style="grid-column:1/-1;padding:20px">No parameters on this tank yet — add one below the tiles first.</div>';
+    }
+    testModal.classList.add('show');
+    var first = wrap.querySelector('input');
+    if (first) first.focus();
+  }
+  function closeTestModal(){ testModal.classList.remove('show'); }
+  document.getElementById('qa-test').addEventListener('click', openTestModal);
+  document.getElementById('test-modal-close').addEventListener('click', closeTestModal);
+  document.getElementById('test-cancel').addEventListener('click', closeTestModal);
+  testModal.addEventListener('click', function(e){ if (e.target === testModal) closeTestModal(); });
+
+  var testSaving = false;
+  document.getElementById('test-save').addEventListener('click', async function(){
+    if (testSaving) return;
+    var t = tanks[currentTank];
+    var changes = [];
+    document.querySelectorAll('#test-fields input').forEach(function(inp){
+      var v = inp.value.trim();
+      if (!v) return;                       // blank means "didn't test it", not "clear it"
+      var i = parseInt(inp.getAttribute('data-p'), 10);
+      if (v === t.params[i][0]) return;
+      changes.push({ i: i, v: v });
+    });
+    if (!changes.length){ closeTestModal(); popToast('Nothing to save'); return; }
+    testSaving = true;
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    var summary = changes.map(function(c){ return paramTitle(t.params[c.i][1]) + ' ' + c.v; }).join(', ');
+    if (sb && t.id){
+      for (var c = 0; c < changes.length; c++){
+        var p = t.params[changes[c].i];
+        if (p._id){
+          var res = await dbUpdateRow('tank_params', p._id, { value: changes[c].v });
+          if (res.error){ btn.disabled = false; btn.textContent = 'Save readings'; testSaving = false; popToast('Could not save — try again'); return; }
+        }
+      }
+      var lr = await dbInsertRow('tank_log', { tank_id: t.id, entry: 'Water test logged', note: summary });
+      if (!lr.error && lr.data){
+        var la = [lr.data.entry, lr.data.note || '', fmtLogDate(lr.data.logged_at)]; la._id = lr.data.id;
+        t.log.unshift(la);
+      }
+    } else {
+      t.log.unshift(['Water test logged', summary, todayShort()]);
+    }
+    changes.forEach(function(c){ t.params[c.i][0] = c.v; });
+    btn.disabled = false; btn.textContent = 'Save readings';
+    testSaving = false;
+    closeTestModal();
+    popToast(changes.length + ' reading' + (changes.length === 1 ? '' : 's') + ' logged');
+    renderDetail(); renderTanks();
+  });
+
+  var wcModal = document.getElementById('wc-modal');
+  function wcLitres(){
+    var t = tanks[currentTank];
+    var base = netLitres(t) || t.volume || 0;
+    var pct = parseInt(document.getElementById('wc-pct').value, 10) || 0;
+    return base ? Math.round(base * pct / 100) : 0;
+  }
+  function syncWc(){
+    var l = wcLitres();
+    document.getElementById('wc-litres').value = l || '';
+  }
+  document.getElementById('qa-wc').addEventListener('click', function(){
+    document.getElementById('wc-pct').value = 30;
+    document.getElementById('wc-note').value = '';
+    syncWc();
+    wcModal.classList.add('show');
+    document.getElementById('wc-pct').focus();
+  });
+  document.getElementById('wc-pct').addEventListener('input', syncWc);
+  function closeWc(){ wcModal.classList.remove('show'); }
+  document.getElementById('wc-modal-close').addEventListener('click', closeWc);
+  document.getElementById('wc-cancel').addEventListener('click', closeWc);
+  wcModal.addEventListener('click', function(e){ if (e.target === wcModal) closeWc(); });
+
+  document.getElementById('wc-save').addEventListener('click', async function(){
+    var t = tanks[currentTank];
+    var pct = Math.min(100, Math.max(1, parseInt(document.getElementById('wc-pct').value, 10) || 0));
+    var litres = wcLitres();
+    var note = document.getElementById('wc-note').value.trim();
+    var entry = pct + '% water change' + (litres ? ' (' + litres + ' ℓ)' : '');
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    if (sb && t.id){
+      var lr = await dbInsertRow('tank_log', { tank_id: t.id, entry: entry, note: note || 'Maintenance' });
+      btn.disabled = false; btn.textContent = 'Log it';
+      if (lr.error){ popToast('Could not save — try again'); return; }
+      var la = [lr.data.entry, lr.data.note || '', fmtLogDate(lr.data.logged_at)]; la._id = lr.data.id;
+      t.log.unshift(la);
+    } else {
+      btn.disabled = false; btn.textContent = 'Log it';
+      t.log.unshift([entry, note || 'Maintenance', todayShort()]);
+    }
+    closeWc();
+    popToast('Water change logged');
+    renderDetail(); renderTanks();
+  });
+
+  document.getElementById('qa-live').addEventListener('click', function(){
+    var input = document.getElementById('ls-name');
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(function(){ input.focus(); }, 320);
   });
 
   // ===== archive / restore =====
@@ -4970,7 +5422,9 @@ window.initPortal = function(){
   }
 
   // esc closes tank modal too
-  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeTankModal(); });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape'){ closeTankModal(); closeTestModal(); closeWc(); }
+  });
 
   // ===== Global search (top bar) =====
   var NAV_ICONS = {
