@@ -460,6 +460,20 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 .aw-review-actions{display:flex;align-items:center;gap:8px;flex:none}
 .aw-points-input{width:64px;padding:8px 6px;border-radius:8px;border:1px solid var(--sand-line);background:var(--sand);font:inherit;font-size:13px;text-align:center}
 .aw-points-input:focus{outline:none;border-color:var(--leaf)}
+.aw-comment-input{width:180px;padding:8px 10px;border-radius:8px;border:1px solid var(--sand-line);background:var(--sand);font:inherit;font-size:13px}
+.aw-comment-input:focus{outline:none;border-color:var(--leaf)}
+/* thumbnail strip on award entry rows (member list + admin review queue) */
+.aw-thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.aw-thumbs img{width:46px;height:46px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--sand-line);transition:transform .15s}
+.aw-thumbs img:hover{transform:scale(1.06)}
+.aw-nophoto{font-size:11.5px;font-weight:700;color:var(--coral-dark);margin-top:6px;display:block}
+.aw-reviewed-row .aw-review-actions{gap:8px}
+.aw-status-tag{flex:none;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:7px;white-space:nowrap}
+.aw-status-tag.ok{background:#EAF3DE;color:var(--leaf-dark)}
+.aw-status-tag.rej{background:#FCEBDD;color:var(--coral-dark)}
+.aw-btn.neutral{background:var(--sand);color:var(--deep);border:1px solid var(--sand-line)}
+.aw-btn.neutral:hover{background:var(--sand-line)}
+@media(max-width:820px){.aw-review-actions{flex-wrap:wrap;justify-content:flex-end}.aw-comment-input{width:100%;order:-1}}
 .aw-btn{padding:8px 14px;border-radius:9px;border:none;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
 .aw-btn.approve{background:#EAF3DE;color:var(--leaf-dark)}
 .aw-btn.approve:hover{background:var(--leaf);color:#fff}
@@ -1105,6 +1119,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   <div class="grid g2" style="margin-top:24px">
     <div class="panel">
       <h3>Program progress</h3>
+      <div id="aw-program-progress">
       <div style="margin-bottom:16px">
         <div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700"><span>Breeding Awards (BAP) — Advanced Breeder</span><span style="color:var(--leaf-dark)">145 / 200 pts</span></div>
         <div class="progress"><i style="width:72%"></i></div>
@@ -1122,13 +1137,14 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <div class="progress"><i style="width:60%"></i></div>
         <p style="font-size:12px;color:var(--ink-soft);margin-top:8px">2 more qualified Tanganyikan spawns to earn Specialist Breeder recognition.</p>
       </div>
+      </div>
     </div>
     <div class="panel">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h3 style="margin:0">Badges</h3>
         <button class="link-arrow" data-view-jump="badges">My Badges &amp; tiers <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
       </div>
-      <div class="award-badges">
+      <div class="award-badges" id="aw-badge-strip">
         <div class="aw-badge"><div class="ring" style="background:linear-gradient(135deg,var(--leaf),var(--leaf-dark))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/></svg></div><span>First Spawn</span></div>
         <div class="aw-badge"><div class="ring" style="background:linear-gradient(135deg,var(--gold),var(--gold-dark))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/></svg></div><span>100 Club</span></div>
         <div class="aw-badge"><div class="ring" style="background:linear-gradient(135deg,var(--deep),var(--deep-2))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7Z"/><path d="M12 15c0-4-3-6-7-6 0 4 3 6 7 6Z"/></svg></div><span>Green Thumb</span></div>
@@ -1765,6 +1781,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <div class="field full"><label for="af-notes">Notes for the judges</label><textarea id="af-notes" rows="2" placeholder="Spawn date, tank conditions, propagation method…"></textarea></div>
       </div>
       <p id="af-error" style="display:none;font-size:12.5px;font-weight:700;color:var(--coral-dark);margin:12px 0 0">Add a species/item name before submitting.</p>
+      <p id="af-status" style="font-size:12.5px;color:var(--ink-soft);margin:12px 0 0;min-height:16px"></p>
       <div style="margin-top:18px;display:flex;gap:10px">
         <button class="btn btn-primary" id="af-submit">Submit entry</button>
         <button class="btn btn-outline" id="af-cancel">Cancel</button>
@@ -1888,7 +1905,15 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     var res = await supabase.auth.getSession();
     var session = res.data.session;
     if (session) {
+      // A different member signing in while the portal is already running (another
+      // tab, an expired session re-established, a magic link) must not re-enter
+      // initPortal() — see the logout handler. Reload instead.
+      if (window.__portalInited && window.__portalMemberId && window.__portalMemberId !== session.user.id) {
+        window.location.reload();
+        return;
+      }
       window.currentUser = session.user;
+      window.__portalMemberId = session.user.id;
       // fetch this member's profile row (auto-created by the signup trigger)
       try {
         var m = await supabase.from('members').select('*').eq('id', session.user.id).single();
@@ -1901,6 +1926,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
       root.style.display = 'block';
       if (window.initPortal) window.initPortal();
     } else {
+      // Signed out elsewhere while the portal was live — same reasoning as above.
+      // Safe from reload loops: a fresh page has __portalInited false.
+      if (window.__portalInited) { window.location.reload(); return; }
       gate.style.display = 'flex';
       root.style.display = 'none';
     }
@@ -1935,6 +1963,17 @@ window.initPortal = function(){
   var sidebar = document.getElementById('sidebar');
   var scrim = document.getElementById('scrim');
 
+  // Which section is showing is DOM state (a class on .view), and the portal is
+  // shown/hidden rather than reloaded. Only the initial page markup marks the
+  // dashboard active, so without this a previous session could leave any other
+  // section active and the next member would land there. Done directly rather
+  // than via show() so it doesn't re-trigger show()'s data loaders on top of the
+  // ones that run at the end of init.
+  views.forEach(function(v){ v.classList.remove('active'); });
+  var dashView = document.getElementById('view-dashboard');
+  if (dashView) dashView.classList.add('active');
+  links.forEach(function(l){ l.classList.toggle('active', l.getAttribute('data-view') === 'dashboard'); });
+
   function show(id){
     views.forEach(function(v){ v.classList.remove('active'); });
     var target = document.getElementById('view-' + id);
@@ -1944,7 +1983,10 @@ window.initPortal = function(){
     if (id === 'tank-detail') {
       links.forEach(function(l){ l.classList.toggle('active', l.getAttribute('data-view') === 'tanks'); });
     }
-    if (id === 'badges' && typeof renderBadgeCategories === 'function') renderBadgeCategories();
+    // The Awards page shows an earned-badge count and badge strip fed by the same
+    // computation, so it needs this too — it previously only ran on the Badges view,
+    // leaving the Awards card stuck on its login placeholder.
+    if ((id === 'badges' || id === 'awards') && typeof renderBadgeCategories === 'function') renderBadgeCategories();
     if (id === 'member-aquariums' && typeof renderMemberAquariums === 'function') renderMemberAquariums();
     if (id === 'admin' && typeof loadAdminAwardQueue === 'function') loadAdminAwardQueue();
     if (id === 'admin' && typeof loadEvents === 'function') loadEvents();
@@ -2002,9 +2044,16 @@ window.initPortal = function(){
   function notifyBadge(b){ badgeQueue.push(b); if (!badgeShowing) nextBadgePop(); }
   window.notifyBadge = notifyBadge;
 
-  document.getElementById('logout-link').addEventListener('click', function(){
-    supabase.auth.signOut();
-    window.__portalInited = false;
+  document.getElementById('logout-link').addEventListener('click', async function(){
+    // Hard reload rather than just flipping __portalInited back off. The portal is
+    // shown/hidden, never torn down, so re-running initPortal() in the same page
+    // would bind all 100+ listeners a second time on top of the previous user's
+    // still-live ones — those closures hold the *previous* member's tanks/entries
+    // arrays, and the per-init re-entrancy locks (tfSaving, afSubmitting) are
+    // separate vars per init, so they can't guard against each other. A reload is
+    // the only way to guarantee one init, one set of listeners, one member's data.
+    try { await supabase.auth.signOut(); } catch (e) { /* local session is cleared regardless */ }
+    window.location.reload();
   });
 
   // ===== membership card: view + download =====
@@ -2504,6 +2553,10 @@ window.initPortal = function(){
     { title:'AAP — Spring showcase 2026, "Emerald Valley"', meta:'87/100 · 2nd place · +30 points', status:'ok', icon:'scape' },
     { title:'HAP — Cryptocoryne wendtii (runner propagation)', meta:'+10 points · Mar 2026', status:'ok', icon:'plant' }
   ];
+  // Live mode fetches entries after init, so the list starts in a loading state
+  // (same pattern as tanksLoading). Demo mode already has its rows in hand.
+  var entriesLoading = IS_LIVE;
+  var entriesError = false;
   var ENTRY_ICONS = {
     fish: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg>',
     plant: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7Z"/><path d="M12 15c0-4-3-6-7-6 0 4 3 6 7 6Z"/></svg>',
@@ -2517,11 +2570,19 @@ window.initPortal = function(){
       var badgeLabel = e.status === 'ok' ? 'Approved' : (e.status === 'rej' ? 'Not approved' : 'Pending');
       var iconClass = e.status === 'ok' ? '' : (e.status === 'rej' ? ' warn' : ' gold');
       return '<div class="row"><div class="row-icon' + iconClass + '">' + ENTRY_ICONS[e.icon] + '</div>' +
-        '<div class="row-body"><b>' + escT(e.title) + '</b><span>' + escT(e.meta) + '</span></div>' +
+        '<div class="row-body"><b>' + escT(e.title) + '</b><span>' + escT(e.meta) + '</span>' + awardThumbsHtml(e.photos) + '</div>' +
         '<span class="badge ' + badgeClass + '">' + badgeLabel + '</span></div>';
-    }).join('') : '<div class="reg-empty" style="padding:22px">No award entries yet — submit your first entry when you have a spawn, plant division or aquascape to show.</div>';
-    document.getElementById('aw-approved-count').textContent = ENTRIES.filter(function(e){ return e.status==='ok'; }).length;
-    document.getElementById('aw-pending-count').textContent = ENTRIES.filter(function(e){ return e.status==='pend'; }).length;
+    }).join('') : '<div class="reg-empty" style="padding:22px">' + (
+        entriesLoading ? 'Loading your award entries…'
+      : entriesError   ? 'Couldn\u2019t load your entries just now — check your connection and reload the page.'
+      : 'No award entries yet — submit your first entry when you have a spawn, plant division or aquascape to show.'
+    ) + '</div>';
+    wireAwardThumbs(el);
+    var pendingCount = ENTRIES.filter(function(e){ return e.status==='pend'; }).length;
+    document.getElementById('aw-approved-count').textContent = entriesLoading ? '—' : ENTRIES.filter(function(e){ return e.status==='ok'; }).length;
+    document.getElementById('aw-pending-count').textContent = entriesLoading ? '—' : pendingCount;
+    refreshAwardStats(pendingCount);
+    renderProgramProgress();
   }
   renderEntries();
 
@@ -2540,6 +2601,7 @@ window.initPortal = function(){
     document.getElementById('af-file-text').textContent = 'Tap to choose photos of your entry';
     document.getElementById('af-file-label').classList.remove('has-file');
     document.getElementById('af-error').style.display = 'none';
+    var afSt = document.getElementById('af-status'); if (afSt) afSt.textContent = '';
     awardModal.classList.add('show');
     document.getElementById('af-species').focus();
   }
@@ -2565,7 +2627,10 @@ window.initPortal = function(){
     var tankIdx = document.getElementById('af-tank').value;
     var tankObj = tankIdx !== '' ? tanks[parseInt(tankIdx,10)] : null;
     var submitBtn = document.getElementById('af-submit');
+    var afStatus = document.getElementById('af-status');
+    var photoFiles = Array.prototype.slice.call(document.getElementById('af-photo').files || []);
     submitBtn.disabled = true; submitBtn.textContent = 'Submitting…';
+    if (afStatus) afStatus.textContent = '';
 
     if (sb && window.currentMember){
       var res = await dbInsertRow('award_entries', {
@@ -2574,10 +2639,29 @@ window.initPortal = function(){
         program: program, category: category, species: species,
         notes: document.getElementById('af-notes').value.trim() || null
       });
+      if (res.error){
+        submitBtn.disabled = false; submitBtn.textContent = 'Submit for judging';
+        popToast('Could not submit — try again'); afSubmitting = false; return;
+      }
+      // Entry is saved from here on. Photos are a best-effort extra: the modal
+      // stays open while they upload so there's visible progress, but nothing
+      // below can undo the submission.
+      var attached = 0;
+      if (photoFiles.length && res.data && res.data.id){
+        submitBtn.textContent = 'Uploading photos…';
+        attached = await uploadAwardPhotos(res.data.id, photoFiles, function(n, total){
+          if (afStatus) afStatus.textContent = 'Uploading photo ' + n + ' of ' + total + '…';
+        });
+      }
       submitBtn.disabled = false; submitBtn.textContent = 'Submit for judging';
-      if (res.error){ popToast('Could not submit — try again'); afSubmitting = false; return; }
+      if (afStatus) afStatus.textContent = '';
       closeAwardModal();
       popToast(category + ' entry for ' + program + ' submitted for judging');
+      if (photoFiles.length && attached < photoFiles.length){
+        popToast(attached
+          ? 'Entry saved, but ' + (photoFiles.length - attached) + ' photo(s) didn\u2019t upload'
+          : 'Entry saved, but the photos didn\u2019t upload — you can mention this to the committee');
+      }
       loadMyEntries();
     } else {
       submitBtn.disabled = false; submitBtn.textContent = 'Submit for judging';
@@ -3014,6 +3098,12 @@ window.initPortal = function(){
         cover_photo_id: row.cover_photo_id || null
       });
     });
+    // Tanks and award entries load in parallel and this rebuild resets every
+    // tank's `awards` to []. If entries won the race (they usually do — it's the
+    // lighter query) their tank links were just wiped, so re-attach them from the
+    // rows we already hold rather than re-fetching. Also covers the re-runs of
+    // this function after a tank create/edit.
+    applyEntriesToTanks();
     renderTanks();
     if (currentTank >= 0 && currentTank < tanks.length) renderDetail();
     if (window.checkBadgeChanges) window.checkBadgeChanges();
@@ -3764,6 +3854,11 @@ window.initPortal = function(){
     }).join('');
 
     document.getElementById('badges-earned-count').textContent = totalEarned;
+    // The Awards page "Badges earned" card was zeroed at login and never updated.
+    // Live only — demo keeps its authored figure.
+    if (sb && window.currentMember){
+      document.querySelectorAll('[data-live="aw-badges"]').forEach(function(el){ el.textContent = totalEarned; });
+    }
     document.getElementById('badges-standing').textContent = highestTierIdx >= 0 ? TIER_NAMES[highestTierIdx] : 'Unranked';
     document.getElementById('badges-next-away').textContent = totalAway === null ? 'All maxed!' : fmtVal(totalAway, false);
 
@@ -3784,6 +3879,7 @@ window.initPortal = function(){
     showcase.innerHTML = tiles.join('').replace(/var\(--tier-bg-(\d)\)/g, function(_, i){ return tierGrads[+i]; });
 
     renderMilestoneBadges();
+    if (typeof renderAwardBadgeStrip === 'function') renderAwardBadgeStrip();
   }
 
   // ===== One-time milestone badges (novelty, always green when earned) =====
@@ -4219,9 +4315,12 @@ window.initPortal = function(){
       'years-badge': years + ' year' + (years===1?'':'s') + ' a member',
       'years-num': String(years),
       'joined-label': 'Years as member · joined ' + joinYear,
-      'award-points': '0',
+      // Placeholders, not real values — these scrub the demo figures at login and
+      // are replaced by refreshAwardStats() / renderBadgeCategories() once the
+      // member's entries land. A dash reads as "loading", where 0 read as fact.
+      'award-points': '—',
       'award-points-label': 'Award points',
-      'aw-badges': '0',
+      'aw-badges': '—',
       'ev-meetings': '0 / 0'
     };
     document.querySelectorAll('[data-live]').forEach(function(el){
@@ -4939,16 +5038,137 @@ window.initPortal = function(){
 
   // ===== Award entries: member's own list + admin approval queue =====
   var myApprovedPoints = 0;
+  var myEntryRows = [];                       // raw rows, kept so tanks can be re-linked at any time
+  var myProgramPoints = { BAP:0, HAP:0, AAP:0, SBP:0 };
+  var mySbpSpecies = 0;                       // distinct approved species under the Specialist Breeder program
   var ENTRY_STATUS_MAP = { pending:'pend', approved:'ok', rejected:'rej' };
 
-  async function loadMyEntries(){
+  // ===== Award entry photos =====
+  // Mirrors the tank-photos pattern: upload to a public bucket, then record the
+  // row. Paths are {member_id}/{entry_id}/{ts}-{name} so the storage policy can
+  // check ownership from the first folder segment.
+  var AWARD_BUCKET = 'award-photos';
+
+  // escT() escapes & < > only, which is fine for text nodes but not for attribute
+  // values — and judge comments legitimately contain double quotes, which would
+  // break out of a value="..." and mangle the input. Anything interpolated into
+  // an attribute below goes through escA().
+  function escA(s){ return escT(s == null ? '' : s).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+
+  function awardThumbsHtml(photos){
+    if (!photos || !photos.length) return '';
+    return '<div class="aw-thumbs">' + photos.map(function(p){
+      return '<img src="' + escA(p.url) + '" alt="Entry photo" loading="lazy" data-lightbox="' + escA(p.url) + '">';
+    }).join('') + '</div>';
+  }
+
+  // Delegated so it works for rows rendered by either the member list or the
+  // admin queue, and survives re-renders without rebinding.
+  function wireAwardThumbs(container){
+    if (!container) return;
+    container.querySelectorAll('img[data-lightbox]').forEach(function(img){
+      img.addEventListener('click', function(){ openLightbox(img.getAttribute('data-lightbox')); });
+    });
+  }
+
+  // Uploads the files chosen on the submission form and attaches them to a
+  // freshly-created entry. Deliberately never throws and never reports failure
+  // upward as fatal: the entry itself is already saved by this point, and losing
+  // a photo must not look like losing the submission. Returns a count of what
+  // actually attached so the caller can be honest in its toast.
+  async function uploadAwardPhotos(entryId, files, onProgress){
+    var attached = 0;
+    for (var i = 0; i < files.length; i++){
+      var file = files[i];
+      if (!file.type || file.type.indexOf('image/') !== 0){ popToast(file.name + ' skipped — not an image'); continue; }
+      if (file.size > MAX_PHOTO_MB * 1024 * 1024){ popToast(file.name + ' skipped — over ' + MAX_PHOTO_MB + 'MB'); continue; }
+      if (onProgress) onProgress(i + 1, files.length);
+      var safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      var path = window.currentMember.id + '/' + entryId + '/' + Date.now() + '-' + safeName;
+      try {
+        var upRes = await sb.storage.from(AWARD_BUCKET).upload(path, file);
+        if (upRes.error){ continue; }
+        var pub = sb.storage.from(AWARD_BUCKET).getPublicUrl(path);
+        var dbRes = await dbInsertRow('award_entry_photos', {
+          entry_id: entryId, path: path,
+          url: pub.data ? pub.data.publicUrl : '',
+          uploaded_by: window.currentMember.id
+        });
+        if (dbRes.error){
+          // Object is in the bucket but unreferenced — clean it up rather than
+          // leaving an orphan nobody can ever see or delete through the UI.
+          try { await sb.storage.from(AWARD_BUCKET).remove([path]); } catch (e2) {}
+          continue;
+        }
+        attached++;
+      } catch (err){ /* non-fatal, counted as not attached */ }
+    }
+    return attached;
+  }
+
+
+  // Per-program tiers. NOTE: these thresholds are placeholders modelled on what
+  // the demo markup implied — swap them for the club's published rules.
+  var PROGRAM_TIERS = {
+    BAP: { label:'Breeding Awards (BAP)',    tiers:[[50,'Breeder'],[100,'Senior Breeder'],[200,'Advanced Breeder'],[400,'Master Breeder']] },
+    HAP: { label:'Horticulture Awards (HAP)',tiers:[[25,'Aquatic Gardener'],[100,'Senior Gardener'],[200,'Advanced Gardener'],[400,'Master Gardener']] },
+    AAP: { label:'Aquascaping Awards (AAP)', tiers:[[30,'Showcase Entrant'],[60,'Showcase Finalist'],[120,'Showcase Master']] }
+  };
+  var SBP_SPECIES_TARGET = 5;
+
+  // Attach each tank's own entries to its "Award entries from this tank" panel.
+  // Split out of loadMyEntries so loadTanksFromDB can call it after it rebuilds
+  // the tanks array (see the race note there).
+  function applyEntriesToTanks(){
+    if (!myEntryRows.length && !tanks.length) return;
+    tanks.forEach(function(t){
+      t.awards = myEntryRows.filter(function(r){ return r.tank_id === t.id; }).map(function(r){
+        var sub = r.status === 'approved' ? ('+' + (r.points||0) + ' points · approved')
+                : r.status === 'rejected' ? 'Not approved'
+                : 'Submitted ' + new Date(r.submitted_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short' });
+        return [r.program + ' — ' + r.species, sub, r.status === 'approved' ? 'ok' : 'pend'];
+      });
+    });
+  }
+
+  // The two award-points stat cards are zeroed by applyLiveMember() at login and
+  // were never written to again — this is what kept them reading 0 regardless of
+  // approved points. Demo mode keeps its curated figures untouched.
+  function refreshAwardStats(pendingCount){
     if (!sb || !window.currentMember) return;
+    document.querySelectorAll('[data-live="award-points"]').forEach(function(el){
+      el.textContent = entriesLoading ? '—' : String(myApprovedPoints);
+    });
+    document.querySelectorAll('[data-live="award-points-label"]').forEach(function(el){
+      el.textContent = entriesLoading
+        ? 'Award points'
+        : 'Award points' + (pendingCount ? ' · ' + pendingCount + ' entr' + (pendingCount === 1 ? 'y' : 'ies') + ' pending review' : '');
+    });
+  }
+
+  async function loadMyEntries(){
+    if (!sb || !window.currentMember){ entriesLoading = false; renderEntries(); return; }
     var res = await sb.from('award_entries')
-      .select('*, tanks(name)')
+      .select('*, tanks(name), award_entry_photos(id,url,path)')
       .eq('member_id', window.currentMember.id)
       .order('submitted_at', { ascending: false });
+    entriesLoading = false;
+    // A failed fetch used to render identically to "no entries yet" *and* zero the
+    // points total, which would then feed the badge engine. Bail instead.
+    if (res.error){ entriesError = true; renderEntries(); return; }
+    entriesError = false;
     var rows = res.data || [];
+    myEntryRows = rows;
     myApprovedPoints = rows.reduce(function(sum, r){ return sum + (r.status === 'approved' ? (r.points || 0) : 0); }, 0);
+
+    myProgramPoints = { BAP:0, HAP:0, AAP:0, SBP:0 };
+    var sbpSeen = {};
+    rows.forEach(function(r){
+      if (r.status !== 'approved') return;
+      if (myProgramPoints[r.program] !== undefined) myProgramPoints[r.program] += (r.points || 0);
+      if (r.program === 'SBP' && r.species) sbpSeen[r.species.trim().toLowerCase()] = true;
+    });
+    mySbpSpecies = Object.keys(sbpSeen).length;
 
     ENTRIES.length = 0;
     rows.forEach(function(r){
@@ -4967,74 +5187,262 @@ window.initPortal = function(){
         title: r.program + ' — ' + r.species,
         meta: metaParts.join(' · '),
         status: ENTRY_STATUS_MAP[r.status] || 'pend',
-        icon: r.program === 'HAP' ? 'plant' : (r.program === 'AAP' ? 'scape' : 'fish')
+        icon: r.program === 'HAP' ? 'plant' : (r.program === 'AAP' ? 'scape' : 'fish'),
+        photos: r.award_entry_photos || []
       });
     });
     renderEntries();
-
-    // attach each tank's own entries for its "Award entries from this tank" panel
-    tanks.forEach(function(t){
-      t.awards = rows.filter(function(r){ return r.tank_id === t.id; }).map(function(r){
-        return [r.program + ' — ' + r.species, r.status === 'approved' ? ('+' + (r.points||0) + ' points · approved') : (r.status === 'rejected' ? 'Not approved' : 'Submitted ' + new Date(r.submitted_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short' })), r.status === 'approved' ? 'ok' : 'pend'];
-      });
-    });
+    applyEntriesToTanks();
     if (currentTank >= 0 && currentTank < tanks.length) renderDetail();
     if (window.checkBadgeChanges) window.checkBadgeChanges();
   }
 
+  // ===== Awards page: "Program progress" panel =====
+  // The markup for this panel is hardcoded demo data (145/200 BAP etc). In live
+  // mode we replace its contents with real per-program approved points; demo mode
+  // is left exactly as authored.
+  function renderProgramProgress(){
+    if (!sb || !window.currentMember) return;
+    var wrap = document.getElementById('aw-program-progress');
+    if (!wrap) return;
+    if (entriesLoading){ wrap.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);margin:0">Loading your program progress…</p>'; return; }
+    if (entriesError){ wrap.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);margin:0">Progress unavailable — your entries couldn\u2019t be loaded.</p>'; return; }
+
+    var blocks = Object.keys(PROGRAM_TIERS).map(function(key){
+      var cfg = PROGRAM_TIERS[key];
+      var pts = myProgramPoints[key] || 0;
+      var earned = 0;
+      cfg.tiers.forEach(function(t){ if (pts >= t[0]) earned++; });
+      var maxed = earned >= cfg.tiers.length;
+      var prev = earned > 0 ? cfg.tiers[earned - 1][0] : 0;
+      var next = maxed ? null : cfg.tiers[earned][0];
+      var pct = maxed ? 100 : Math.round(((pts - prev) / (next - prev)) * 100);
+      pct = Math.max(0, Math.min(100, pct));
+      var tierName = maxed ? cfg.tiers[cfg.tiers.length - 1][1]
+                   : (earned > 0 ? cfg.tiers[earned - 1][1] : 'Not yet ranked');
+      var right = maxed ? (pts + ' pts · top tier') : (pts + ' / ' + next + ' pts');
+      return '<div style="margin-bottom:16px">' +
+        '<div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;gap:10px">' +
+          '<span>' + escT(cfg.label + ' — ' + tierName) + '</span>' +
+          '<span style="color:var(--leaf-dark);white-space:nowrap">' + escT(right) + '</span>' +
+        '</div>' +
+        '<div class="progress"><i style="width:' + pct + '%"></i></div>' +
+      '</div>';
+    });
+
+    var sbpPct = Math.max(0, Math.min(100, Math.round((mySbpSpecies / SBP_SPECIES_TARGET) * 100)));
+    var remaining = Math.max(0, SBP_SPECIES_TARGET - mySbpSpecies);
+    blocks.push('<div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;gap:10px">' +
+        '<span>Specialist Breeder (SBP)</span>' +
+        '<span style="color:var(--leaf-dark);white-space:nowrap">' + mySbpSpecies + ' / ' + SBP_SPECIES_TARGET + ' species</span>' +
+      '</div>' +
+      '<div class="progress"><i style="width:' + sbpPct + '%"></i></div>' +
+      '<p style="font-size:12px;color:var(--ink-soft);margin-top:8px">' + (
+        remaining === 0
+          ? 'Specialist Breeder recognition reached — nice work.'
+          : remaining + ' more qualified species to earn Specialist Breeder recognition.'
+      ) + '</p>' +
+    '</div>');
+
+    wrap.innerHTML = blocks.join('');
+  }
+
+  // ===== Awards page: badge strip =====
+  // Hardcoded novelty badges in the markup; in live mode show the member's real
+  // earned badges (tiers + milestones) so it agrees with the Badges page.
+  function renderAwardBadgeStrip(){
+    if (!sb || !window.currentMember) return;
+    var strip = document.getElementById('aw-badge-strip');
+    if (!strip || typeof currentEarnedBadges !== 'function') return;
+    var earned = currentEarnedBadges();
+    var keys = Object.keys(earned);
+    if (!keys.length){
+      strip.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);margin:0">No badges yet — every approved entry, meeting and aquarium counts toward one.</p>';
+      return;
+    }
+    strip.innerHTML = keys.slice(0, 8).map(function(k){
+      var b = earned[k];
+      return '<div class="aw-badge"><div class="ring" style="background:' + b.ringBg + '">' + b.icon + '</div>' +
+        '<span>' + escT(b.title) + '</span></div>';
+    }).join('');
+  }
+  window.renderAwardBadgeStrip = renderAwardBadgeStrip;
+
+  var AW_HISTORY_LIMIT = 25;
+
+  function awMemberName(r){
+    return (r.members ? ((r.members.first_name||'') + ' ' + (r.members.last_name||'')).trim() : '') || 'Unknown member';
+  }
+  function awShortDate(iso){
+    return iso ? new Date(iso).toLocaleDateString('en-ZA', { day:'numeric', month:'short' }) : '';
+  }
+
   async function loadAdminAwardQueue(){
     if (!sb || !IS_ADMIN) return;
-    var res = await sb.from('award_entries')
-      .select('*, members!member_id(first_name,last_name), tanks(name)')
-      .eq('status', 'pending')
-      .order('submitted_at', { ascending: true });
-    var rows = res.data || [];
     var list = document.getElementById('admin-aw-list');
     var countEl = document.getElementById('admin-aw-count');
-    if (countEl) countEl.textContent = rows.length + ' pending';
     if (!list) return;
-    if (!rows.length){ list.innerHTML = '<div class="reg-empty" style="padding:20px">Nothing waiting for judging right now.</div>'; return; }
-    list.innerHTML = rows.map(function(r){
-      var memberName = r.members ? ((r.members.first_name||'') + ' ' + (r.members.last_name||'')).trim() : 'Unknown member';
-      var sub = (memberName || 'Member') + ' · ' + r.category + (r.tanks && r.tanks.name ? ' · ' + r.tanks.name : '') + ' · submitted ' + new Date(r.submitted_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short' });
-      return '<div class="row aw-review-row" data-entry-id="' + r.id + '">' +
-        '<div class="row-body"><b>' + escT(r.program + ' — ' + r.species) + '</b><span>' + escT(sub) + '</span>' + (r.notes ? '<span style="display:block;margin-top:2px;font-style:italic">' + escT(r.notes) + '</span>' : '') + '</div>' +
-        '<div class="aw-review-actions">' +
-          '<input type="number" class="aw-points-input" min="0" placeholder="Pts" aria-label="Points to award">' +
-          '<button class="aw-btn approve" data-action="approve">Approve</button>' +
-          '<button class="aw-btn reject" data-action="reject">Reject</button>' +
-        '</div></div>';
-    }).join('');
-    var awRowById = {};
-    rows.forEach(function(r){ awRowById[r.id] = r; });
-    list.querySelectorAll('.aw-review-row').forEach(function(row){
-      var entryId = row.getAttribute('data-entry-id');
-      var entry = awRowById[entryId] || {};
-      var ptsInput = row.querySelector('.aw-points-input');
-      row.querySelector('[data-action="approve"]').addEventListener('click', async function(){
-        var pts = parseInt(ptsInput.value, 10);
-        if (!pts || pts <= 0){ ptsInput.focus(); popToast('Enter points before approving'); return; }
-        this.disabled = true;
-        var res2 = await sb.from('award_entries').update({
-          status: 'approved', points: pts, reviewed_at: new Date().toISOString(), reviewed_by: window.currentMember.id
-        }).eq('id', entryId);
-        if (res2.error){ popToast('Could not approve — try again'); this.disabled = false; return; }
-        popToast('Entry approved — +' + pts + ' points awarded');
-        pushNotification('award', (entry.program || 'Award') + ' entry approved \uD83C\uDF89',
-          (entry.species || 'Your entry') + ' — +' + pts + ' point' + (pts === 1 ? '' : 's') + ' awarded.', entry.member_id);
-        loadAdminAwardQueue();
-      });
-      row.querySelector('[data-action="reject"]').addEventListener('click', async function(){
-        this.disabled = true;
-        var res3 = await sb.from('award_entries').update({
-          status: 'rejected', reviewed_at: new Date().toISOString(), reviewed_by: window.currentMember.id
-        }).eq('id', entryId);
-        if (res3.error){ popToast('Could not update — try again'); this.disabled = false; return; }
-        popToast('Entry marked not approved');
-        pushNotification('award', (entry.program || 'Award') + ' entry not approved',
-          (entry.species || 'Your entry') + ' wasn\u2019t approved this round — chat to the committee for feedback.', entry.member_id);
-        loadAdminAwardQueue();
-      });
+
+    // Two bounded queries rather than one unbounded fetch of the whole table:
+    // pending must be complete (it's a work queue), but history only needs the
+    // most recent slice, and pulling every entry ever — with photos joined —
+    // would grow without limit as the club accumulates entries.
+    var pendRes = await sb.from('award_entries')
+      .select('*, members!member_id(first_name,last_name), tanks(name), award_entry_photos(id,url,path)')
+      .eq('status', 'pending')
+      .order('submitted_at', { ascending: true });
+    var histRes = await sb.from('award_entries')
+      .select('*, members!member_id(first_name,last_name), tanks(name), award_entry_photos(id,url,path)')
+      .in('status', ['approved', 'rejected'])
+      .order('reviewed_at', { ascending: false, nullsFirst: false })
+      .limit(AW_HISTORY_LIMIT);
+    if (pendRes.error){
+      if (countEl) countEl.textContent = '';
+      list.innerHTML = '<div class="reg-empty" style="padding:20px">Couldn\u2019t load the review queue — reload the page to try again.</div>';
+      return;
+    }
+    var pending = pendRes.data || [];
+    // History is optional garnish — if only that query fails, still show the queue.
+    var reviewed = histRes.error ? [] : (histRes.data || []);
+
+    if (countEl) countEl.textContent = pending.length + ' pending';
+
+    var html = '';
+    html += pending.length
+      ? pending.map(awPendingRowHtml).join('')
+      : '<div class="reg-empty" style="padding:20px">Nothing waiting for judging right now.</div>';
+
+    if (reviewed.length){
+      html += '<div class="row" style="background:var(--sand)"><div class="row-body">' +
+        '<b>Recently reviewed</b><span>Last ' + reviewed.length + ' decision' + (reviewed.length === 1 ? '' : 's') +
+        ' — correct the points or send an entry back to the queue.</span></div></div>';
+      html += reviewed.map(awReviewedRowHtml).join('');
+    }
+    list.innerHTML = html;
+
+    var byId = {};
+    pending.concat(reviewed).forEach(function(r){ byId[r.id] = r; });
+    wireAwardThumbs(list);
+    list.querySelectorAll('.aw-review-row').forEach(function(row){ wireAwPendingRow(row, byId); });
+    list.querySelectorAll('.aw-reviewed-row').forEach(function(row){ wireAwReviewedRow(row, byId); });
+  }
+
+  function awPendingRowHtml(r){
+    var sub = awMemberName(r) + ' · ' + r.category + (r.tanks && r.tanks.name ? ' · ' + r.tanks.name : '') +
+      ' · submitted ' + awShortDate(r.submitted_at);
+    var photos = r.award_entry_photos || [];
+    return '<div class="row aw-review-row" data-entry-id="' + r.id + '">' +
+      '<div class="row-body"><b>' + escT(r.program + ' — ' + r.species) + '</b><span>' + escT(sub) + '</span>' +
+        (r.notes ? '<span style="display:block;margin-top:2px;font-style:italic">' + escT(r.notes) + '</span>' : '') +
+        (photos.length ? awardThumbsHtml(photos) : '<span class="aw-nophoto">No photos submitted</span>') +
+      '</div>' +
+      '<div class="aw-review-actions">' +
+        '<input type="text" class="aw-comment-input" placeholder="Judge comment (optional)" aria-label="Judge comment">' +
+        '<input type="number" class="aw-points-input" min="0" placeholder="Pts" aria-label="Points to award">' +
+        '<button class="aw-btn approve" data-action="approve">Approve</button>' +
+        '<button class="aw-btn reject" data-action="reject">Reject</button>' +
+      '</div></div>';
+  }
+
+  function awReviewedRowHtml(r){
+    var ok = r.status === 'approved';
+    var sub = awMemberName(r) + ' · ' + r.category +
+      (r.tanks && r.tanks.name ? ' · ' + r.tanks.name : '') +
+      ' · reviewed ' + (awShortDate(r.reviewed_at) || 'previously') +
+      (ok ? ' · +' + (r.points || 0) + ' points' : '');
+    var photos = r.award_entry_photos || [];
+    return '<div class="row aw-reviewed-row" data-entry-id="' + r.id + '">' +
+      '<div class="row-body"><b>' + escT(r.program + ' — ' + r.species) + '</b><span>' + escT(sub) + '</span>' +
+        (r.judge_comment ? '<span style="display:block;margin-top:2px;font-style:italic">' + escT(r.judge_comment) + '</span>' : '') +
+        awardThumbsHtml(photos) +
+      '</div>' +
+      '<span class="aw-status-tag ' + (ok ? 'ok' : 'rej') + '">' + (ok ? 'Approved' : 'Not approved') + '</span>' +
+      '<div class="aw-review-actions">' +
+        '<input type="text" class="aw-comment-input" placeholder="Judge comment" aria-label="Judge comment" value="' + escA(r.judge_comment || '') + '">' +
+        '<input type="number" class="aw-points-input" min="0" placeholder="Pts" aria-label="Points awarded" value="' + (ok && r.points ? r.points : '') + '">' +
+        '<button class="aw-btn approve" data-action="save">Save</button>' +
+        '<button class="aw-btn neutral" data-action="reopen">Reopen</button>' +
+      '</div></div>';
+  }
+
+  function wireAwPendingRow(row, byId){
+    var entryId = row.getAttribute('data-entry-id');
+    var entry = byId[entryId] || {};
+    var ptsInput = row.querySelector('.aw-points-input');
+    var cmtInput = row.querySelector('.aw-comment-input');
+
+    row.querySelector('[data-action="approve"]').addEventListener('click', async function(){
+      var pts = parseInt(ptsInput.value, 10);
+      if (!pts || pts <= 0){ ptsInput.focus(); popToast('Enter points before approving'); return; }
+      this.disabled = true;
+      var res2 = await sb.from('award_entries').update({
+        status: 'approved', points: pts, judge_comment: cmtInput.value.trim() || null,
+        reviewed_at: new Date().toISOString(), reviewed_by: window.currentMember.id
+      }).eq('id', entryId);
+      if (res2.error){ popToast('Could not approve — try again'); this.disabled = false; return; }
+      popToast('Entry approved — +' + pts + ' points awarded');
+      pushNotification('award', (entry.program || 'Award') + ' entry approved \uD83C\uDF89',
+        (entry.species || 'Your entry') + ' — +' + pts + ' point' + (pts === 1 ? '' : 's') + ' awarded.', entry.member_id);
+      loadAdminAwardQueue();
+    });
+
+    row.querySelector('[data-action="reject"]').addEventListener('click', async function(){
+      this.disabled = true;
+      var res3 = await sb.from('award_entries').update({
+        status: 'rejected', judge_comment: cmtInput.value.trim() || null,
+        reviewed_at: new Date().toISOString(), reviewed_by: window.currentMember.id
+      }).eq('id', entryId);
+      if (res3.error){ popToast('Could not update — try again'); this.disabled = false; return; }
+      popToast('Entry marked not approved');
+      pushNotification('award', (entry.program || 'Award') + ' entry not approved',
+        (entry.species || 'Your entry') + ' wasn\u2019t approved this round — chat to the committee for feedback.', entry.member_id);
+      loadAdminAwardQueue();
+    });
+  }
+
+  function wireAwReviewedRow(row, byId){
+    var entryId = row.getAttribute('data-entry-id');
+    var entry = byId[entryId] || {};
+    var ptsInput = row.querySelector('.aw-points-input');
+    var cmtInput = row.querySelector('.aw-comment-input');
+
+    // Correct a decision in place. Only notifies the member when something they'd
+    // actually care about moved (points or approval status) — silently re-sending
+    // "entry approved" every time a typo in the comment is fixed would be noise.
+    row.querySelector('[data-action="save"]').addEventListener('click', async function(){
+      var wasApproved = entry.status === 'approved';
+      var newPts = wasApproved ? parseInt(ptsInput.value, 10) : null;
+      if (wasApproved && (!newPts || newPts <= 0)){ ptsInput.focus(); popToast('Approved entries need a points value'); return; }
+      var newCmt = cmtInput.value.trim() || null;
+      if (newPts === (entry.points || null) && newCmt === (entry.judge_comment || null)){
+        popToast('Nothing changed'); return;
+      }
+      this.disabled = true;
+      var upd = { judge_comment: newCmt, reviewed_at: new Date().toISOString(), reviewed_by: window.currentMember.id };
+      if (wasApproved) upd.points = newPts;
+      var r = await sb.from('award_entries').update(upd).eq('id', entryId);
+      if (r.error){ popToast('Could not save the correction — try again'); this.disabled = false; return; }
+      if (wasApproved && newPts !== (entry.points || null)){
+        popToast('Points corrected to ' + newPts);
+        pushNotification('award', (entry.program || 'Award') + ' entry updated',
+          (entry.species || 'Your entry') + ' — points revised to ' + newPts + '.', entry.member_id);
+      } else {
+        popToast('Judge comment updated');
+      }
+      loadAdminAwardQueue();
+    });
+
+    // Send it back to the judging queue. Points are cleared so an entry can never
+    // sit in "pending" while still counting toward the member's approved total.
+    row.querySelector('[data-action="reopen"]').addEventListener('click', async function(){
+      this.disabled = true;
+      var r = await sb.from('award_entries').update({
+        status: 'pending', points: null, reviewed_at: null, reviewed_by: null
+      }).eq('id', entryId);
+      if (r.error){ popToast('Could not reopen — try again'); this.disabled = false; return; }
+      popToast('Entry returned to the judging queue');
+      loadAdminAwardQueue();
     });
   }
 
