@@ -2875,7 +2875,7 @@ window.initPortal = function(){
   async function loadTanksFromDB(){
     if (!sb || !window.currentMember) { tanksLoading = false; return; }
     var res = await sb.from('tanks')
-      .select('*, tank_tags(*), tank_params(*), tank_livestock(*), tank_plants(*), tank_log(*), tank_photos(*)')
+      .select('*, tank_tags(*), tank_params(*), tank_livestock(*), tank_plants(*), tank_log(*), tank_photos!tank_id(*)')
       .eq('owner_id', window.currentMember.id)
       .order('created_at', { ascending: true });
     tanksLoading = false;
@@ -3776,7 +3776,7 @@ window.initPortal = function(){
   async function loadOtherMemberTanks(){
     if (!sb || !window.currentMember) { otherMemberTanks = []; return; }
     var res = await sb.from('tanks')
-      .select('*, tank_tags(*), tank_params(*), tank_livestock(*), tank_plants(*), tank_photos(*), members(first_name,last_name)')
+      .select('*, tank_tags(*), tank_params(*), tank_livestock(*), tank_plants(*), tank_photos!tank_id(*), members(first_name,last_name)')
       .neq('owner_id', window.currentMember.id)
       .order('created_at', { ascending: true });
     if (res.error || !res.data){ otherMemberTanks = []; renderMemberAquariums(); return; }
