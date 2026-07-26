@@ -87,6 +87,14 @@ button{font-family:inherit}
 .status-chip::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--leaf)}
 
 .content{padding:30px 32px 110px;max-width:1220px;width:100%;margin:0 auto}
+.bday-banner{display:flex;align-items:center;gap:12px;margin:0 0 24px;padding:13px 16px;border-radius:14px;background:linear-gradient(135deg,var(--deep-2),var(--deep));border:1px solid rgba(217,164,65,0.4);color:#fff;box-shadow:0 14px 30px -16px rgba(6,7,15,0.6)}
+.bday-banner[hidden]{display:none}
+.bday-banner .bday-emoji{font-size:20px;line-height:1}
+.bday-banner .bday-text{font-size:14px;font-weight:700;flex:1}
+.bday-banner .bday-close{flex:none;width:30px;height:30px;border-radius:8px;border:none;background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.bday-banner .bday-close:hover{background:rgba(255,255,255,0.22)}
+.bday-banner .bday-close svg{width:15px;height:15px}
+.chip-select{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .view{display:none;animation:fadeUp .35s cubic-bezier(.16,.8,.3,1)}
 .view.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -697,7 +705,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </button>
   <div class="welcome">
     <b data-live="welcome">Welcome back, Judy 🌿</b>
-    <span>Friday, 24 July 2026</span>
+    <span id="topbar-date">Friday, 24 July 2026</span>
   </div>
   <span class="status-chip">Membership active</span>
   <div class="top-search">
@@ -715,6 +723,14 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 </header>
 
 <main class="content">
+
+<div class="bday-banner" id="bday-banner" role="status" hidden>
+  <span class="bday-emoji" aria-hidden="true">🎉</span>
+  <span class="bday-text" id="bday-text">Happy birthday!</span>
+  <button class="bday-close" id="bday-close" aria-label="Dismiss">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+</div>
 
 <!-- ============ DASHBOARD ============ -->
 <section class="view active" id="view-dashboard">
@@ -883,12 +899,41 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
           <select id="f-province"><option selected>Eastern Cape</option><option>Western Cape</option><option>Gauteng</option><option>KwaZulu-Natal</option><option>Free State</option><option>Other</option></select>
         </div>
         <div class="field"><label for="f-city">City / Town</label><input id="f-city" value="Gqeberha"></div>
-        <div class="field"><label for="f-emergency">Emergency contact</label><input id="f-emergency" value="P. Nel · +27 82 000 0000"></div>
+        <div class="field"><label for="f-bday-day">Birthday</label>
+          <div style="display:flex;gap:10px">
+            <select id="f-bday-day" style="flex:1"><option value="">Day</option></select>
+            <select id="f-bday-month" style="flex:1.6">
+              <option value="">Month</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
+        </div>
         <div class="field"><label for="f-comm">Preferred communication</label>
           <select id="f-comm"><option selected>WhatsApp</option><option>Email</option><option>SMS</option></select>
         </div>
-        <div class="field full"><label for="f-interests">Aquarium interests</label><input id="f-interests" value="Planted tanks, Tanganyikan cichlids, shrimp, paludariums"></div>
-        <div class="field full"><label for="f-bio">Biography</label><textarea id="f-bio" rows="3">Keeping fish since the 90s and hopelessly addicted to planted tanks. Proud to serve as ECAAC's Club President.</textarea></div>
+        <div class="field full"><label>Aquarium interests</label>
+          <div class="chip-select" id="f-interests" role="group" aria-label="Aquarium interests">
+            <button type="button" class="chip-btn" data-interest="Breeding">Breeding</button>
+            <button type="button" class="chip-btn" data-interest="Plants">Plants</button>
+            <button type="button" class="chip-btn" data-interest="Shrimp">Shrimp</button>
+            <button type="button" class="chip-btn" data-interest="Aquascaping">Aquascaping</button>
+            <button type="button" class="chip-btn" data-interest="Freshwater">Freshwater</button>
+            <button type="button" class="chip-btn" data-interest="Marine">Marine</button>
+            <button type="button" class="chip-btn" data-interest="Terrariums">Terrariums</button>
+          </div>
+        </div>
+        <div class="field full"><label for="f-bio">About you</label><textarea id="f-bio" rows="3">Keeping fish since the 90s and hopelessly addicted to planted tanks. Proud to serve as ECAAC's Club President.</textarea></div>
       </div>
       <div style="margin-top:18px;display:flex;gap:10px">
         <button class="btn btn-primary" id="profile-save-btn">Save changes</button>
@@ -1290,8 +1335,13 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <button class="chip-btn active" data-dirf="all">All</button>
     <button class="chip-btn" data-dirf="committee">Committee</button>
     <button class="chip-btn" data-dirf="breeder">Breeders</button>
+    <button class="chip-btn" data-dirf="breeding">Breeding</button>
     <button class="chip-btn" data-dirf="plants">Plants</button>
     <button class="chip-btn" data-dirf="shrimp">Shrimp</button>
+    <button class="chip-btn" data-dirf="aquascaping">Aquascaping</button>
+    <button class="chip-btn" data-dirf="freshwater">Freshwater</button>
+    <button class="chip-btn" data-dirf="marine">Marine</button>
+    <button class="chip-btn" data-dirf="terrariums">Terrariums</button>
   </div>
 
   <div class="dir-grid" id="dir-grid"></div>
@@ -2854,14 +2904,23 @@ window.initPortal = function(){
   var dirSearch = document.getElementById('dir-search');
   var dirFilter = 'all';
 
+  // Matches a member against a directory filter. Legacy demo rules (committee /
+  // breeder / plants / shrimp) are preserved; live members also match on their
+  // stored interests, and the new interest pills match purely on those.
+  function memberMatchesDirFilter(m, f){
+    if (f === 'committee') return !!m.committee;
+    if (f === 'breeder') return !!m.breeder;
+    var interests = (m.interests || []).map(function(s){ return String(s).toLowerCase(); });
+    if (f === 'plants') return interests.indexOf('plants') !== -1 || m.cats.indexOf('Plant') !== -1;
+    if (f === 'shrimp') return interests.indexOf('shrimp') !== -1 || !!m.shrimp;
+    return interests.indexOf(f) !== -1;
+  }
+
   function renderDir(){
     var q = (dirSearch.value || '').toLowerCase();
     var out = DIR.filter(function(m){
-      if (dirFilter === 'committee' && !m.committee) return false;
-      if (dirFilter === 'breeder' && !m.breeder) return false;
-      if (dirFilter === 'plants' && m.cats.indexOf('Plant') === -1) return false;
-      if (dirFilter === 'shrimp' && !m.shrimp) return false;
-      if (q && (m.name + ' ' + m.blurb + ' ' + m.cats.join(' ')).toLowerCase().indexOf(q) === -1) return false;
+      if (dirFilter !== 'all' && !memberMatchesDirFilter(m, dirFilter)) return false;
+      if (q && (m.name + ' ' + m.blurb + ' ' + m.cats.join(' ') + ' ' + (m.interests || []).join(' ')).toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
     dirGrid.innerHTML = out.map(function(m, i){
@@ -2870,6 +2929,7 @@ window.initPortal = function(){
         : (m.typePill
             ? '<span>' + escT(m.typePill) + '</span>'
             : m.cats.map(function(c){ return '<span>' + c + '</span>'; }).join(''));
+      tags += (m.interests || []).map(function(c){ return '<span>' + escT(c) + '</span>'; }).join('');
       var meta = m.breeder
         ? '<div class="dir-meta"><span><b>' + m.listings + '</b> register listings</span><span><b>' + m.current + '</b> breeding now</span></div>'
         : '<div class="dir-meta"><span>' + (m.email ? '<a href="mailto:' + m.email + '" style="color:var(--leaf-dark);font-weight:700">' + m.email + '</a>' : '<b>' + (m.metaLine || '') + '</b>') + '</span></div>';
@@ -4334,10 +4394,11 @@ window.initPortal = function(){
     setVal('f-surname', cm.last_name);
     setVal('f-email', cm.email);
     setVal('f-phone', cm.phone);
-    setVal('f-city', '');
-    setVal('f-emergency', '');
-    setVal('f-interests', '');
+    setVal('f-city', cm.city);
+    setSelectedInterests(cm.interests);
+    setBirthdayValue(cm.birthday);
     var bioEl = document.getElementById('f-bio'); if (bioEl) bioEl.value = cm.bio || '';
+    if (window.checkBirthday) window.checkBirthday();
 
     // dashboard recent activity: single welcome entry
     var act = document.getElementById('dash-activity');
@@ -4454,8 +4515,10 @@ window.initPortal = function(){
   }
 
   // ----- Admin: create events + mark attendance -----
+  var postingEvent = false;
   var anEventBtn = document.getElementById('ae-post-btn');
   if (anEventBtn) anEventBtn.addEventListener('click', async function(){
+    if (postingEvent) return;
     if (!sb || !IS_ADMIN) return;
     var title = document.getElementById('ae-title').value.trim();
     var dateVal = document.getElementById('ae-date').value;
@@ -4463,6 +4526,7 @@ window.initPortal = function(){
     var errEl = document.getElementById('ae-error');
     if (!title || !dateVal){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
+    postingEvent = true;
     var start = new Date(dateVal + 'T' + timeVal);
     var hours = parseFloat(document.getElementById('ae-hours').value) || 4;
     var end = new Date(start.getTime() + hours * 3600000);
@@ -4475,7 +4539,7 @@ window.initPortal = function(){
       created_by: window.currentMember.id
     });
     anEventBtn.disabled = false; anEventBtn.textContent = 'Post event';
-    if (res.error){ popToast('Could not post — try again'); return; }
+    if (res.error){ popToast('Could not post — try again'); postingEvent = false; return; }
     var evLocation = document.getElementById('ae-location').value.trim();
     document.getElementById('ae-title').value = '';
     document.getElementById('ae-location').value = '';
@@ -4486,6 +4550,7 @@ window.initPortal = function(){
       ' at ' + start.toLocaleTimeString('en-ZA', { hour:'2-digit', minute:'2-digit', hour12:false }) +
       (evLocation ? ' · ' + evLocation : ''), null);
     loadEvents();
+    postingEvent = false;
   });
 
   function renderAdminEventList(rows){
@@ -4984,8 +5049,10 @@ window.initPortal = function(){
     mtSyncFromSelection();
   });
 
+  var postingLot = false;
   var alPostBtn = document.getElementById('al-post-btn');
   if (alPostBtn) alPostBtn.addEventListener('click', async function(){
+    if (postingLot) return;
     if (!sb || !IS_ADMIN) return;
     var memberId = document.getElementById('al-member').value;
     var dateVal = document.getElementById('al-date').value;
@@ -4994,6 +5061,7 @@ window.initPortal = function(){
     var errEl = document.getElementById('al-error');
     if (!memberId || !dateVal || !item || !amount || amount <= 0){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
+    postingLot = true;
     alPostBtn.disabled = true; alPostBtn.textContent = 'Saving…';
     var res = await dbInsertRow('auction_lots', {
       member_id: memberId, auction_date: dateVal, item: item,
@@ -5001,12 +5069,13 @@ window.initPortal = function(){
       created_by: window.currentMember.id
     });
     alPostBtn.disabled = false; alPostBtn.textContent = 'Log lot';
-    if (res.error){ popToast('Could not save — try again'); return; }
+    if (res.error){ popToast('Could not save — try again'); postingLot = false; return; }
     document.getElementById('al-item').value = '';
     document.getElementById('al-amount').value = '';
     popToast('Lot logged for that member');
     loadAdminAuctionList();
     if (memberId === window.currentMember.id) loadMyAuctionLots();
+    postingLot = false;
   });
 
   async function loadAdminAuctionList(){
@@ -5446,23 +5515,27 @@ window.initPortal = function(){
     });
   }
 
+  var postingNews = false;
   var anPostBtn = document.getElementById('an-post-btn');
   if (anPostBtn) anPostBtn.addEventListener('click', async function(){
+    if (postingNews) return;
     if (!sb) return;
     var title = document.getElementById('an-title').value.trim();
     var body = document.getElementById('an-body').value.trim();
     var errEl = document.getElementById('an-error');
     if (!title || !body){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
+    postingNews = true;
     anPostBtn.disabled = true; anPostBtn.textContent = 'Posting…';
     var res = await sb.from('news').insert({ title: title, body: body, badge: document.getElementById('an-badge').value });
     anPostBtn.disabled = false; anPostBtn.textContent = 'Post news';
-    if (res.error){ popToast('Could not post — are you signed in as an admin?'); return; }
+    if (res.error){ popToast('Could not post — are you signed in as an admin?'); postingNews = false; return; }
     document.getElementById('an-title').value = '';
     document.getElementById('an-body').value = '';
     popToast('News posted — every member now sees it');
     pushNotification('news', title, body.length > 140 ? body.slice(0, 137) + '…' : body, null);
     loadNews();
+    postingNews = false;
   });
 
   async function loadLiveMembers(){
@@ -5476,11 +5549,13 @@ window.initPortal = function(){
     rows.forEach(function(m){
       var nm = ((m.first_name || '') + ' ' + (m.last_name || '')).trim() || 'New member';
       var joinYear = m.join_date ? new Date(m.join_date).getFullYear() : '';
+      var interestList = String(m.interests || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
       DIR.push({
         name: nm,
         role: (m.role === 'admin' ? 'Committee' : 'Member') + (joinYear ? ' · joined ' + joinYear : ''),
         blurb: m.bio || 'This member hasn\u2019t written a bio yet.',
-        cats: [m.province || 'ECAAC'],
+        cats: ['Member'],
+        interests: interestList,
         typePill: memberTypeInfo(m.membership_type).pill,
         committee: m.role === 'admin',
         breeder: false, shrimp: false, listings: 0, current: 0,
@@ -5489,6 +5564,103 @@ window.initPortal = function(){
     });
     renderDir();
   }
+
+  // ===== Birthday banner =====
+  // Shows a top-of-page greeting when today matches the member's saved birthday
+  // (month + day only). Demo mode has no birthday, so this stays dormant there.
+  window.checkBirthday = function(){
+    var banner = document.getElementById('bday-banner');
+    if (!banner) return;
+    var cm = window.currentMember;
+    var bday = cm && cm.birthday;
+    if (!bday){ banner.hidden = true; return; }
+    var parts = String(bday).slice(0,10).split('-');
+    if (parts.length !== 3){ banner.hidden = true; return; }
+    var now = new Date();
+    var isToday = (parseInt(parts[1],10) === now.getMonth() + 1) && (parseInt(parts[2],10) === now.getDate());
+    if (!isToday){ banner.hidden = true; return; }
+    var todayKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + now.getDate();
+    var dismissKey = 'ecaac-bday-dismissed-' + (cm.id || 'demo') + '-' + todayKey;
+    if (localStorage.getItem(dismissKey)){ banner.hidden = true; return; }
+    var fullName = [cm.first_name, cm.last_name].filter(Boolean).join(' ').trim() || (member.name || '').trim();
+    var txt = document.getElementById('bday-text');
+    if (txt) txt.textContent = 'Happy birthday' + (fullName ? ', ' + fullName : '') + '! The whole ECAAC club wishes you a wonderful day.';
+    banner.hidden = false;
+  };
+  var bdayClose = document.getElementById('bday-close');
+  if (bdayClose) bdayClose.addEventListener('click', function(){
+    var banner = document.getElementById('bday-banner');
+    if (banner) banner.hidden = true;
+    var cm = window.currentMember;
+    var now = new Date();
+    var todayKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + now.getDate();
+    try { localStorage.setItem('ecaac-bday-dismissed-' + ((cm && cm.id) || 'demo') + '-' + todayKey, '1'); } catch(e){}
+  });
+
+  // ===== Aquarium interests: multi-select toggle chips =====
+  // Stored as a comma-separated list in members.interests.
+  function getSelectedInterests(){
+    var box = document.getElementById('f-interests');
+    if (!box) return [];
+    return Array.prototype.map.call(box.querySelectorAll('.chip-btn.active'), function(c){
+      return c.getAttribute('data-interest');
+    });
+  }
+  function setSelectedInterests(str){
+    var box = document.getElementById('f-interests');
+    if (!box) return;
+    var list = String(str || '').split(',').map(function(s){ return s.trim().toLowerCase(); }).filter(Boolean);
+    box.querySelectorAll('[data-interest]').forEach(function(c){
+      c.classList.toggle('active', list.indexOf(c.getAttribute('data-interest').toLowerCase()) !== -1);
+    });
+  }
+  (function(){
+    var box = document.getElementById('f-interests');
+    if (!box) return;
+    box.querySelectorAll('[data-interest]').forEach(function(chip){
+      chip.addEventListener('click', function(){ chip.classList.toggle('active'); });
+    });
+  })();
+
+  // ===== Birthday: day + month only (stored as 2000-MM-DD; year is a placeholder) =====
+  function bdayDaysInMonth(month){ return month ? new Date(2000, parseInt(month, 10), 0).getDate() : 31; }
+  function populateBdayDays(){
+    var monthSel = document.getElementById('f-bday-month');
+    var daySel = document.getElementById('f-bday-day');
+    if (!monthSel || !daySel) return;
+    var max = bdayDaysInMonth(monthSel.value);
+    var prev = daySel.value;
+    var opts = '<option value="">Day</option>';
+    for (var d = 1; d <= max; d++){ opts += '<option value="' + d + '">' + d + '</option>'; }
+    daySel.innerHTML = opts;
+    if (prev && parseInt(prev, 10) <= max) daySel.value = prev;
+  }
+  function setBirthdayValue(str){
+    var monthSel = document.getElementById('f-bday-month');
+    var daySel = document.getElementById('f-bday-day');
+    if (!monthSel || !daySel) return;
+    var parts = String(str || '').slice(0, 10).split('-');
+    var mm = parts.length === 3 ? parseInt(parts[1], 10) : 0;
+    var dd = parts.length === 3 ? parseInt(parts[2], 10) : 0;
+    monthSel.value = mm ? String(mm) : '';
+    populateBdayDays();
+    daySel.value = dd ? String(dd) : '';
+  }
+  function getBirthdayValue(){
+    var monthSel = document.getElementById('f-bday-month');
+    var daySel = document.getElementById('f-bday-day');
+    if (!monthSel || !daySel) return null;
+    var mm = parseInt(monthSel.value, 10), dd = parseInt(daySel.value, 10);
+    if (!mm || !dd) return null;
+    var pad = function(n){ return (n < 10 ? '0' : '') + n; };
+    return '2000-' + pad(mm) + '-' + pad(dd);
+  }
+  (function(){
+    var monthSel = document.getElementById('f-bday-month');
+    if (!monthSel) return;
+    monthSel.addEventListener('change', populateBdayDays);
+    populateBdayDays();
+  })();
 
   var profileSaveBtn = document.getElementById('profile-save-btn');
   if (profileSaveBtn) profileSaveBtn.addEventListener('click', async function(){
@@ -5499,6 +5671,9 @@ window.initPortal = function(){
       last_name: document.getElementById('f-surname').value.trim() || null,
       phone: document.getElementById('f-phone').value.trim() || null,
       province: document.getElementById('f-province').value || null,
+      city: document.getElementById('f-city').value.trim() || null,
+      interests: getSelectedInterests().join(', ') || null,
+      birthday: getBirthdayValue(),
       bio: document.getElementById('f-bio').value.trim() || null
     };
     profileSaveBtn.disabled = true; profileSaveBtn.textContent = 'Saving…';
@@ -5589,6 +5764,16 @@ window.initPortal = function(){
   if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); }
 
   applyLiveMember();
+
+  // Top bar date: always show today's date, formatted "Weekday, D Month YYYY".
+  (function(){
+    var el = document.getElementById('topbar-date');
+    if (!el) return;
+    var now = new Date();
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    el.textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+  })();
 
   renderTanks();
 
