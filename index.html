@@ -3928,7 +3928,7 @@ window.initPortal = function(){
     { id:'club',        title:'Club life & awards', note:'Show up, trade a lot, and enter the award programs.' },
     { id:'collect',     title:'Building a collection', note:'For the depth and variety of what you keep.' },
     { id:'fun',         title:'Just for fun',      note:'No reason at all.' },
-    { id:'recognition', title:'Recognition',       note:'Marks of standing in the club rather than things to chase.', excludeFromCount:true }
+    { id:'recognition', title:'Recognition',       note:'Marks of standing in the club rather than things to chase.', excludeFromCount:true, hideWhenLocked:true }
   ];
 
   function msBadgeHtml(m){
@@ -3954,11 +3954,15 @@ window.initPortal = function(){
 
     el.innerHTML = MS_GROUPS.map(function(g){
       var items = list.filter(function(m){ return m.group === g.id; });
+      // Status badges nobody can act on ("Have joined in 2018") read as failures
+      // rather than goals, so unearned ones are hidden and the whole group
+      // disappears for members who have none of them.
+      if (g.hideWhenLocked) items = items.filter(function(m){ return m.earned; });
       if (!items.length) return '';
       var got = items.filter(function(m){ return m.earned; }).length;
       return '<div class="ms-group">' +
         '<div class="ms-group-head"><h5>' + escT(g.title) + '</h5>' +
-          '<span class="ms-count">' + got + ' / ' + items.length + '</span></div>' +
+          (g.hideWhenLocked ? '' : '<span class="ms-count">' + got + ' / ' + items.length + '</span>') + '</div>' +
         '<p class="ms-group-note">' + escT(g.note) + '</p>' +
         '<div class="milestone-badges">' + items.map(msBadgeHtml).join('') + '</div>' +
       '</div>';
