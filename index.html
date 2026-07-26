@@ -590,6 +590,18 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 .md-badge svg{width:13px;height:13px;flex:none}
 .md-empty{font-size:13px;color:var(--ink-soft);font-style:italic;margin:0}
 .md-note{font-size:12px;color:var(--ink-soft);line-height:1.5;margin:10px 0 0}
+.md-tanks{display:flex;flex-direction:column;gap:9px}
+.md-tank{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:9px;border:1px solid var(--sand-line);background:var(--paper);border-radius:14px;cursor:pointer;font:inherit;transition:border-color .15s,transform .15s}
+.md-tank:hover{border-color:var(--leaf);transform:translateY(-1px)}
+.md-tank:focus-visible{outline:2px solid var(--leaf);outline-offset:2px}
+.md-tank-thumb{width:60px;height:52px;border-radius:10px;flex:none;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.md-tank-thumb img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.md-tank-icon svg{width:22px;height:22px;color:rgba(255,255,255,0.9)}
+.md-tank-txt{min-width:0;display:flex;flex-direction:column;gap:1px}
+.md-tank-txt b{font-size:13.5px;color:var(--deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.md-tank-txt span{font-size:11.5px;color:var(--ink-soft)}
+/* The preview opens over the drawer, so it must sit above it (drawer is 170). */
+#ma-preview-modal{z-index:180}
 @media (max-width:640px){
   .mem-drawer{width:100%;max-width:100%}
   .md-body{padding:18px 16px 30px}
@@ -3046,6 +3058,37 @@ window.initPortal = function(){
   });
   renderDir();
 
+  // Which aquariums belong to this directory entry. Reuses data already loaded:
+  // the signed-in member's own tanks, or otherMemberTanks for everyone else.
+  function tanksForMember(m){
+    if (!m) return [];
+    if (window.currentMember && m.memberId === window.currentMember.id){
+      return tanks.map(function(t, i){ return Object.assign({}, t, { owner: member.name, mine:true, myIndex:i }); });
+    }
+    if (m.memberId) return (otherMemberTanks || []).filter(function(t){ return t.ownerId === m.memberId; });
+    // Demo entries have no id — fall back to matching the owner name.
+    return (otherMemberTanks || []).filter(function(t){ return (t.owner || '') === m.name; });
+  }
+
+  function mdTanksHtml(list){
+    if (!list.length) return '';
+    return '<div class="md-sec"><h4>Their aquariums \u00B7 ' + list.length + '</h4><div class="md-tanks">' +
+      list.map(function(t, i){
+        var st = TYPE_STYLE[t.type] || TYPE_STYLE['Freshwater'];
+        var cover = coverUrl(t);
+        var thumb = cover
+          ? '<img src="' + escA(cover) + '" alt="" loading="lazy">'
+          : '<span class="md-tank-icon">' + ICONS[st[2]] + '</span>';
+        var liveCount = (t.livestock || []).reduce(function(a, l){ var n = parseInt(l[2],10); return a + (isNaN(n) ? (l[2] ? 1 : 0) : n); }, 0);
+        var plantCount = (t.plants || []).length;
+        return '<button class="md-tank" data-md-tank="' + i + '">' +
+          '<span class="md-tank-thumb" style="background:linear-gradient(135deg,' + st[0] + ',' + st[1] + ')">' + thumb + '</span>' +
+          '<span class="md-tank-txt"><b>' + escT(t.name) + '</b>' +
+          '<span>' + (t.volume ? t.volume + ' \u2113 \u00B7 ' : '') + escT(t.type) + '</span>' +
+          '<span>' + liveCount + ' livestock \u00B7 ' + plantCount + ' plant' + (plantCount === 1 ? '' : 's') + '</span></span></button>';
+      }).join('') + '</div></div>';
+  }
+
   // ===== Member detail drawer =====
   // Opens from a directory card. Shows bio, interests, shared interests, awards
   // standing and earned badges. Deliberately shows no email or phone number.
@@ -3054,6 +3097,16 @@ window.initPortal = function(){
   var mdBody = document.getElementById('md-body');
   var mdLastFocus = null;
   var mdToken = 0;                              // guards against a slow fetch landing after the drawer moved on
+  var mdTanks = [];                             // the open member's tanks, for the gallery below
+
+  // Hands off to the existing aquarium preview modal rather than rebuilding it.
+  // Delegated because the drawer body is re-rendered when the stats arrive.
+  if (mdBody) mdBody.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-md-tank]');
+    if (!btn) return;
+    var t = mdTanks[parseInt(btn.getAttribute('data-md-tank'), 10)];
+    if (t) openMaPreview(t);
+  });
 
   function closeMemberDrawer(){
     if (!memDrawer) return;
@@ -3067,7 +3120,11 @@ window.initPortal = function(){
   if (mdCloseBtn) mdCloseBtn.addEventListener('click', closeMemberDrawer);
   if (memScrim) memScrim.addEventListener('click', closeMemberDrawer);
   document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && memDrawer && memDrawer.classList.contains('open')) closeMemberDrawer();
+    if (e.key !== 'Escape') return;
+    // The aquarium preview opens on top of the drawer, so let it take Escape first.
+    var previewOpen = maModal && maModal.classList.contains('show');
+    if (previewOpen) return;
+    if (memDrawer && memDrawer.classList.contains('open')) closeMemberDrawer();
   });
 
   // Which interests the viewer and this member have in common.
@@ -3169,6 +3226,8 @@ window.initPortal = function(){
         m.interests.map(function(x){ return '<span>' + escT(x) + '</span>'; }).join('') + '</div></div>';
     }
     head += '<div class="md-sec"><h4>About</h4><p class="md-bio">' + escT(m.blurb || '') + '</p></div>';
+    mdTanks = tanksForMember(m);
+    head += mdTanksHtml(mdTanks);
     if (m.joinDate){
       head += '<div class="md-sec"><h4>Member since</h4><p class="md-bio">' +
         new Date(m.joinDate).toLocaleDateString('en-ZA', { month:'long', year:'numeric' }) + '</p></div>';
@@ -4591,6 +4650,7 @@ window.initPortal = function(){
   document.getElementById('ma-preview-manage-btn').addEventListener('click', function(){
     if (maCurrent && maCurrent.mine){
       closeMaPreview();
+      closeMemberDrawer();                      // may have been reached from the directory drawer
       show('tanks');
       openTank(maCurrent.myIndex);
     }
