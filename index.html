@@ -4542,13 +4542,13 @@ window.initPortal = function(){
   function badgeCatsFrom(stats){
     return [
       { id:'meetings', label:'Meeting Attendance', icon:'calendar', unit:'meetings attended', value:stats.meetings,
-        tiers:[10, 25, 50, 100] },
+        tiers:[12, 24, 36, 48] },
       { id:'auctions', label:'Auction Trading', icon:'gavel', unit:'traded at auctions', value:stats.auctionValue, isMoney:true,
-        tiers:[500, 1500, 3000, 6000] },
+        tiers:[500, 1500, 2500, 5000] },
       { id:'awards', label:'Award Program Points', icon:'trophy', unit:'points earned', value:stats.awardPoints,
         tiers:[50, 100, 200, 400] },
       { id:'aquariums', label:'Aquarium Collection', icon:'fish', unit:'active aquariums', value:stats.tankCount,
-        tiers:[1, 3, 5, 8] },
+        tiers:[1, 5, 10, 15] },
       { id:'tenure', label:'Membership Tenure', icon:'star', unit:'years as a member', value:stats.tenureYears,
         tiers:[1, 3, 5, 10] }
     ];
