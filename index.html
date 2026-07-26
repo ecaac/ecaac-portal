@@ -288,6 +288,12 @@ button{font-family:inherit}
 .photo-tile:hover .photo-rm{opacity:1}
 .photo-tile .photo-rm svg{width:13px;height:13px}
 .photo-tile .photo-uploading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(246,241,230,0.7);font-size:11px;font-weight:700;color:var(--ink-soft)}
+.photo-tile .photo-cover-btn{position:absolute;top:8px;left:8px;height:28px;padding:0 10px;border-radius:8px;border:none;background:rgba(13,16,38,0.65);color:#fff;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;opacity:0;transition:opacity .15s,background .15s}
+.photo-tile:hover .photo-cover-btn{opacity:1}
+.photo-tile .photo-cover-btn svg{width:13px;height:13px}
+.photo-tile .photo-cover-btn:hover{background:var(--leaf-dark)}
+.photo-tile.is-cover{box-shadow:0 0 0 3px var(--leaf),0 8px 18px -12px rgba(11,59,76,0.25)}
+.photo-tile.is-cover .photo-cover-btn{opacity:1;background:var(--leaf-dark)}
 .photo-lightbox{position:fixed;inset:0;background:rgba(6,7,15,0.88);z-index:300;display:none;align-items:center;justify-content:center;padding:30px}
 .photo-lightbox.show{display:flex}
 .photo-lightbox img{max-width:min(900px,90vw);max-height:85vh;border-radius:14px;box-shadow:0 30px 60px -20px rgba(0,0,0,0.6)}
@@ -1490,6 +1496,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   <div class="sec-title"><h3>Upcoming</h3></div>
   <div class="rows" id="events-rows"></div>
 
+  <div class="sec-title" style="margin-top:26px"><h3>Past events</h3></div>
+  <div class="rows" id="events-past-rows"></div>
+
   <div class="sec-title"><h3>Your attendance</h3></div>
   <div style="max-width:280px">
     <div class="card t-leaf"><div class="stat-num" data-live="ev-meetings">11 / 12</div><div class="stat-label">Meetings attended, last 12 months</div></div>
@@ -2242,24 +2251,45 @@ window.initPortal = function(){
     return { uid:m.uid, title:m.title, start:m.date, end:end, location:m.location, desc:m.desc };
   }
 
+  function eventRowHtml(m, originalIndex, isPast){
+    var action = isPast
+      ? '<span class="badge info">Past</span>'
+      : (m.rsvp
+        ? '<button class="btn btn-primary btn-sm toastable" data-toast="RSVP confirmed — see you on ' + m.dateLabel[0] + ' ' + m.dateLabel[1] + '!">RSVP</button>'
+        : '<span class="badge info">Details soon</span>');
+    var icsButton = isPast ? '' :
+      '<button class="ics-btn" data-mtg="' + originalIndex + '" title="Add to calendar" aria-label="Add ' + escT(m.name) + ' to calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M12 14v4M10 16h4"/></svg></button>';
+    return '<div class="row"' + (isPast ? ' style="opacity:.7"' : '') + '><div class="event-date"><b>' + m.dateLabel[0] + '</b><span>' + m.dateLabel[1] + '</span></div>' +
+      '<div class="row-body"><b>' + escT(m.name) + '</b><span>' + escT(m.meta) + '</span></div>' +
+      '<div class="row-actions">' + icsButton + action + '</div></div>';
+  }
+
   function renderEvents(){
     var el = document.getElementById('events-rows');
+    var pastEl = document.getElementById('events-past-rows');
     if (!el) return;
     if (!MEETINGS.length){
-      el.innerHTML = '<div class="reg-empty" style="padding:22px">' + (IS_LIVE ? 'No events on the calendar yet — the committee will post the next one soon.' : 'No events yet.') + '</div>';
+      var msg = '<div class="reg-empty" style="padding:22px">' + (IS_LIVE ? 'No events on the calendar yet — the committee will post the next one soon.' : 'No events yet.') + '</div>';
+      el.innerHTML = msg;
+      if (pastEl) pastEl.innerHTML = '<div class="reg-empty" style="padding:22px">Nothing here yet.</div>';
       return;
     }
-    el.innerHTML = MEETINGS.map(function(m, i){
-      var action = m.rsvp
-        ? '<button class="btn btn-primary btn-sm toastable" data-toast="RSVP confirmed — see you on ' + m.dateLabel[0] + ' ' + m.dateLabel[1] + '!">RSVP</button>'
-        : '<span class="badge info">Details soon</span>';
-      return '<div class="row"><div class="event-date"><b>' + m.dateLabel[0] + '</b><span>' + m.dateLabel[1] + '</span></div>' +
-        '<div class="row-body"><b>' + escT(m.name) + '</b><span>' + escT(m.meta) + '</span></div>' +
-        '<div class="row-actions">' +
-        '<button class="ics-btn" data-mtg="' + i + '" title="Add to calendar" aria-label="Add ' + escT(m.name) + ' to calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M12 14v4M10 16h4"/></svg></button>' +
-        action + '</div></div>';
-    }).join('');
-    el.querySelectorAll('.ics-btn').forEach(function(b){
+    var now = new Date();
+    var withIdx = MEETINGS.map(function(m, i){ return { m: m, i: i }; });
+    var upcoming = withIdx.filter(function(x){ return x.m.date >= now; }).sort(function(a,b){ return a.m.date - b.m.date; });
+    var past = withIdx.filter(function(x){ return x.m.date < now; }).sort(function(a,b){ return b.m.date - a.m.date; });
+
+    el.innerHTML = upcoming.length
+      ? upcoming.map(function(x){ return eventRowHtml(x.m, x.i, false); }).join('')
+      : '<div class="reg-empty" style="padding:22px">Nothing on the calendar yet — check back soon.</div>';
+
+    if (pastEl){
+      pastEl.innerHTML = past.length
+        ? past.map(function(x){ return eventRowHtml(x.m, x.i, true); }).join('')
+        : '<div class="reg-empty" style="padding:22px">No past events recorded yet.</div>';
+    }
+
+    document.querySelectorAll('.ics-btn').forEach(function(b){
       b.addEventListener('click', function(){
         var m = MEETINGS[parseInt(b.getAttribute('data-mtg'),10)];
         downloadICSFile('ECAAC-' + m.uid + '.ics', [meetingToEvent(m)]);
@@ -2271,8 +2301,10 @@ window.initPortal = function(){
 
   var icsAllBtn = document.getElementById('ics-all-btn');
   if (icsAllBtn) icsAllBtn.addEventListener('click', function(){
-    downloadICSFile('ECAAC-meetings-2026.ics', MEETINGS.map(meetingToEvent));
-    popToast('All ' + MEETINGS.length + ' meetings added to your calendar file');
+    var now = new Date();
+    var upcomingOnly = MEETINGS.filter(function(m){ return m.date >= now; });
+    downloadICSFile('ECAAC-meetings-2026.ics', upcomingOnly.map(meetingToEvent));
+    popToast('All ' + upcomingOnly.length + ' upcoming meetings added to your calendar file');
   });
 
   // ===== Club Resources: full guide library (mirrors ecaac.co.za/club-resources) =====
@@ -2861,7 +2893,8 @@ window.initPortal = function(){
         id: row.id, name: row.name, type: row.type, subtitle: row.subtitle || '',
         volume: row.volume || 0, dims: row.dims || '—', started: row.started || '', notes: row.notes || '',
         tags: (row.tank_tags || []).map(function(t){ return t.label; }),
-        params: params, livestock: livestock, plants: plants, log: log, awards: [], photos: photos
+        params: params, livestock: livestock, plants: plants, log: log, awards: [], photos: photos,
+        cover_photo_id: row.cover_photo_id || null
       });
     });
     renderTanks();
@@ -2886,15 +2919,25 @@ window.initPortal = function(){
     return Object.keys(counts).map(function(k){ return counts[k] + ' ' + k.toLowerCase(); }).join(', ');
   }
 
+  function coverUrl(t){
+    if (!t.cover_photo_id || !t.photos) return null;
+    var p = t.photos.find(function(ph){ return ph.id === t.cover_photo_id; });
+    return p ? p.url : null;
+  }
+
   function renderTanks(){
     var grid = document.getElementById('tank-grid');
     grid.innerHTML = tanks.map(function(t, i){
       var st = TYPE_STYLE[t.type] || TYPE_STYLE['Freshwater'];
       var live = t.livestock.reduce(function(a, l){ var n = parseInt(l[2],10); return a + (isNaN(n) ? (l[2] ? 1 : 0) : n); }, 0);
       var liveLabel = /shrimp|caridina/i.test(t.livestock.map(function(l){return l[0];}).join(' ')) && t.type==='Freshwater' ? 'Shrimp' : (t.type==='Terrarium' ? 'Fauna' : 'Fish');
+      var cover = coverUrl(t);
+      var thumbInner = cover
+        ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
+        : ICONS[st[2]];
       return '<button class="tank-card" data-tank="' + i + '">' +
         '<div class="tank-thumb" style="background:linear-gradient(135deg,' + st[0] + ',' + st[1] + ')">' +
-          '<span class="cat-pill">' + escT(t.type) + (t.subtitle ? ' · ' + escT(t.subtitle) : '') + '</span>' + ICONS[st[2]] +
+          '<span class="cat-pill" style="z-index:1">' + escT(t.type) + (t.subtitle ? ' · ' + escT(t.subtitle) : '') + '</span>' + thumbInner +
         '</div><div class="tank-body"><h4>' + escT(t.name) + '</h4>' +
         '<div class="meta">' + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm · started ' + escT(t.started) + '</div>' +
         '<div class="tank-stats"><div><b>' + (live || '—') + '</b><span>' + liveLabel + '</span></div>' +
@@ -3105,14 +3148,32 @@ window.initPortal = function(){
     if (!grid) return;
     var photos = t.photos || [];
     grid.innerHTML = photos.map(function(p){
-      return '<div class="photo-tile" data-photo-id="' + p.id + '">' +
+      var isCover = t.cover_photo_id === p.id;
+      return '<div class="photo-tile' + (isCover ? ' is-cover' : '') + '" data-photo-id="' + p.id + '">' +
         '<img src="' + escT(p.url) + '" alt="Photo of ' + escT(t.name) + '" loading="lazy">' +
+        '<button class="photo-cover-btn" data-photo-id3="' + p.id + '" aria-label="' + (isCover ? 'Remove as card image' : 'Use as card image') + '"><svg viewBox="0 0 24 24" fill="' + (isCover ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2"><path d="M12 2 15 8 22 9 17 14 18 21 12 17.5 6 21 7 14 2 9 9 8 12 2Z"/></svg>' + (isCover ? 'Cover' : 'Set cover') + '</button>' +
         '<button class="photo-rm" data-photo-id2="' + p.id + '" aria-label="Delete photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
       '</div>';
     }).join('');
     empty.style.display = photos.length ? 'none' : 'block';
     grid.querySelectorAll('img').forEach(function(img){
       img.addEventListener('click', function(){ openLightbox(img.src); });
+    });
+    grid.querySelectorAll('.photo-cover-btn').forEach(function(btn){
+      btn.addEventListener('click', async function(e){
+        e.stopPropagation();
+        var photoId = btn.getAttribute('data-photo-id3');
+        var newCoverId = t.cover_photo_id === photoId ? null : photoId;
+        btn.disabled = true;
+        if (sb && t.id){
+          var res = await dbUpdateRow('tanks', t.id, { cover_photo_id: newCoverId });
+          if (res.error){ popToast('Could not update card image — try again'); btn.disabled = false; return; }
+        }
+        t.cover_photo_id = newCoverId;
+        renderPhotoGrid(t);
+        renderTanks();
+        popToast(newCoverId ? 'Set as this tank\u2019s card image' : 'Card image cleared — back to the default');
+      });
     });
     grid.querySelectorAll('.photo-rm').forEach(function(btn){
       btn.addEventListener('click', async function(e){
@@ -3124,9 +3185,14 @@ window.initPortal = function(){
         if (sb && photo.path){
           await sb.storage.from('tank-photos').remove([photo.path]);
           await dbDeleteRow('tank_photos', photo.id);
+          if (t.cover_photo_id === photo.id && t.id){
+            await dbUpdateRow('tanks', t.id, { cover_photo_id: null });
+            t.cover_photo_id = null;
+          }
         }
         t.photos = t.photos.filter(function(p){ return p.id !== photo.id; });
         renderPhotoGrid(t);
+        renderTanks();
         popToast('Photo removed');
       });
     });
@@ -3305,7 +3371,7 @@ window.initPortal = function(){
     } else {
       var nt = Object.assign({ subtitle:'', tags:newTags,
         params:[['—','pH'],['—','Temp'],['—','TDS']],
-        livestock:[], plants:[], awards:[], photos:[],
+        livestock:[], plants:[], awards:[], photos:[], cover_photo_id:null,
         log:[['Tank set up', 'Welcome to the fishroom', todayShort()]] }, data);
 
       if (sb && window.currentMember){
@@ -3703,7 +3769,7 @@ window.initPortal = function(){
   async function loadOtherMemberTanks(){
     if (!sb || !window.currentMember) { otherMemberTanks = []; return; }
     var res = await sb.from('tanks')
-      .select('*, tank_tags(*), tank_params(*), tank_livestock(*), tank_plants(*), members(first_name,last_name)')
+      .select('*, tank_tags(*), tank_params(*), tank_livestock(*), tank_plants(*), tank_photos(*), members(first_name,last_name)')
       .neq('owner_id', window.currentMember.id)
       .order('created_at', { ascending: true });
     if (res.error || !res.data){ otherMemberTanks = []; renderMemberAquariums(); return; }
@@ -3711,6 +3777,7 @@ window.initPortal = function(){
       var ownerName = row.members ? ((row.members.first_name || '') + ' ' + (row.members.last_name || '')).trim() : '';
       var params = (row.tank_params || []).slice().sort(function(a,b){ return (a.sort_order||0) - (b.sort_order||0); })
         .map(function(p){ return [p.value, p.label]; });
+      var photos = (row.tank_photos || []).map(function(p){ return { id: p.id, url: p.url, path: p.path }; });
       return {
         name: row.name, type: row.type, subtitle: row.subtitle || '',
         volume: row.volume || 0, dims: row.dims || '—', started: row.started || '',
@@ -3719,6 +3786,7 @@ window.initPortal = function(){
         params: params,
         livestock: (row.tank_livestock || []).map(function(l){ return [l.name, l.note || '', l.qty || '']; }),
         plants: (row.tank_plants || []).map(function(p){ return [p.name, p.note || '', p.qty || '']; }),
+        photos: photos, cover_photo_id: row.cover_photo_id || null,
         mine: false
       };
     });
@@ -3748,9 +3816,13 @@ window.initPortal = function(){
       var initials = maInitials(t.owner);
       var gradIdx = t.mine ? 0 : (Math.abs(t.owner.split('').reduce(function(a,c){return a+c.charCodeAt(0);},0)) % MA_AVATAR_GRADS.length);
       var liveCount = t.livestock.reduce(function(a, l){ var n = parseInt(l[2],10); return a + (isNaN(n) ? (l[2] ? 1 : 0) : n); }, 0);
+      var cover = coverUrl(t);
+      var thumbInner = cover
+        ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
+        : ICONS[st[2]];
       return '<button class="tank-card" data-ma="' + idx + '">' +
         '<div class="tank-thumb" style="background:linear-gradient(135deg,' + st[0] + ',' + st[1] + ')">' +
-          '<span class="cat-pill">' + escT(t.type) + (t.subtitle ? ' · ' + escT(t.subtitle) : '') + '</span>' + ICONS[st[2]] +
+          '<span class="cat-pill" style="z-index:1">' + escT(t.type) + (t.subtitle ? ' · ' + escT(t.subtitle) : '') + '</span>' + thumbInner +
         '</div><div class="tank-body">' +
           '<div class="tank-owner"><div class="mini-avatar" style="background:' + MA_AVATAR_GRADS[gradIdx] + '">' + initials + '</div><span>' + escT(t.owner) + '</span>' + (t.mine ? '<span class="mine-pill">Yours</span>' : '') + '</div>' +
           '<h4>' + escT(t.name) + '</h4>' +
