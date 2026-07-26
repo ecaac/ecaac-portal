@@ -648,6 +648,28 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   .reg-table tbody td.reg-species::before{display:none}
   .reg-table tbody td.reg-member{white-space:normal}
 }
+/* Countdown on narrow screens: three cells plus the hero text overflow, so show
+   only the days figure and let it fill the width. */
+@media (max-width:640px){
+  .detail-hero{padding:24px 20px}
+  /* Hide the whole hours/min cells, labels included — hiding just the numbers
+     would leave "HOURS" and "MIN" floating with nothing above them. */
+  .countdown .cd:not(:first-child){display:none}
+  .countdown{margin-top:12px}
+  .countdown .cd{min-width:0;flex:1;padding:12px 14px}
+  .countdown .cd b{font-size:26px}
+}
+/* Event rows on narrow screens. .row never wraps, so the date block plus the
+   non-shrinking actions squeeze the title and meta text into a narrow column
+   (and the "Soon" pill ends up cramped against the edge). Let the text take the
+   full width and drop the actions beneath it. */
+@media (max-width:640px){
+  #events-rows .row, #events-past-rows .row, #dash-events .row{flex-wrap:wrap;gap:10px}
+  #events-rows .row-body, #events-past-rows .row-body, #dash-events .row-body{flex:1 1 calc(100% - 68px)}
+  #events-rows .row-actions, #events-past-rows .row-actions, #dash-events .row-actions{
+    flex:1 1 100%;justify-content:flex-end;align-items:center}
+  .badge{white-space:nowrap}
+}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 .side-link:focus-visible,.btn:focus-visible,.icon-btn:focus-visible,.tank-card:focus-visible{outline:3px solid var(--leaf-light);outline-offset:2px}
 /* auth gate: back-to-website link */
@@ -2630,7 +2652,7 @@ window.initPortal = function(){
   function eventRowHtml(m, originalIndex, isPast, isNext){
     var action;
     if (isPast) action = '<span class="badge info">Past</span>';
-    else if (isNext) action = '<span class="badge warn">Soon</span>';
+    else if (isNext) action = '<span class="badge ok">Soon</span>';
     else action = '<span class="badge pend">Upcoming</span>';
     var icsButton = isPast ? '' :
       '<button class="ics-btn" data-mtg="' + originalIndex + '" title="Add to calendar" aria-label="Add ' + escT(m.name) + ' to calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M12 14v4M10 16h4"/></svg></button>';
@@ -2703,7 +2725,7 @@ window.initPortal = function(){
     }
     dash.innerHTML = upcoming.map(function(m, i){
       var pill = i === 0
-        ? '<span class="badge warn">Soon</span>'
+        ? '<span class="badge ok">Soon</span>'
         : '<span class="badge pend">Upcoming</span>';
       return '<div class="row"><div class="event-date"><b>' + m.dateLabel[0] + '</b><span>' + m.dateLabel[1] + '</span></div>' +
         '<div class="row-body"><b>' + escT(m.name) + '</b><span>' + escT(m.meta) + '</span></div>' +
