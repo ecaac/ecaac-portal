@@ -1909,6 +1909,7 @@ window.initPortal = function(){
     if (id === 'admin' && typeof loadAdminAwardQueue === 'function') loadAdminAwardQueue();
     if (id === 'admin' && typeof loadEvents === 'function') loadEvents();
     if (id === 'admin' && typeof loadAdminAuctionList === 'function') loadAdminAuctionList();
+    if ((id === 'tanks' || id === 'dashboard') && typeof loadTanksFromDB === 'function') loadTanksFromDB();
     sidebar.classList.remove('open'); scrim.classList.remove('show');
     window.scrollTo({top:0, behavior:'smooth'});
   }
