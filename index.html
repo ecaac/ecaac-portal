@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Members Portal | ECAAC</title>
 <meta name="robots" content="noindex, nofollow">
+<!-- Favicon embedded as a data URI so the portal stays a single self-contained
+     file with no sibling asset to upload. 64px covers the 16/32px tab sizes
+     crisply on retina; the source art is a transparent circle, so it floats
+     correctly on both light and dark tab strips. -->
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAS0klEQVR42u2baZQdZZnHf89bVXe/3bc3SAKEENNNR4gQwiYGw+KCEkTAjBxQw+YMCC6AAiPqDG7IqGwqwyAGcQD1BMRRBCSCRgQRSYNDICuJIaSzdaeXu99b9T7zoW6nOyS9kcDkzJk6536pU7fq/f+f/XmfV9hzl8AcBxb7Q++lGqdNFytHqcpMhLeDTgaaBUkBkfB/WlHIAl0gr6IsE+E5NXZJbtvqZYAOvnKOC4uDHe/t1qL3xDvmGVgYDCwwWb9ptginCXoiMF3ExAYeVh1Yt+5yKSKDS1K1JWC5wuOq8lC+b8KfBgme58BCu7tE7CYB85wB4Inm9okmsPNF+ZiIOSR8taJqAQYWKkO++fpvD2Vm4FkjYhjyrpdUuMc65u5C1/KNr1/DW0mAGVhoInHgBCcS+5yiFxlxmsCiqhbUwvbVv9Hv1MgI3yUiBgyqtgvhh7ZSuSWfX7t5yDfsW0GAC/iA1GVaL1PkiyLOBNUAUL8G2vDmXDVijStiUA02CfLN/t4V36+RNbC2N4UAqQELkg1TDzXWvU2Mc3yo4tYHcfaQTxmjZmiwnQgbLLbGvyzfs2Yp4AwxuVEvZxzgBbDp+oMvEMz9YkyrauCH999S8LX1SM0MbSDGmSoq86PR5k2VcnfHeDTQGaO9A2gqc/BNxsj1oBGwAYj7FgMfhggbgETFmNO9WEN9pbTt0SEaq7tjArUXzHLTmdy9Imaequ//L0h8zGYh4rqqdmG2N3UuLPFHc44yutrPclL12V8Y48xV9asgHnv1pVUR17M2eCjXlz4TlgRDQuuw6j1McoNNZ7L37c3gRcCYMDbU7niqftUYZ246k70vlP48M5ywh/EBc1x4OEhlWm8y4l6wt4I3BgIfSiVLImUI/JCQ0ERtVcSd4UUbGirlJx8JMa2zYyBgngMPB+n61vOMcb+lGuyV4B0HinmL5wkXXdtMss6wvKNENCGE2XZIgjHucZFow7pKuaMjxPayjmQCBhYGqVRbO2JuUw2CWnKxd0negf5eS+s7Ynz17kmc8ckGvIhBd7JycVWDAJEfpJra2mspsxmOANkeOhz9kYjEa35D9jbw2V7Liaen+cqdEzlgWoT+bQHpjNmVVxdQREwCX++q4d0hNR9CwLwwy8u0XWKMe1yY5Iizt6l9ttfyvnlpPnP9PqBQylscBxpbHMTsytWLoxr4xrjHJjNtlwBBDesOBAgstKlUW7PAdarWvlngB7y2cUJAAz/j1HK7ESSf67cceUKCT36lhXJJUQXjCtZCusHBcWSYYCdG1VqB61KptuZaGS1DCJhnABVPr6xVdHZPqr4YcBxBBKoVpZCzZHst/T2Dv1yvpVQIQQ08O5Q0v6Jkmh0u/OdmHEfIZy2lomJMuNpEUjAOu/ADA4K21ojTJK5+PswJQi1wa47PplLTWlTlYrC6p6VfLirVsiUaF1omuUyc7NEyySOVMXgelIrQ2+3TubbKa2uq9PcExBKCFxVsEGpMLq+cfmE9B0yLsGVDlWVLSsw8PrE9/ovsSBq7NAWrqnJxMjn1xnx+4VbCXH6OgcU+nrnA4GRqqe6e8/wCk1sjHH1SkkOPibH/1AipOoPjSc0cBASCqlLMWzat93nu93kW3d9PV6dPst7g+5BuMBxzUgKAZxblOWh6lHjSkO8PMAYKeUvgQyQ6rBYIWN8Yt95GOJ88N8Act9Zfm+Wh/ReoWB3ZEseXpBRyllM/nuGia5sIqqFuVcpKoSDYWpujXLJYq8SThnS9S9thLq0zosz5UJr/vLGbpx/N4XrC/lMjHDAtwtplZbo2+Zxydh2FnEVEMAY2r/fxq8rIaiBG1SrohTDrRljsOwCpTOpdRpzP1xp2e4QABRxXWL+6QtPECJOnx8j3WRzxiZkyqUiJ3KYsa5/vYW1HDy8/3ccrS3rYukmJJl32P8jjuPen2LrRZ3lHkWnviHPK2fU8/mCWCZM9DmqPUimHovYiwi8X9NL59yqRqAynAQNRUo04zV6s9LtKadu6AVU/A0SHtLH2iO4bz1Au+tz62TUUOut57zktbC1l2BxMYqO/Hxtjk+g/qpFckMIW8nRvqHD4uh/z4m2vkpkY571npbniO/uy4oUSpbylWlU2rKlw+LvqqZRDhxlPCGuXl3nxmSLxhMGO2h1UW1OTDwN/dAEjysmIyh4D7zhQrUAuj5tMoYcdxe2dx/Ob9SfRFZ9GLpuCSoHGyBYmehtojy3nefdI8lNbOOPkB4jmmvnjo2VuuWYL756b5qOXNvDAf/TQ1VmlVFQaml0qZa2FT+Gnt26jmLck0mMhQAyoiMpJgOOmmtraCDi41r01u2341iL9PWjTBCrv/SiVEz+CPWQmOPD3ZatxX1zIJ2Yv45Sj1hPNbyEZ9NAZ7M/arQdxXdPVxPqLVCTG+/4hwszZcRZc38Vra6pYC6+8VMH6ihjwvDBK/PDrXSz5Q4Fk/VjAh6tUtSC0p5raWp1otOkDImZeraCU3ZG6FHLgelQ/+AmKl92AP/cs1EvhPf4LYnd+g8TCm3Cf/g0b/7QcqZbY921pGpodHs1/iONST3NQdC0F0niOxVrINLmccHqa/p6AP/46S7LOUMhZTj4rzZZOn9u+vJU//FeWVJ0JM5extzmtiPGw9q+Sqp92izHuZ1RtMI4e4Y5ZigiS7cU/9FjK532RYNZR0J0l8ug9RB77GWbDGjAG9WKIgWrJp1SsMnE/l2PfkyJx/Ls4fsoKEpkoIkq5YNm6ocLzfyrwt6cKzL+qiXUrKiy4vov9p0U5+sQEj/8iS88Wf2fJ2yBMG0e+AhHjWGtvlVSmbZER854w/R2nCdRCjhSyVE67gNL8a6Auibv4EaI/vRnnlaWDArGKRqJoqh7S9Zh4nEpZKfVXiDtlkn4XKa+IsQGFiktfIULFdzFi0UC56tYJLOso8eCdPUSighsRvIjsBF7rm5H+baOEQ6yIMVbt7ySVaV0hmLZa+iDjAq+KlAqU5l9D5exLIZsjds+3iTx0NxRzEI1hJ03FP2w2/ox3Yg+YhibrwQgEAWJ9jAZouUKQL8CWjZh1y/FWLiGy7iWc/i7wPKoSIwjgiz/Ylwfu6GV5R4lYcgh4Y5BiDn/mCZiuTqRzLXgRRoiHCiKKXSmpTGu3YBrHT4BBCllKF3yZytn/hGzYQPx7V+H9+SE0Vod/5EmU555H0H4Eku3FWfk87ooXMK+tRrZtQYo58KtgHDQWh3QGbZmEnTgF27wfagxmwxrcvz2Fu2ElxX6fKYcmOeczjXz7c5sHtdwYJN+Pf8QJ2KaJRB67L9Qya0dJU0QUu03SmdYySGTcDq+/h/JZn6J88ZeRDetJXH8x7tIn8N8+h9KFXyJom4n3l0V4i36Gs6IDyfaF9Doe6rhhxBhQU2sRG4SEBAE4DpppJjigFZ1wIBQLRNa/RN/qjcz/Qgu5voAH7uihvtnFVnw0nqJ8zpXEfnJ9+I4xR3OtSDrTNj7vbxykkMWf8U4K1/0YKZWIf/UCvBceo3T2NZTP/Rzes48TvfcmzLrl4EXRaBwcd0j3epjd4YFaOSwbkXIRrMXWN0Eyjd3WRTotXPqNfbjl6s2USgYn1035I5ci5SKRX/0IrW9mrPEQUHe82R2BjyZSlM6/FmJxYjdfhffCIgpX/xh/5mwS37wE9y+L0HgSzTSHlmXt6Isa8CnZXqiWQ+IiUbABpqsTusDNNLC5U1i7vMK7T0vz4J091Dc2ELTPIrbg62giNbQ9PNaNTq2O2QQcg/T3UT7zYuzhh+Et/AmRxxaQv/ZedN/9SV32PqR/G9rQEoIOgnFpFSL4h8/GP/JkgsltaDq0ZWfTq7jPPYH37CJitoenHolyzuVN/PaujfgHHg1+FbNlPZpIj2b7O+0huAo5QUZ3giJQraIN+1CZex7y2iZid/wLpfO/Dsk6kledgboRNN0Q9qqH/eaQim271HvwDz2W6innorEEztplRH7/AFQraEML/vQjKV30L5TmX0P85zez9pf34RfTtL8jwvNNbyPSuyVMvWXMllxzgppzgS6gcUxev9hHZfZcdNqBxK/7LMH0Wfith5H82vloJA6uOzJ4kbBO8P3Bpr61VD7wcezEKUQeugtn5QshGMcNn7eWyIN3YJsnhrnGp6/Hvv0Ulr3yLY451qdj8yRMMftG50S6DMirtbGUkV+hGqa5cz6MrFmPs/TPVE88i8QtV4Ze3XWHVz8R8KtopgXbNDEEHgTgRqiecCZmayexBV/DWf0imqxDG1rQdAOaqkfrGtFME1LMEVvwNRKfPhXTPo0nTrmH4MDpxOstvniMkwENMcurBuXlISX8COpfxjZNJDj0GCKP3heGud8/EGZd8eTItieC+BWCKe0QiSF+FaIxgulH4f73U7hLnggBx5KDvsMGg84zCMBx0cZ9MK8sJfmF0+hZuYW7py6AtkPC/5lxJbFaq4xfNiK6ZNQqQgxSLWMPmh76wjVLkVwfzkvPgg1CEkbvjhC0zQyfdT1s4wScVc8j3ZvQVCYEOpIHVwXfD5OcbB/pf/0Yle5eiu88BfbdDyKxsOU09nkHRMxzRh15VtWWR6wDBPB9gmkzkI3rMJ1/x1mzFOIpymd9iuoJZ0K1umsnJALlIsHkg9HmiZitnWgsgdmyHkqFsIlnxzHjFPgQTyL920h+51Jk82aC9iOwzZPAH7MjNKq2rA5/NbnulatQXRFOYw2zj15LXOyEKTivLA3T2WwPldMvpHzxtRQvv4ngkKORYn5nVTQOUsxRPfFMZNOrUC6Eqh029UfK10ckQRNpzLoVxP79S+i+++DPOiEMpaNXglbEgOqKXPfKlQYIVHh8sCU2DAPGwabqQskjIbBcXziSVMwhpRp4fZ30KyXspIOoHvt+vKcfRmOJIaB3Y8Qv8NG6Brwnf4330M8pn3MF2rJfmESNqAVqQTTEjB3IBH8JevmISXSNWadzLRhBY0m83/4U6dqI6esOPXg0viOHxkFyXRQvuwHz2is4q/6G1jWOT+VHlKVF40mi934HbZqAbWjBZHuGpN3Dt8SABwc2RiTXW/fnVKZ/lWCm1RCYnUzAGKSQQ3q7BtXMGLynH65VdIkd1dn1kN6tVN99Ov6cD5O88rQRm/ZvrPUchmbJ9RH/6vxwXZHYSN+wiIjVYGWut+6ZGhtzHFhSReRHIkZGcsWmrxtKBdQ4g5EkWY/GkzuDz/YQHDid4tU/ILLw+zgrnq89Z9mjl9a2MiIxcL1RCFYrGEFkASypwhzH1AaPRSv+XdYGfTXx6s5BQ5HujUgQ7BgwB+L19k1AF+ntwh7QSuHb9+N2LCZ2341oOjP22uCN7EKojqZdCsaxGvRStQtCVIutGdgozOfXbBHR22taEOyyz79lw67LWGPCFLdSQnq2UJ19KrlbH8ZZ1kH83y5FvehesLmugYgREb09l1u9dWAGaofB5VSqrQmX5YI01ICaHbz522YguT5k64Za/LYQ+EipAL6PndJO6dwr8Gd/kMgDtxO757uoGwmd0p5W/XGriKiiPfi053IruwfuDwma85xK5cm8F2vKG3FOrQ0fmh2HLcJRXcn1I9Vq2ISsa8Q/bDaVc6+kfM4VmHwf8e9eTmTRz9F4qhYadS+QvuNY9Kp8/8rFtVkh+/r0d/tkZaq+9SljnGPDGaEhW+W1+Gr3nYydMp1gcmsYe42DeXUF7jOPhXmC64XNiTfN5t8AeBs8netbdTyDg5O7nP8xgE01tbVLwBIgOmSuZrs2aTwVFkCBRbI9SLYHgiAMhbH49hi9N6APwUpFfT0il1u5fADj9h7Pzn+Y51SKT26NRhs7xbhnDJkE364oUimFZlDMhbdiSYgnQkc4ujd+Ky9fxHHR4B9z2VW/G6r6wxFAOEc3x62UOzq8aEODMe5xYKs7mkIY7nCcwVi894De3u4ScT2r/s25vlU3DAx/7tTl2/Wf14WaUH7ykUis8VARd8ZOJOzVVwheNbg/17vqwtrwpx22Lh6hCP4/Pyw9mkQFNtpKecrCSKzcLuLMqPmE3TkH9CY6PA1CyduFub70R4eMyw9rn84YvKiBjbZS6l7oxRrqjTjvCqspDfbcNMnuh7rwUJVjrOrNud4VF8FGZQwHqZyxMRvmCJXStkcj0ab1CO8RcaJ7gTbUpO64oDmUS3J9K741pJod1TOP16k5lXJ3hxev/5VYOUSMO7WWIr7VRAwcmnJEHKPWPmmNf2aud/Vva5h0rN2W3Tw2d/BlitaOzW0/PfYWHJsTV8SpHZvTb/b3rnrDx+acN7aIEGC51P0Xz6m7RxxTBaaLOCmRAbvToXXz7h6cDEAQCe1c0W7ge0GlfH4uu+aJIWn8uHPv/z86uwfUcpjD0zpX4GSgffcPT8sTqvx6Lzw8/fp3DXd83sxS5UiE6YPH50nXdqUVqCiaY/D4/Msi2qFGn3uzj8//D9BOCtVFDqmSAAAAAElFTkSuQmCC">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -85,6 +90,28 @@ button{font-family:inherit}
 .status-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--leaf-dark);background:#EAF3DE;padding:7px 13px;border-radius:20px}
 .status-chip::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--leaf)}
 
+/* ===== dark topbar =====
+   Continues the sidebar's dark frame across the top of the page. Overrides are
+   scoped to .topbar because .status-chip and .icon-btn are also used inside
+   light panels elsewhere, and they must keep their paper styling there. Kept
+   translucent so the sticky blur still reads over scrolling content. */
+.topbar{
+  background:linear-gradient(180deg, rgba(20,37,66,0.94) 0%, rgba(13,16,38,0.94) 100%);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.topbar .welcome b{color:#fff}
+.topbar .burger{border-color:rgba(255,255,255,0.14);background:rgba(255,255,255,0.06);color:#fff}
+.topbar .status-chip{color:var(--leaf-light);background:rgba(53,173,81,0.18)}
+.topbar .top-search input{
+  border-color:rgba(255,255,255,0.14);background:rgba(255,255,255,0.07);color:#fff;
+}
+.topbar .top-search input::placeholder{color:rgba(215,219,234,0.55)}
+.topbar .top-search svg{color:rgba(215,219,234,0.75)}
+.topbar .icon-btn{border-color:rgba(255,255,255,0.14);background:rgba(255,255,255,0.06);color:#fff}
+.topbar .icon-btn:hover{background:rgba(255,255,255,0.12);box-shadow:0 10px 20px -12px rgba(6,7,15,0.7)}
+/* The dot's ring punched out of the paper background; match the bar instead. */
+.topbar .icon-btn .dot{border-color:#141833}
+
 .content{padding:30px 32px 110px;max-width:1220px;width:100%;margin:0 auto}
 .bday-banner{display:flex;align-items:center;gap:12px;margin:0 0 24px;padding:13px 16px;border-radius:14px;background:linear-gradient(135deg,var(--deep-2),var(--deep));border:1px solid rgba(217,164,65,0.4);color:#fff;box-shadow:0 14px 30px -16px rgba(6,7,15,0.6)}
 .bday-banner[hidden]{display:none}
@@ -132,6 +159,21 @@ button{font-family:inherit}
 .card.t-deep{border-top-color:var(--deep)}
 .card.t-coral{border-top-color:var(--coral-dark)}
 .card.t-gold{border-top-color:var(--gold-dark)}
+/* Dark stat cards. Only the four-across summary rows carry .stat-grid, so this
+   never touches cards with headings and body copy — those stay on paper. Every
+   selector here is (0,2,0) so it outranks the plain .card/.stat-num rules
+   above, and it sits before the 860px block so the mobile sizing still wins. */
+.stat-grid .card{
+  background:radial-gradient(120% 160% at 15% 10%, #142542 0%, var(--deep) 55%, var(--deep-3) 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06),0 1px 2px rgba(6,7,15,0.2),0 14px 30px -18px rgba(6,7,15,0.65);
+}
+.stat-grid .card:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1),0 22px 40px -16px rgba(6,7,15,0.7)}
+.stat-grid .stat-num{color:#fff}
+.stat-grid .stat-label{color:rgba(215,219,234,0.72)}
+/* The deep tone reads as "no border" against a dark card, and the matching icon
+   gradient disappears into it — both get a lifted variant instead. */
+.stat-grid .card.t-deep{border-top-color:#5B6BA8}
+.stat-grid .card-icon.bg-deep{background:linear-gradient(135deg,#3A4682,#232A5C)}
 .card h4{font-size:15.5px;margin-bottom:8px}
 .card p{font-size:13px;color:var(--ink-soft);line-height:1.65;margin:0}
 .card-icon{width:40px;height:40px;border-radius:11px;color:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:0 8px 16px -8px rgba(11,59,76,0.35)}
@@ -339,7 +381,12 @@ button{font-family:inherit}
 .tier-pip{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:14px 8px;border-radius:14px;background:var(--sand);border:1px solid var(--sand-line)}
 .tier-pip.earned{background:var(--paper);border-color:transparent;box-shadow:0 8px 18px -12px rgba(11,59,76,0.25)}
 .tier-pip .dot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:#D9D2BE}
-.tier-pip.earned .dot{box-shadow:0 6px 14px -6px rgba(11,59,76,0.4)}
+/* Earned steps read as "done", so they get one consistent green rather than the
+   bronze/silver/gold gradient — at small size bronze and silver sit too close to
+   the locked grey to scan. (0,2,0) here outranks the single TIER_CLASS classes
+   the markup also puts on this element. The tier gradients still carry meaning
+   in the showcase grid and the category icon.) */
+.tier-pip.earned .dot{background:linear-gradient(135deg,var(--leaf),var(--leaf-dark));box-shadow:0 6px 14px -6px rgba(11,59,76,0.4)}
 .tier-pip .dot svg{width:16px;height:16px}
 .tier-pip b{font-size:11.5px;color:var(--deep)}
 .tier-pip span{font-size:10px;color:var(--ink-soft)}
@@ -758,7 +805,6 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <button class="side-link" data-view="awards">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/></svg>
       Awards Program
-      <span class="pill">2</span>
     </button>
     <button class="side-link" data-view="badges">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M9 13.5 7 22l5-3 5 3-2-8.5"/></svg>
@@ -1348,22 +1394,6 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
         <div class="aw-badge locked"><div class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><span>Lifetime Achiever</span></div>
       </div>
       <p style="font-size:12px;color:var(--ink-soft);margin-top:16px">Certificates for approved entries can be downloaded from the Documents section.</p>
-    </div>
-  </div>
-
-  <div class="sec-title"><h3>Hall of Fame</h3><a href="https://www.ecaac.co.za/hall-of-fame" target="_blank" rel="noopener" class="linkish">Full Hall of Fame <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a></div>
-  <div class="grid g2">
-    <div class="card t-gold">
-      <div class="card-icon bg-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/></svg></div>
-      <span class="badge pend" style="margin-bottom:8px;display:inline-block">2025</span>
-      <h4>Judy Nel — Club Member of the Year</h4>
-      <p>Awarded for exceptional commitment, active participation, and significant positive impact within the club during 2025. That's you! 🏆</p>
-    </div>
-    <div class="card t-deep">
-      <div class="card-icon bg-deep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 15 8 22 9 17 14 18 21 12 17.5 6 21 7 14 2 9 9 8 12 2Z"/></svg></div>
-      <span class="badge info" style="margin-bottom:8px;display:inline-block">2024</span>
-      <h4>Jan Calitz — Honorable Lifetime Member</h4>
-      <p>In recognition of a lifetime of dedication, leadership, and outstanding contributions to the growth and success of ECAAC.</p>
     </div>
   </div>
 
@@ -2147,10 +2177,25 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 </div><!-- /#portal-root -->
 
 <script>
-  var supabase = window.supabase.createClient(
-    'https://ydouydznrtsvmilgworn.supabase.co',
-    'sb_publishable_Q4f9Rbt3xHyzL-l7p7doqA_KHFgCBbP'
-  );
+  // The Supabase SDK is a single CDN dependency. If it fails to load,
+  // createClient throws, every remaining line in this block is skipped, and
+  // members are left on a sign-in form whose button does nothing with no
+  // explanation on screen. Fail loudly instead.
+  var supabase;
+  try {
+    supabase = window.supabase.createClient(
+      'https://ydouydznrtsvmilgworn.supabase.co',
+      'sb_publishable_Q4f9Rbt3xHyzL-l7p7doqA_KHFgCBbP'
+    );
+  } catch (e) {
+    var failMsg = document.getElementById('auth-status');
+    if (failMsg){
+      failMsg.textContent = 'Can\u2019t reach the sign-in service right now \u2014 check your connection and reload the page.';
+      failMsg.style.color = '#C25A3F';
+    }
+    var failBtn = document.getElementById('auth-signin-btn');
+    if (failBtn){ failBtn.disabled = true; failBtn.style.opacity = '0.55'; failBtn.style.cursor = 'not-allowed'; }
+  }
 
   var gate = document.getElementById('auth-gate');
   var root = document.getElementById('portal-root');
@@ -2205,8 +2250,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     // on success, onAuthStateChange fires and checkSession() shows the portal
   });
 
-  supabase.auth.onAuthStateChange(function(_event, _session){ checkSession(); });
-  checkSession();
+  // The session check and auth listener are NOT started here. They now run from
+  // a small block after initPortal() is defined — see the end of the file for
+  // why the ordering matters.
 </script>
 
 <script>
@@ -3296,14 +3342,18 @@ window.initPortal = function(){
             ? '<span>' + escT(m.typePill) + '</span>'
             : m.cats.map(function(c){ return '<span>' + c + '</span>'; }).join(''));
       if (m.founding) tags += '<span class="founding">Founding member</span>';
-      tags += (m.interests || []).map(function(c){ return '<span>' + escT(c) + '</span>'; }).join('');
+      // Interests deliberately not shown here — the pill row got long enough to
+      // push the card taller than its neighbours. The drawer's own "Interests"
+      // section still lists them, and the filter pills read m.interests directly.
       var meta = m.breeder
         ? '<div class="dir-meta"><span><b>' + m.listings + '</b> register listings</span><span><b>' + m.current + '</b> breeding now</span></div>'
-        : '<div class="dir-meta"><span>' + (m.email ? '<a href="mailto:' + m.email + '" style="color:var(--leaf-dark);font-weight:700">' + m.email + '</a>' : '<b>' + (m.metaLine || '') + '</b>') + '</span></div>';
+        : '<div class="dir-meta"><span>' + (m.email ? '<a href="mailto:' + escA(m.email) + '" style="color:var(--leaf-dark);font-weight:700">' + escT(m.email) + '</a>' : '<b>' + escT(m.metaLine || '') + '</b>') + '</span></div>';
       return '<div class="dir-card" data-dir-idx="' + i + '" role="button" tabindex="0" aria-label="View ' + escA(m.name) + '\u2019s profile">' +
         '<div class="dir-avatar" style="background:' + gradients[i % gradients.length] + '">' + initials(m.name) + '</div>' +
-        '<div class="dir-body"><h4>' + m.name + '</h4><div class="dir-role">' + m.role + '</div>' +
-        '<p>' + m.blurb + '</p><div class="dir-tags">' + tags + '</div>' + meta + '</div></div>';
+        // name/role/bio are member-editable, so they get escaped here just as the
+        // drawer already does (textContent for name/role, escT for the bio).
+        '<div class="dir-body"><h4>' + escT(m.name) + '</h4><div class="dir-role">' + escT(m.role || '') + '</div>' +
+        '<p>' + escT(m.blurb || '') + '</p><div class="dir-tags">' + tags + '</div>' + meta + '</div></div>';
     }).join('');
     dirEmpty.style.display = out.length ? 'none' : 'block';
     dirGrid.style.display = out.length ? 'grid' : 'none';
@@ -4613,15 +4663,15 @@ window.initPortal = function(){
   // the two can never disagree about what earns a tier.
   function badgeCatsFrom(stats){
     return [
-      { id:'meetings', label:'Meeting Attendance', icon:'calendar', unit:'meetings attended', value:stats.meetings,
-        tiers:[10, 25, 50, 100] },
+      { id:'meetings', label:'Meeting Attendance', icon:'calendar', unit:'meetings attended', unit1:'meeting attended', value:stats.meetings,
+        tiers:[12, 24, 36, 48] },
       { id:'auctions', label:'Auction Trading', icon:'gavel', unit:'traded at auctions', value:stats.auctionValue, isMoney:true,
-        tiers:[500, 1500, 3000, 6000] },
-      { id:'awards', label:'Award Program Points', icon:'trophy', unit:'points earned', value:stats.awardPoints,
+        tiers:[500, 1500, 2500, 5000] },
+      { id:'awards', label:'Award Program Points', icon:'trophy', unit:'points earned', unit1:'point earned', value:stats.awardPoints,
         tiers:[50, 100, 200, 400] },
-      { id:'aquariums', label:'Aquarium Collection', icon:'fish', unit:'active aquariums', value:stats.tankCount,
-        tiers:[1, 3, 5, 8] },
-      { id:'tenure', label:'Membership Tenure', icon:'star', unit:'years as a member', value:stats.tenureYears,
+      { id:'aquariums', label:'Aquarium Collection', icon:'fish', unit:'active aquariums', unit1:'active aquarium', value:stats.tankCount,
+        tiers:[1, 5, 10, 15] },
+      { id:'tenure', label:'Membership Tenure', icon:'star', unit:'years as a member', unit1:'year as a member', value:stats.tenureYears,
         tiers:[1, 3, 5, 10] }
     ];
   }
@@ -4649,13 +4699,24 @@ window.initPortal = function(){
     cat.tiers.forEach(function(t){ if (cat.value >= t) achieved++; });
     var nextIdx = achieved; // index of next unearned tier, or -1 if maxed
     var maxed = nextIdx >= cat.tiers.length;
-    var prevThreshold = achieved > 0 ? cat.tiers[achieved - 1] : 0;
     var nextThreshold = maxed ? null : cat.tiers[nextIdx];
-    var pct = maxed ? 100 : Math.round(((cat.value - prevThreshold) / (nextThreshold - prevThreshold)) * 100);
+    // Progress toward the final (Platinum) threshold, not just the current
+    // stretch. Nothing on screen says "progress within this tier", so a
+    // stretch-relative bar reads as wrong — and it resets to near-zero each time
+    // you cross a tier. 6 of 10 years now shows 60%, as anyone would expect.
+    var finalThreshold = cat.tiers[cat.tiers.length - 1];
+    var pct = finalThreshold > 0 ? Math.round((cat.value / finalThreshold) * 100) : 0;
     return { achieved: achieved, maxed: maxed, nextThreshold: nextThreshold, pct: Math.max(0, Math.min(100, pct)) };
   }
 
-  function fmtVal(v, isMoney){ return isMoney ? money2(v) : v; }
+  // Thresholds and remainders are almost always whole rands, so trailing cents
+  // are noise. Cents still show when an amount actually has them.
+  function fmtVal(v, isMoney){ return isMoney ? money2(v).replace(/\.00$/, '') : v; }
+
+  // Singular/plural for the count noun in each category's unit string.
+  // Money categories have no count noun to inflect, so they omit unit1 and
+  // fall back to the one form.
+  function unitFor(cat, n){ return (n === 1 && cat.unit1) ? cat.unit1 : cat.unit; }
 
   function renderBadgeCategories(){
     var cats = getBadgeCategories();
@@ -4682,12 +4743,12 @@ window.initPortal = function(){
 
       var nextLine = prog.maxed
         ? '<div class="badge-cat-next">🏆 <b>Platinum reached</b> — top tier in this category.</div>'
-        : '<div class="badge-cat-next"><b>' + fmtVal(prog.nextThreshold - cat.value, cat.isMoney) + '</b> more ' + cat.unit + ' to reach <b>' + TIER_NAMES[prog.achieved] + '</b>.</div>';
+        : '<div class="badge-cat-next"><b>' + fmtVal(prog.nextThreshold - cat.value, cat.isMoney) + '</b> more ' + unitFor(cat, prog.nextThreshold - cat.value) + ' to reach <b>' + TIER_NAMES[prog.achieved] + '</b>.</div>';
 
       return '<div class="badge-cat">' +
         '<div class="badge-cat-head">' +
           '<div class="badge-cat-icon ' + (prog.achieved ? TIER_CLASS[prog.achieved - 1] : '') + '" style="' + (prog.achieved ? '' : 'background:linear-gradient(135deg,var(--deep),var(--deep-2))') + '">' + TIER_ICONS[cat.icon] + '</div>' +
-          '<div class="badge-cat-title"><h4>' + cat.label + '</h4><span>' + fmtVal(cat.value, cat.isMoney) + ' ' + cat.unit + '</span></div>' +
+          '<div class="badge-cat-title"><h4>' + cat.label + '</h4><span>' + fmtVal(cat.value, cat.isMoney) + ' ' + unitFor(cat, cat.value) + '</span></div>' +
           '<div class="badge-cat-current"><b>' + (prog.achieved ? TIER_NAMES[prog.achieved - 1] : 'Unranked') + '</b><span>Current tier</span></div>' +
         '</div>' +
         '<div class="progress"><i style="width:' + prog.pct + '%;' + (prog.achieved ? 'background:linear-gradient(90deg,var(--leaf),var(--leaf-dark))' : '') + '"></i></div>' +
@@ -6807,6 +6868,28 @@ window.initPortal = function(){
   // happens to open Awards or Badges.
   if (window.checkBadgeChanges) window.checkBadgeChanges();
 };
+</script>
+
+<script>
+  // Bootstrap, deliberately last.
+  //
+  // These two lines used to sit at the end of the auth block near the top of the
+  // file, which the browser parses BEFORE the block above that defines
+  // initPortal(). checkSession() awaits getSession(), and Supabase resolves that
+  // from localStorage rather than the network when a valid session is cached — so
+  // it can resume in the same tick, while initPortal is still undefined. The
+  // guard `if (window.initPortal)` then quietly did nothing: the gate hid, the
+  // portal appeared, and none of it was ever wired up. No error, nothing in the
+  // console, fixed by a reload — the worst kind of intermittent failure.
+  //
+  // Running the bootstrap from here means initPortal() is guaranteed to exist by
+  // the time any session resolves, however fast. Nothing else about sign-in
+  // changes. Guarded on `supabase` so a failed SDK load shows the message set in
+  // the auth block instead of throwing on top of it.
+  if (supabase) {
+    supabase.auth.onAuthStateChange(function(_event, _session){ checkSession(); });
+    checkSession();
+  }
 </script>
 </body>
 </html>
