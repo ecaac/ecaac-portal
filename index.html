@@ -62,7 +62,6 @@ button{font-family:inherit}
 .burger{display:none;width:40px;height:40px;border-radius:10px;border:1px solid var(--sand-line);background:var(--paper);cursor:pointer;align-items:center;justify-content:center;color:var(--deep)}
 .burger svg{width:19px;height:19px}
 .topbar .welcome b{font-family:'Fraunces',Georgia,serif;font-size:17px;color:var(--deep);display:block;line-height:1.2}
-.topbar .welcome span{font-size:12px;color:var(--ink-soft)}
 .top-search{flex:1;max-width:380px;margin-left:auto;position:relative}
 .top-search input{width:100%;padding:10px 14px 10px 38px;border-radius:11px;border:1px solid var(--sand-line);background:var(--paper);font:inherit;font-size:13px;color:var(--ink)}
 .top-search input:focus{outline:2px solid var(--leaf-light);outline-offset:0}
@@ -273,6 +272,12 @@ button{font-family:inherit}
 .dir-tags{display:flex;flex-wrap:wrap;gap:5px}
 .dir-tags span{font-size:10px;font-weight:700;color:var(--leaf-dark);background:#EAF3DE;padding:3px 9px;border-radius:12px}
 .dir-tags span.n{color:var(--deep);background:#E3EBED}
+/* Founding member — recognition, so gold rather than a category colour.
+   .dir-tags span is (0,1,1), so the in-card variant must be at least as specific
+   or the green category styling would win. */
+.founding{font-size:10px;font-weight:800;letter-spacing:.02em;color:var(--gold-dark);background:#FAF0DA;border:1px solid rgba(217,164,65,0.45);padding:3px 9px;border-radius:12px;white-space:nowrap}
+.dir-tags span.founding{color:var(--gold-dark);background:#FAF0DA;border:1px solid rgba(217,164,65,0.45);font-size:10px;font-weight:800}
+.md-bio .founding{margin-left:6px;display:inline-block;vertical-align:1px}
 .dir-meta{font-size:11px;color:var(--ink-soft);margin-top:10px;display:flex;gap:12px;flex-wrap:wrap}
 .dir-meta b{color:var(--deep)}
 
@@ -770,7 +775,6 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </button>
   <div class="welcome">
     <b data-live="welcome">Welcome back, Judy 🌿</b>
-    <span id="topbar-date">Friday, 24 July 2026</span>
   </div>
   <span class="status-chip">Membership active</span>
   <div class="top-search">
@@ -1882,6 +1886,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   <div class="fab-menu">
     <button class="fab-item" id="fab-add-tank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg> Add tank</button>
     <button class="fab-item" id="fab-award"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/></svg> Submit award entry</button>
+    <button class="fab-item" id="fab-listing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add a listing</button>
     <button class="fab-item" id="fab-renew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg> Renew membership</button>
     <a class="fab-item" href="https://wa.me/27603495761" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.5L3 21l2-5.6A8.5 8.5 0 1 1 21 11.5Z"/></svg> Contact committee (WhatsApp)</a>
   </div>
@@ -2248,6 +2253,7 @@ window.initPortal = function(){
     venueShort: 'The Italian Club, Broadwood',
     localAreas: 'Gqeberha (PE), Jeffreys Bay, Humansdorp, Uitenhage & Despatch',
     feesDueMonth: 'February',                   // fees due by the end of this month
+    foundingYear: 2018,                         // members who joined this year are founding members
     bank: {
       name: 'Nedbank',
       accountName: 'Eastern Cape Aquarium & Aquascaping Club',
@@ -2260,7 +2266,15 @@ window.initPortal = function(){
     var now = new Date();
     return now.getMonth() >= 2 ? now.getFullYear() + 1 : now.getFullYear();
   }
-  function feesDueText(){ return 'fees due end ' + CLUB.feesDueMonth.slice(0, 3) + ' ' + feesDueYear(); }
+  // Founding member: joined in the club's founding year (or earlier, which guards
+  // against join dates recorded before the club was formally constituted).
+  // Single source of truth — the Recognition badge, the directory cards and the
+  // member drawer all call this, so they can never disagree.
+  function isFoundingJoinDate(joinDate){
+    if (!joinDate) return false;
+    var y = new Date(String(joinDate).slice(0, 10) + 'T00:00:00').getFullYear();
+    return !isNaN(y) && y <= CLUB.foundingYear;
+  }
 
   var MEMBER_TYPES = {
     'Full': {
@@ -3026,10 +3040,6 @@ window.initPortal = function(){
       navigator.clipboard.writeText(text).then(done).catch(done);
     } else { done(); }
   }
-  document.querySelectorAll('#renew-modal .copy-btn[data-copy]').forEach(function(b){
-    b.addEventListener('click', function(){ copyText(b.getAttribute('data-copy'), b); });
-  });
-
   // ===== Club config into the UI =====
   // Fees render from MEMBER_TYPES and banking from CLUB.bank, so these facts are
   // stated once in config rather than repeated across the markup.
@@ -3157,6 +3167,7 @@ window.initPortal = function(){
         : (m.typePill
             ? '<span>' + escT(m.typePill) + '</span>'
             : m.cats.map(function(c){ return '<span>' + c + '</span>'; }).join(''));
+      if (m.founding) tags += '<span class="founding">Founding member</span>';
       tags += (m.interests || []).map(function(c){ return '<span>' + escT(c) + '</span>'; }).join('');
       var meta = m.breeder
         ? '<div class="dir-meta"><span><b>' + m.listings + '</b> register listings</span><span><b>' + m.current + '</b> breeding now</span></div>'
@@ -3367,7 +3378,8 @@ window.initPortal = function(){
     head += mdTanksHtml(mdTanks);
     if (m.joinDate){
       head += '<div class="md-sec"><h4>Member since</h4><p class="md-bio">' +
-        new Date(m.joinDate).toLocaleDateString('en-ZA', { month:'long', year:'numeric' }) + '</p></div>';
+        new Date(m.joinDate).toLocaleDateString('en-ZA', { month:'long', year:'numeric' }) +
+        (m.founding ? ' <span class="founding">Founding member</span>' : '') + '</p></div>';
     }
 
     mdBody.innerHTML = head + (m.memberId
@@ -3565,6 +3577,22 @@ window.initPortal = function(){
       });
     });
   }
+
+  // FAB shortcut: jump to the register and put the cursor in the species field.
+  var fabListing = document.getElementById('fab-listing');
+  if (fabListing) fabListing.addEventListener('click', function(){
+    var fw = document.getElementById('fab-wrap');
+    if (fw) fw.classList.remove('open');
+    show('breeders');
+    var wrap = document.getElementById('my-listings-wrap');
+    var input = document.getElementById('bl-species');
+    if (!sb || !window.currentMember || !wrap || wrap.style.display === 'none'){
+      popToast('Sign in to add a listing to the register');
+      return;
+    }
+    if (wrap.scrollIntoView) wrap.scrollIntoView({ behavior:'smooth', block:'center' });
+    if (input) setTimeout(function(){ input.focus(); }, 320);
+  });
 
   var addingListing = false;
   var blAddBtn = document.getElementById('bl-add-btn');
@@ -4594,7 +4622,7 @@ window.initPortal = function(){
     var isLiveUser = !!cm;
     var hasFullProfile = isLiveUser ? !!(cm.first_name && cm.bio) : true;
     var isCommittee = isLiveUser ? cm.role === 'admin' : true;
-    var isFoundingYear = isLiveUser ? (cm.join_date && new Date(cm.join_date).getFullYear() <= 2018) : true;
+    var isFoundingYear = isLiveUser ? isFoundingJoinDate(cm.join_date) : true;
 
     var totalLogs = tanks.reduce(function(a, t){ return a + realLogCount(t); }, 0);
     var totalLivestock = tanks.reduce(function(a, t){ return a + (t.livestock || []).length; }, 0);
@@ -4646,7 +4674,7 @@ window.initPortal = function(){
 
       // --- recognition ---
       { group:'recognition', label:'Committee Circle', icon:'gavel2', earned: isCommittee, hint:'Join the club committee' },
-      { group:'recognition', label:'Founding-Year Member', icon:'seedling', earned: isFoundingYear, hint:'Have joined in 2018' }
+      { group:'recognition', label:'Founding Member', icon:'seedling', earned: isFoundingYear, hint:'Have joined in ' + CLUB.foundingYear }
     ];
   }
 
@@ -6267,6 +6295,7 @@ window.initPortal = function(){
         name: nm,
         memberId: m.id,
         joinDate: m.join_date || null,
+        founding: isFoundingJoinDate(m.join_date),
         role: (m.role === 'admin' ? 'Committee' : 'Member') + (joinYear ? ' · joined ' + joinYear : ''),
         blurb: m.bio || 'This member hasn\u2019t written a bio yet.',
         cats: ['Member'],
@@ -6479,16 +6508,6 @@ window.initPortal = function(){
   if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); loadBreederListings(); }
 
   applyLiveMember();
-
-  // Top bar date: always show today's date, formatted "Weekday, D Month YYYY".
-  (function(){
-    var el = document.getElementById('topbar-date');
-    if (!el) return;
-    var now = new Date();
-    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    el.textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
-  })();
 
   renderTanks();
 
