@@ -863,7 +863,26 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
           <select id="f-province"><option selected>Eastern Cape</option><option>Western Cape</option><option>Gauteng</option><option>KwaZulu-Natal</option><option>Free State</option><option>Other</option></select>
         </div>
         <div class="field"><label for="f-city">City / Town</label><input id="f-city" value="Gqeberha"></div>
-        <div class="field"><label for="f-birthday">Birthday</label><input id="f-birthday" type="date"></div>
+        <div class="field"><label for="f-bday-day">Birthday</label>
+          <div style="display:flex;gap:10px">
+            <select id="f-bday-day" style="flex:1"><option value="">Day</option></select>
+            <select id="f-bday-month" style="flex:1.6">
+              <option value="">Month</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
+        </div>
         <div class="field"><label for="f-comm">Preferred communication</label>
           <select id="f-comm"><option selected>WhatsApp</option><option>Email</option><option>SMS</option></select>
         </div>
@@ -4034,7 +4053,7 @@ window.initPortal = function(){
     setVal('f-phone', cm.phone);
     setVal('f-city', cm.city);
     setSelectedInterests(cm.interests);
-    setVal('f-birthday', cm.birthday);
+    setBirthdayValue(cm.birthday);
     var bioEl = document.getElementById('f-bio'); if (bioEl) bioEl.value = cm.bio || '';
     if (window.checkBirthday) window.checkBirthday();
 
@@ -4537,6 +4556,46 @@ window.initPortal = function(){
     });
   })();
 
+  // ===== Birthday: day + month only (stored as 2000-MM-DD; year is a placeholder) =====
+  function bdayDaysInMonth(month){ return month ? new Date(2000, parseInt(month, 10), 0).getDate() : 31; }
+  function populateBdayDays(){
+    var monthSel = document.getElementById('f-bday-month');
+    var daySel = document.getElementById('f-bday-day');
+    if (!monthSel || !daySel) return;
+    var max = bdayDaysInMonth(monthSel.value);
+    var prev = daySel.value;
+    var opts = '<option value="">Day</option>';
+    for (var d = 1; d <= max; d++){ opts += '<option value="' + d + '">' + d + '</option>'; }
+    daySel.innerHTML = opts;
+    if (prev && parseInt(prev, 10) <= max) daySel.value = prev;
+  }
+  function setBirthdayValue(str){
+    var monthSel = document.getElementById('f-bday-month');
+    var daySel = document.getElementById('f-bday-day');
+    if (!monthSel || !daySel) return;
+    var parts = String(str || '').slice(0, 10).split('-');
+    var mm = parts.length === 3 ? parseInt(parts[1], 10) : 0;
+    var dd = parts.length === 3 ? parseInt(parts[2], 10) : 0;
+    monthSel.value = mm ? String(mm) : '';
+    populateBdayDays();
+    daySel.value = dd ? String(dd) : '';
+  }
+  function getBirthdayValue(){
+    var monthSel = document.getElementById('f-bday-month');
+    var daySel = document.getElementById('f-bday-day');
+    if (!monthSel || !daySel) return null;
+    var mm = parseInt(monthSel.value, 10), dd = parseInt(daySel.value, 10);
+    if (!mm || !dd) return null;
+    var pad = function(n){ return (n < 10 ? '0' : '') + n; };
+    return '2000-' + pad(mm) + '-' + pad(dd);
+  }
+  (function(){
+    var monthSel = document.getElementById('f-bday-month');
+    if (!monthSel) return;
+    monthSel.addEventListener('change', populateBdayDays);
+    populateBdayDays();
+  })();
+
   var profileSaveBtn = document.getElementById('profile-save-btn');
   if (profileSaveBtn) profileSaveBtn.addEventListener('click', async function(){
     if (!sb || !window.currentMember){ popToast('Profile changes saved'); return; }
@@ -4548,7 +4607,7 @@ window.initPortal = function(){
       province: document.getElementById('f-province').value || null,
       city: document.getElementById('f-city').value.trim() || null,
       interests: getSelectedInterests().join(', ') || null,
-      birthday: document.getElementById('f-birthday').value || null,
+      birthday: getBirthdayValue(),
       bio: document.getElementById('f-bio').value.trim() || null
     };
     profileSaveBtn.disabled = true; profileSaveBtn.textContent = 'Saving…';
