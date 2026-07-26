@@ -1086,11 +1086,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
   </div>
 
   <div class="sec-title"><h3>Membership timeline</h3></div>
-  <div class="rows">
-    <div class="row"><div class="row-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/></svg></div><div class="row-body"><b>Elected Club President</b><span>Annual general meeting</span></div><div class="row-end">2023</div></div>
-    <div class="row"><div class="row-icon deep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div><div class="row-body"><b>Joined the committee</b><span>Events coordinator</span></div><div class="row-end">2020</div></div>
-    <div class="row"><div class="row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/></svg></div><div class="row-body"><b>Founding-year member</b><span>One of ECAAC's first members</span></div><div class="row-end">2018</div></div>
-  </div>
+  <div class="rows" id="member-timeline"></div>
 </section>
 
 <!-- ============ MY AQUARIUMS ============ -->
@@ -3756,6 +3752,7 @@ window.initPortal = function(){
     applyEntriesToTanks();
     renderTanks();
     if (currentTank >= 0 && currentTank < tanks.length) renderDetail();
+    if (window.renderMemberTimeline) window.renderMemberTimeline();
     if (window.checkBadgeChanges) window.checkBadgeChanges();
   }
 
@@ -4728,6 +4725,105 @@ window.initPortal = function(){
     }).join('');
   }
 
+  // ===== Membership timeline =====
+  // Built from what the database actually knows about this member. Previously this
+  // was three hardcoded rows describing one person, shown to everyone.
+  // Note: there is no column recording when someone joined the committee or was
+  // elected to an office, so committee standing is shown without inventing a year.
+  var TL_ICONS = {
+    trophy: '<path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/>',
+    person: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',
+    fish:   '<path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/>',
+    star:   '<path d="M12 3l2.6 5.6 6.1.8-4.4 4.2 1.1 6-5.4-3-5.4 3 1.1-6L3.3 9.4l6.1-.8L12 3Z"/>',
+    seed:   '<path d="M12 21V9M12 9a6 6 0 0 1 6-6 6 6 0 0 1-6 6ZM12 9A6 6 0 0 0 6 3a6 6 0 0 0 6 6Z"/>'
+  };
+
+  function renderMemberTimeline(){
+    var el = document.getElementById('member-timeline');
+    if (!el) return;
+    var cm = window.currentMember;
+    if (!cm){
+      // Demo mode: keep the original illustrative timeline, which used to live in
+      // the markup. Live members get their real one below.
+      el.innerHTML =
+        '<div class="row"><div class="row-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + TL_ICONS.trophy + '</svg></div>' +
+          '<div class="row-body"><b>Elected Club President</b><span>Annual general meeting</span></div><div class="row-end">2023</div></div>' +
+        '<div class="row"><div class="row-icon deep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + TL_ICONS.person + '</svg></div>' +
+          '<div class="row-body"><b>Joined the committee</b><span>Events coordinator</span></div><div class="row-end">2020</div></div>' +
+        '<div class="row"><div class="row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + TL_ICONS.fish + '</svg></div>' +
+          '<div class="row-body"><b>Founding-year member</b><span>One of ECAAC\u2019s first members</span></div><div class="row-end">2018</div></div>';
+      return;
+    }
+
+    var now = new Date();
+    var joinYear = cm.join_date ? new Date(String(cm.join_date).slice(0,10) + 'T00:00:00').getFullYear() : null;
+    var items = [];
+
+    // Committee standing — real, but undated (no column records when it started).
+    if (cm.role === 'admin'){
+      items.push({ sort: Infinity, year: 'Current', icon:'person', tone:'deep',
+        title:'Committee member', note:'Serving on the ECAAC committee' });
+    }
+
+    // Tenure milestones actually reached.
+    if (joinYear){
+      [25, 20, 15, 10, 5].forEach(function(n){
+        if (now.getFullYear() - joinYear >= n){
+          items.push({ sort: joinYear + n, year: joinYear + n, icon:'star', tone:'gold',
+            title: n + ' years a member', note:'Membership milestone reached' });
+        }
+      });
+    }
+
+    // First approved award entry.
+    var approved = (myEntryRows || []).filter(function(r){ return r.status === 'approved' && r.submitted_at; });
+    if (approved.length){
+      var firstAw = approved.reduce(function(a, r){
+        return (!a || new Date(r.submitted_at) < new Date(a.submitted_at)) ? r : a;
+      }, null);
+      var awYear = new Date(firstAw.submitted_at).getFullYear();
+      items.push({ sort: awYear, year: awYear, icon:'trophy', tone:'gold',
+        title:'First award entry approved',
+        note: firstAw.program + (firstAw.species ? ' \u2014 ' + firstAw.species : '') });
+    }
+
+    // First aquarium registered (started is member-entered text, so only use it
+    // when it parses to a real date).
+    var dated = (tanks || []).filter(function(t){ return t.started && !isNaN(new Date(t.started).getTime()); });
+    if (dated.length){
+      var firstTank = dated.reduce(function(a, t){
+        return (!a || new Date(t.started) < new Date(a.started)) ? t : a;
+      }, null);
+      var tkYear = new Date(firstTank.started).getFullYear();
+      items.push({ sort: tkYear, year: tkYear, icon:'fish', tone:'',
+        title:'First aquarium registered', note: firstTank.name });
+    }
+
+    // Joined the club — the anchor. Founding status folds in here rather than
+    // duplicating the same year on two rows.
+    if (joinYear){
+      var founding = isFoundingJoinDate(cm.join_date);
+      items.push({ sort: joinYear - 0.5, year: joinYear, icon: founding ? 'seed' : 'person',
+        tone: founding ? '' : 'deep',
+        title: founding ? 'Founding member' : 'Joined ECAAC',
+        note: founding ? 'One of the club\u2019s first members' : memberTypeInfo(cm.membership_type).pill });
+    }
+
+    if (!items.length){
+      el.innerHTML = '<div class="reg-empty" style="padding:22px">Your timeline fills in as your membership grows.</div>';
+      return;
+    }
+    items.sort(function(a, b){ return b.sort - a.sort; });
+    el.innerHTML = items.map(function(it){
+      return '<div class="row"><div class="row-icon' + (it.tone ? ' ' + it.tone : '') + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + TL_ICONS[it.icon] + '</svg></div>' +
+        '<div class="row-body"><b>' + escT(it.title) + '</b><span>' + escT(it.note || '') + '</span></div>' +
+        '<div class="row-end">' + escT(String(it.year)) + '</div></div>';
+    }).join('');
+  }
+  window.renderMemberTimeline = renderMemberTimeline;
+  renderMemberTimeline();
+
   // ===== Detect newly-earned badges and raise the notification bar =====
   var TIER_RING_GRADS = ['linear-gradient(135deg,#C98A4B,#8B5A2B)','linear-gradient(135deg,#C7CEDC,#8892A6)','linear-gradient(135deg,var(--gold),var(--gold-dark))','linear-gradient(135deg,#8FE3E8,#2E7D8C)'];
 
@@ -5012,6 +5108,7 @@ window.initPortal = function(){
     setBirthdayValue(cm.birthday);
     var bioEl = document.getElementById('f-bio'); if (bioEl) bioEl.value = cm.bio || '';
     if (window.checkBirthday) window.checkBirthday();
+    if (window.renderMemberTimeline) window.renderMemberTimeline();
 
     // dashboard recent activity: single welcome entry
     var act = document.getElementById('dash-activity');
@@ -6004,6 +6101,7 @@ window.initPortal = function(){
     renderEntries();
     applyEntriesToTanks();
     if (currentTank >= 0 && currentTank < tanks.length) renderDetail();
+    if (window.renderMemberTimeline) window.renderMemberTimeline();
     if (window.checkBadgeChanges) window.checkBadgeChanges();
   }
 
