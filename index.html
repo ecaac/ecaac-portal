@@ -1697,7 +1697,6 @@ body.modal-open{overflow:hidden}
     <button class="chip-btn" data-maf="Marine">Marine</button>
     <button class="chip-btn" data-maf="Shrimp">Shrimp</button>
     <button class="chip-btn" data-maf="Aquascape">Aquascape</button>
-    <button class="chip-btn" data-maf="Biotope">Biotope</button>
     <button class="chip-btn" data-maf="Paludarium">Paludarium</button>
     <button class="chip-btn" data-maf="Terrarium">Terrarium</button>
   </div>
@@ -2261,7 +2260,7 @@ body.modal-open{overflow:hidden}
         <div class="field"><label for="tf-type">Type *</label>
           <select id="tf-type">
             <option>Freshwater</option><option>Shrimp</option><option>Aquascape</option><option>Marine</option><option>Brackish</option>
-            <option>Blackwater</option><option>Biotope</option><option>Paludarium</option><option>Vivarium</option><option>Terrarium</option>
+            <option>Blackwater</option><option>Paludarium</option><option>Vivarium</option><option>Terrarium</option>
           </select>
         </div>
         <div class="field"><label for="tf-volume">Volume (litres)</label><input id="tf-volume" type="number" min="1" placeholder="e.g. 120"></div>
@@ -4104,7 +4103,6 @@ window.initPortal = function(){
     'Marine':       ['#0B2C52','#051228','fish'],
     'Brackish':     ['#2B2A12','#121106','fish'],
     'Blackwater':   ['#2A1052','#0D0620','fish'],
-    'Biotope':      ['#2A1052','#0D0620','fish'],
     'Paludarium':   ['#16311B','#071409','plant'],
     'Vivarium':     ['#16311B','#071409','plant'],
     'Terrarium':    ['#171B3D','#06070F','terra']
@@ -4121,9 +4119,9 @@ window.initPortal = function(){
   var trophyRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/></svg>';
 
   var tanks = IS_LIVE ? [] : [
-    { name:'Rift Lake Reef', type:'Freshwater', subtitle:'Tanganyika biotope', volume:450, dims:'150 × 50 × 60', started:'Mar 2021',
+    { name:'Rift Lake Reef', type:'Freshwater', subtitle:'Tanganyika', volume:450, dims:'150 × 50 × 60', started:'Mar 2021',
       notes:'Aragonite sand, three ocean-rock towers, FX6 filtration.',
-      tags:['Tanganyika biotope','Aragonite sand','Rockwork','FX6 filtration'],
+      tags:['Tanganyika','Aragonite sand','Rockwork','FX6 filtration'],
       params:[['8.6','pH'],['14°','KH'],['26 °C','Temp'],['0','Nitrite'],['10','Nitrate']],
       livestock:[['Neolamprologus multifasciatus','Shell-dweller colony · BAP approved','12'],['Julidochromis ornatus','Breeding pair · BAP pending','2']],
       plants:[['Ocean rock stacks','Hardscape · three reef towers','']],
@@ -4145,7 +4143,7 @@ window.initPortal = function(){
       plants:[['Christmas moss','Breeding cover',''],['S\u00fcsswassertang','Floating cover','']],
       log:[['Topped up with RO, TDS rechecked','110 ppm after top-up','21 Jul'],['Fed bacter AE, culled two low-grades','Colony grading afternoon','12 Jul']],
       awards:[] },
-    { name:'Rio Negro Shadows', type:'Blackwater', subtitle:'Biotope', volume:240, dims:'120 × 40 × 50', started:'Oct 2022',
+    { name:'Rio Negro Shadows', type:'Blackwater', subtitle:'Rio Negro', volume:240, dims:'120 × 40 × 50', started:'Oct 2022',
       notes:'Botanicals and leaf litter, tannin-stained water, dim lighting.',
       tags:['Blackwater','Botanicals & leaf litter','Tannin-stained','Dim lighting'],
       params:[['5.4','pH'],['1°','KH'],['27 °C','Temp'],['0','Ammonia'],['5','Nitrate']],
@@ -4394,7 +4392,6 @@ window.initPortal = function(){
     'Marine':     ['TEMP','SAL','ALK','CA','MG'],
     'Brackish':   ['TEMP','SAL','PH','NO3'],
     'Blackwater': ['PH','TEMP','TDS','KH'],
-    'Biotope':    ['PH','TEMP','KH','NO3'],
     'Paludarium': ['TEMP','PH','HUM'],
     'Vivarium':   ['TEMP','HUM'],
     'Terrarium':  ['TEMP','HUM']
@@ -5066,7 +5063,19 @@ window.initPortal = function(){
     var t = editingIdx >= 0 ? tanks[editingIdx] : null;
     document.getElementById('tank-modal-title').textContent = t ? 'Edit ' + t.name : 'Add aquarium';
     document.getElementById('tf-name').value = t ? t.name : '';
-    document.getElementById('tf-type').value = t ? t.type : 'Freshwater';
+    var typeSel = document.getElementById('tf-type');
+    // A tank saved under a type that's since been retired (Biotope) would
+    // otherwise fall through to the first option and get silently rewritten to
+    // Freshwater on the next save. Keep its own type available to it.
+    var legacyOpt = typeSel.querySelector('option[data-legacy]');
+    if (legacyOpt) legacyOpt.remove();
+    if (t && t.type && !Array.prototype.some.call(typeSel.options, function(o){ return o.value === t.type; })){
+      var opt = document.createElement('option');
+      opt.value = t.type; opt.textContent = t.type + ' (retired)';
+      opt.setAttribute('data-legacy', '1');
+      typeSel.appendChild(opt);
+    }
+    typeSel.value = t ? t.type : 'Freshwater';
     document.getElementById('tf-volume').value = t && t.volume ? t.volume : '';
     document.getElementById('tf-shape').value = (t && t.shape) || 'rect';
     // Fall back to digging the numbers out of the old free-text dims string.
