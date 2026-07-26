@@ -87,6 +87,12 @@ button{font-family:inherit}
 .status-chip::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--leaf)}
 
 .content{padding:30px 32px 110px;max-width:1220px;width:100%;margin:0 auto}
+.bday-banner{display:flex;align-items:center;gap:12px;margin:0 0 24px;padding:13px 16px;border-radius:14px;background:linear-gradient(135deg,var(--deep-2),var(--deep));border:1px solid rgba(217,164,65,0.4);color:#fff;box-shadow:0 14px 30px -16px rgba(6,7,15,0.6)}
+.bday-banner .bday-emoji{font-size:20px;line-height:1}
+.bday-banner .bday-text{font-size:14px;font-weight:700;flex:1}
+.bday-banner .bday-close{flex:none;width:30px;height:30px;border-radius:8px;border:none;background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.bday-banner .bday-close:hover{background:rgba(255,255,255,0.22)}
+.bday-banner .bday-close svg{width:15px;height:15px}
 .view{display:none;animation:fadeUp .35s cubic-bezier(.16,.8,.3,1)}
 .view.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -682,6 +688,14 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 
 <main class="content">
 
+<div class="bday-banner" id="bday-banner" role="status" hidden>
+  <span class="bday-emoji" aria-hidden="true">🎉</span>
+  <span class="bday-text" id="bday-text">Happy birthday!</span>
+  <button class="bday-close" id="bday-close" aria-label="Dismiss">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+</div>
+
 <!-- ============ DASHBOARD ============ -->
 <section class="view active" id="view-dashboard">
   <div class="view-head">
@@ -863,12 +877,12 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
           <select id="f-province"><option selected>Eastern Cape</option><option>Western Cape</option><option>Gauteng</option><option>KwaZulu-Natal</option><option>Free State</option><option>Other</option></select>
         </div>
         <div class="field"><label for="f-city">City / Town</label><input id="f-city" value="Gqeberha"></div>
-        <div class="field"><label for="f-emergency">Emergency contact</label><input id="f-emergency" value="P. Nel · +27 82 000 0000"></div>
+        <div class="field"><label for="f-birthday">Birthday</label><input id="f-birthday" type="date"></div>
         <div class="field"><label for="f-comm">Preferred communication</label>
           <select id="f-comm"><option selected>WhatsApp</option><option>Email</option><option>SMS</option></select>
         </div>
         <div class="field full"><label for="f-interests">Aquarium interests</label><input id="f-interests" value="Planted tanks, Tanganyikan cichlids, shrimp, paludariums"></div>
-        <div class="field full"><label for="f-bio">Biography</label><textarea id="f-bio" rows="3">Keeping fish since the 90s and hopelessly addicted to planted tanks. Proud to serve as ECAAC's Club President.</textarea></div>
+        <div class="field full"><label for="f-bio">About you</label><textarea id="f-bio" rows="3">Keeping fish since the 90s and hopelessly addicted to planted tanks. Proud to serve as ECAAC's Club President.</textarea></div>
       </div>
       <div style="margin-top:18px;display:flex;gap:10px">
         <button class="btn btn-primary" id="profile-save-btn">Save changes</button>
@@ -2452,9 +2466,12 @@ window.initPortal = function(){
     document.getElementById('af-file-text').textContent = n ? (n + ' photo' + (n===1?'':'s') + ' selected') : 'Tap to choose photos of your entry';
     document.getElementById('af-file-label').classList.toggle('has-file', n > 0);
   });
+  var afSubmitting = false;
   document.getElementById('af-submit').addEventListener('click', async function(){
+    if (afSubmitting) return;
     var species = document.getElementById('af-species').value.trim();
     if (!species){ document.getElementById('af-error').style.display = 'block'; return; }
+    afSubmitting = true;
     var program = document.getElementById('af-program').value;
     var category = document.getElementById('af-category').value;
     var tankIdx = document.getElementById('af-tank').value;
@@ -2470,7 +2487,7 @@ window.initPortal = function(){
         notes: document.getElementById('af-notes').value.trim() || null
       });
       submitBtn.disabled = false; submitBtn.textContent = 'Submit for judging';
-      if (res.error){ popToast('Could not submit — try again'); return; }
+      if (res.error){ popToast('Could not submit — try again'); afSubmitting = false; return; }
       closeAwardModal();
       popToast(category + ' entry for ' + program + ' submitted for judging');
       loadMyEntries();
@@ -2492,6 +2509,7 @@ window.initPortal = function(){
       popToast(category + ' entry for ' + program + ' submitted for judging');
     }
     if (window.checkBadgeChanges) window.checkBadgeChanges();
+    afSubmitting = false;
   });
 
   // ===== My Auctions =====
@@ -3342,9 +3360,12 @@ window.initPortal = function(){
   document.getElementById('tf-cancel').addEventListener('click', closeTankModal);
   tankModal.addEventListener('click', function(e){ if (e.target === tankModal) closeTankModal(); });
 
+  var tfSaving = false;
   document.getElementById('tf-save').addEventListener('click', async function(){
+    if (tfSaving) return; // hard stop: a save is already in flight, ignore any extra click
     var name = document.getElementById('tf-name').value.trim();
     if (!name){ document.getElementById('tf-error').style.display = 'block'; return; }
+    tfSaving = true;
     var data = {
       name: name,
       type: document.getElementById('tf-type').value,
@@ -3365,7 +3386,7 @@ window.initPortal = function(){
       var t = tanks[editingIdx];
       if (sb && t.id){
         var res = await dbUpdateRow('tanks', t.id, dbFields);
-        if (res.error){ saveBtn.disabled = false; saveBtn.textContent = 'Save aquarium'; popToast('Could not save — try again'); return; }
+        if (res.error){ saveBtn.disabled = false; saveBtn.textContent = 'Save aquarium'; popToast('Could not save — try again'); tfSaving = false; return; }
         // simplest correct tag sync: wipe and reinsert
         await sb.from('tank_tags').delete().eq('tank_id', t.id);
         for (var ti = 0; ti < newTags.length; ti++){ await sb.from('tank_tags').insert({ tank_id: t.id, label: newTags[ti] }); }
@@ -3384,7 +3405,7 @@ window.initPortal = function(){
       if (sb && window.currentMember){
         var res2 = await dbInsertRow('tanks', Object.assign({ owner_id: window.currentMember.id }, dbFields));
         saveBtn.disabled = false; saveBtn.textContent = 'Save aquarium';
-        if (res2.error){ popToast('Could not save — try again'); return; }
+        if (res2.error){ popToast('Could not save — try again'); tfSaving = false; return; }
         nt.id = res2.data.id;
         // default tags
         for (var tj = 0; tj < newTags.length; tj++){ await sb.from('tank_tags').insert({ tank_id: nt.id, label: newTags[tj] }); }
@@ -3408,6 +3429,7 @@ window.initPortal = function(){
     renderTanks();
     if (editingIdx < 0){ openTank(tanks.length - 1); }
     if (window.checkBadgeChanges) window.checkBadgeChanges();
+    tfSaving = false;
   });
 
   // delete tank (two-step confirm in the button itself)
@@ -3727,7 +3749,6 @@ window.initPortal = function(){
 
   // ===== Detect newly-earned badges and raise the notification bar =====
   var TIER_RING_GRADS = ['linear-gradient(135deg,#C98A4B,#8B5A2B)','linear-gradient(135deg,#C7CEDC,#8892A6)','linear-gradient(135deg,var(--gold),var(--gold-dark))','linear-gradient(135deg,#8FE3E8,#2E7D8C)'];
-  var earnedBadgeSnapshot = null; // null until first baseline is taken
 
   function currentEarnedBadges(){
     var earned = {}; // key -> {title, icon, ringBg, kicker}
@@ -3753,17 +3774,64 @@ window.initPortal = function(){
     return earned;
   }
 
-  // Call after any action that could change badge state. First call sets the
-  // baseline silently (so we don't announce everything the member already had).
-  function checkBadgeChanges(){
-    var now = currentEarnedBadges();
-    if (earnedBadgeSnapshot === null){ earnedBadgeSnapshot = now; return; }
-    Object.keys(now).forEach(function(key){
-      if (!earnedBadgeSnapshot[key]) notifyBadge(now[key]);
-    });
-    earnedBadgeSnapshot = now;
+  // Which badges this member has already been shown a notification for, persisted
+  // across sessions — deliberately NOT an in-memory snapshot. Several data sources
+  // (tanks, entries, events, auctions) load in parallel after login in no fixed
+  // order; a single "first call becomes the baseline" snapshot could be built from
+  // partial data if it ran before everything had loaded, making an already-earned
+  // badge look "new" once the rest of the data caught up moments later — which is
+  // exactly what caused repeat notifications on every login.
+  var seenBadgesKey = 'ecaac-seen-badges-' + (window.currentMember ? window.currentMember.id : 'demo');
+  var seenBadges = null;
+
+  function loadSeenBadges(){
+    try {
+      var raw = localStorage.getItem(seenBadgesKey);
+      seenBadges = raw ? JSON.parse(raw) : {};
+    } catch (e) { seenBadges = {}; }
   }
-  window.checkBadgeChanges = checkBadgeChanges;
+  function saveSeenBadges(){
+    try { localStorage.setItem(seenBadgesKey, JSON.stringify(seenBadges)); } catch (e) { /* storage unavailable, non-fatal */ }
+  }
+
+  // Call after any action that could change badge state. Each badge is checked
+  // independently against the persisted seen-set, so partial/out-of-order data
+  // loading can never cause a false "new" badge — and once shown, a badge is
+  // marked seen immediately, so it can never notify twice, this session or any
+  // future one.
+  function checkBadgeChanges(){
+    if (seenBadges === null) loadSeenBadges();
+    var now = currentEarnedBadges();
+    var firstEverCheck = Object.keys(seenBadges).length === 0 && !seenBadges.__seeded;
+    if (firstEverCheck){
+      // first time this member's badges have ever been checked on this device —
+      // seed the seen-set silently so we don't announce their entire existing
+      // badge history the moment this feature reaches them.
+      Object.keys(now).forEach(function(key){ seenBadges[key] = true; });
+      seenBadges.__seeded = true;
+      saveSeenBadges();
+      return;
+    }
+    var changed = false;
+    Object.keys(now).forEach(function(key){
+      if (!seenBadges[key]){
+        notifyBadge(now[key]);
+        seenBadges[key] = true;
+        changed = true;
+      }
+    });
+    if (changed) saveSeenBadges();
+  }
+  // Debounced: several data sources (tanks, entries, events, auctions) each call
+  // this independently as they finish loading, in no guaranteed order. Debouncing
+  // collapses those into a single real check after a short quiet period once
+  // everything's settled, so the very first check of a session sees the complete
+  // picture — not whichever loader happened to finish first.
+  var checkBadgeChangesTimer = null;
+  window.checkBadgeChanges = function(){
+    clearTimeout(checkBadgeChangesTimer);
+    checkBadgeChangesTimer = setTimeout(checkBadgeChanges, 500);
+  };
 
   // ===== Member Aquariums (club-wide directory) =====
   var MA_AVATAR_GRADS = ['linear-gradient(135deg,var(--deep),var(--leaf))','linear-gradient(135deg,var(--leaf),var(--leaf-dark))','linear-gradient(135deg,var(--deep-2),var(--deep))','linear-gradient(135deg,var(--leaf-dark),var(--deep))','linear-gradient(135deg,var(--deep),var(--deep-3))','linear-gradient(135deg,var(--coral),var(--coral-dark))'];
@@ -3930,10 +3998,11 @@ window.initPortal = function(){
     setVal('f-surname', cm.last_name);
     setVal('f-email', cm.email);
     setVal('f-phone', cm.phone);
-    setVal('f-city', '');
-    setVal('f-emergency', '');
-    setVal('f-interests', '');
+    setVal('f-city', cm.city);
+    setVal('f-interests', cm.interests);
+    setVal('f-birthday', cm.birthday);
     var bioEl = document.getElementById('f-bio'); if (bioEl) bioEl.value = cm.bio || '';
+    if (window.checkBirthday) window.checkBirthday();
 
     // dashboard recent activity: single welcome entry
     var act = document.getElementById('dash-activity');
@@ -4361,6 +4430,40 @@ window.initPortal = function(){
     renderDir();
   }
 
+  // ===== Birthday banner =====
+  // Shows a top-of-page greeting when today matches the member's saved birthday.
+  // Demo mode has no birthday on the demo member, so this stays dormant there.
+  window.checkBirthday = function(){
+    var banner = document.getElementById('bday-banner');
+    if (!banner) return;
+    var cm = window.currentMember;
+    var bday = cm && cm.birthday;
+    if (!bday){ banner.hidden = true; return; }
+    // birthday is a 'YYYY-MM-DD' date string; compare month + day only
+    var parts = String(bday).slice(0,10).split('-');
+    if (parts.length !== 3){ banner.hidden = true; return; }
+    var now = new Date();
+    var isToday = (parseInt(parts[1],10) === now.getMonth() + 1) && (parseInt(parts[2],10) === now.getDate());
+    if (!isToday){ banner.hidden = true; return; }
+    // don't re-show after the member dismissed it today
+    var todayKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + now.getDate();
+    var dismissKey = 'ecaac-bday-dismissed-' + (cm.id || 'demo') + '-' + todayKey;
+    if (localStorage.getItem(dismissKey)){ banner.hidden = true; return; }
+    var first = (cm.first_name || (member.name || '').split(' ')[0] || '').trim();
+    var txt = document.getElementById('bday-text');
+    if (txt) txt.textContent = 'Happy birthday' + (first ? ', ' + first : '') + '! The whole ECAAC club wishes you a wonderful day.';
+    banner.hidden = false;
+  };
+  var bdayClose = document.getElementById('bday-close');
+  if (bdayClose) bdayClose.addEventListener('click', function(){
+    var banner = document.getElementById('bday-banner');
+    if (banner) banner.hidden = true;
+    var cm = window.currentMember;
+    var now = new Date();
+    var todayKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + now.getDate();
+    try { localStorage.setItem('ecaac-bday-dismissed-' + ((cm && cm.id) || 'demo') + '-' + todayKey, '1'); } catch(e){}
+  });
+
   var profileSaveBtn = document.getElementById('profile-save-btn');
   if (profileSaveBtn) profileSaveBtn.addEventListener('click', async function(){
     if (!sb || !window.currentMember){ popToast('Profile changes saved'); return; }
@@ -4370,6 +4473,9 @@ window.initPortal = function(){
       last_name: document.getElementById('f-surname').value.trim() || null,
       phone: document.getElementById('f-phone').value.trim() || null,
       province: document.getElementById('f-province').value || null,
+      city: document.getElementById('f-city').value.trim() || null,
+      interests: document.getElementById('f-interests').value.trim() || null,
+      birthday: document.getElementById('f-birthday').value || null,
       bio: document.getElementById('f-bio').value.trim() || null
     };
     profileSaveBtn.disabled = true; profileSaveBtn.textContent = 'Saving…';
@@ -4390,8 +4496,10 @@ window.initPortal = function(){
 
   renderTanks();
 
-  // Establish the badge baseline once everything's rendered, so the notification
-  // bar only fires for badges earned *after* this point in the session.
+  // Safe to call unconditionally: window.checkBadgeChanges is now debounced, so
+  // this just contributes to the same settle-then-check cycle as every async
+  // loader's own call — and it's what actually seeds demo mode's baseline, since
+  // demo mode has no async loaders of its own to trigger it.
   if (window.checkBadgeChanges) window.checkBadgeChanges();
 };
 </script>
