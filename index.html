@@ -670,6 +670,22 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     flex:1 1 100%;justify-content:flex-end;align-items:center}
   .badge{white-space:nowrap}
 }
+/* Stat-card grids on narrow screens. The shared rule collapses .g4 to a single
+   column at 860px, turning four cards into a tall full-width stack. Two-up with
+   tighter type keeps them glanceable. Applied via .stat-grid rather than .g4 so
+   the "Planned features" grid, whose cards carry headings and paragraphs, keeps
+   its full-width stack. .stat-grid is (0,1,0) like .g4, so this block must come
+   after the collapsing rule — it does. */
+@media (max-width:860px){
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .stat-grid .card{padding:15px 14px;border-radius:14px}
+  .stat-grid .stat-num{font-size:24px}
+  .stat-grid .stat-label{font-size:11px;margin-top:3px;line-height:1.35}
+  .stat-grid .card-icon{width:32px;height:32px;border-radius:9px;margin-bottom:10px}
+  .stat-grid .card-icon svg{width:15px;height:15px}
+  /* The membership number card sets its own inline font-size. */
+  .stat-grid .stat-num[data-live="member-number"]{font-size:16px!important}
+}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 .side-link:focus-visible,.btn:focus-visible,.icon-btn:focus-visible,.tank-card:focus-visible{outline:3px solid var(--leaf-light);outline-offset:2px}
 /* auth gate: back-to-website link */
@@ -861,7 +877,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     </button>
   </div>
 
-  <div class="grid g4">
+  <div class="grid g4 stat-grid">
     <div class="card t-leaf">
       <div class="card-icon bg-leaf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></div>
       <div class="stat-num" data-live="mem-status">Active</div>
@@ -1069,7 +1085,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <button class="btn btn-primary" id="renew-open-btn">Renew membership</button>
   </div>
 
-  <div class="grid g4">
+  <div class="grid g4 stat-grid">
     <div class="card t-leaf"><div class="stat-num" data-live="member-number" style="font-size:22px">ECAAC-0002</div><div class="stat-label">Membership number</div></div>
     <div class="card t-deep"><div class="stat-num" data-live="mem-type">Full</div><div class="stat-label" data-live="mem-type-label">Annual membership type</div></div>
     <div class="card t-gold"><div class="stat-num" data-live="years-num">8</div><div class="stat-label" data-live="joined-label">Years as member · joined 2018</div></div>
@@ -1254,7 +1270,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     <button class="btn btn-primary" id="award-open-btn">Submit new entry</button>
   </div>
 
-  <div class="grid g4">
+  <div class="grid g4 stat-grid">
     <div class="card t-gold"><div class="stat-num" data-live="award-points">245</div><div class="stat-label">Total points earned</div></div>
     <div class="card t-leaf"><div class="stat-num" id="aw-approved-count">12</div><div class="stat-label">Approved entries</div></div>
     <div class="card t-coral"><div class="stat-num" id="aw-pending-count">2</div><div class="stat-label">Pending judge review</div></div>
@@ -1345,7 +1361,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     </div>
   </div>
 
-  <div class="grid g4" style="margin-top:20px">
+  <div class="grid g4 stat-grid" style="margin-top:20px">
     <div class="card t-coral"><div class="stat-num" id="auction-lots-bought">0</div><div class="stat-label">Lots bought</div></div>
     <div class="card t-leaf"><div class="stat-num" id="auction-lots-sold">0</div><div class="stat-label">Lots sold</div></div>
     <div class="card t-deep"><div class="stat-num" id="auction-count">0</div><div class="stat-label">Auctions attended</div></div>
@@ -1391,7 +1407,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     </div>
   </div>
 
-  <div class="grid g4">
+  <div class="grid g4 stat-grid">
     <div class="card t-gold"><div class="stat-num" id="badges-earned-count">0</div><div class="stat-label">Badges earned</div></div>
     <div class="card t-leaf"><div class="stat-num" id="badges-standing">—</div><div class="stat-label">Current standing</div></div>
     <div class="card t-deep"><div class="stat-num" id="badges-categories">5</div><div class="stat-label">Categories tracked</div></div>
@@ -1525,7 +1541,7 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
     </div>
   </div>
 
-  <div class="grid g4" id="reg-stats"></div>
+  <div class="grid g4 stat-grid" id="reg-stats"></div>
 
   <div class="dir-controls" style="margin-top:24px">
     <div class="dir-search">
