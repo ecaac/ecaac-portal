@@ -307,10 +307,10 @@ window.initPortal = function(){
     foundingYear: 2018,                         // members who joined this year are founding members
     expoDate: '2027-04-22T09:00:00',            // Aquarium Expo — drives the countdown
     bank: {
-      name: 'Nedbank',
-      accountName: 'Eastern Cape Aquarium & Aquascaping Club',
-      accountNumber: '1198 234 5017',
-      branchCode: '198765'
+      name: 'Capitec',
+      accountName: 'ECAAC',
+      accountNumber: '233 374 1003',
+      branchCode: '470010'
     }
   };
   // The year fees are next due: this year until March, then next year.
@@ -1276,7 +1276,13 @@ window.initPortal = function(){
         // name/role/bio are member-editable, so they get escaped here just as the
         // drawer already does (textContent for name/role, escT for the bio).
         '<div class="dir-body"><h4>' + escT(m.name) + '</h4><div class="dir-role">' + escT(m.role || '') + '</div>' +
-        '<p>' + escT(m.blurb || '') + '</p><div class="dir-tags">' + tags + '</div>' + meta + '</div></div>';
+        // Bio removed from the card: it was the tallest, most variable element
+        // here and pushed cards to different heights depending on how much
+        // someone had written. It still appears in full in the drawer, which is
+        // what the "View profile" affordance below now points at.
+        '<div class="dir-tags">' + tags + '</div>' + meta +
+        '<div class="dir-open">View profile<span class="dir-open-arrow" aria-hidden="true">\u2192</span></div>' +
+        '</div></div>';
     }).join('');
     dirEmpty.style.display = out.length ? 'none' : 'block';
     dirGrid.style.display = out.length ? 'grid' : 'none';

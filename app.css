@@ -322,7 +322,18 @@ button{font-family:inherit}
 .dir-body{min-width:0;flex:1}
 .dir-body h4{font-size:15.5px;margin-bottom:2px}
 .dir-role{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--leaf-dark);margin-bottom:6px}
+/* The card no longer renders a bio — see renderDir(). This rule is kept only
+   because .dir-body p is still used by the empty-state text inside the grid. */
 .dir-body p{font-size:12.5px;color:var(--ink-soft);line-height:1.6;margin:0 0 10px}
+/* Clickability affordance. The card has always been role="button" with a hover
+   lift and a pointer cursor, but on a touch screen there is no hover and no
+   cursor, so nothing signalled that a card opened anything. This says so in
+   words. The arrow nudges right on hover, which is decoration on desktop and
+   simply never fires on a phone. */
+.dir-open{display:inline-flex;align-items:center;gap:6px;margin-top:12px;
+  font-size:11.5px;font-weight:800;letter-spacing:.03em;color:var(--leaf-dark)}
+.dir-open-arrow{transition:transform .18s;font-weight:700}
+.dir-card:hover .dir-open-arrow{transform:translateX(3px)}
 .dir-tags{display:flex;flex-wrap:wrap;gap:5px}
 .dir-tags span{font-size:10px;font-weight:700;color:var(--leaf-dark);background:#EAF3DE;padding:3px 9px;border-radius:12px}
 .dir-tags span.n{color:var(--deep);background:#E3EBED}
