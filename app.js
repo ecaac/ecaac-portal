@@ -4439,20 +4439,31 @@ window.initPortal = function(){
         datesInFile[dateKey] = true;
         parsed.push({ member_id: mem.id, auction_date: dateKey, item: item, role: role, amount: amount });
       }
-      // skip lots already recorded (same member, date, item, role and amount)
-      var existingSet = {}, dateList = Object.keys(datesInFile);
+      // Re-importing the same file must not double up, but two genuinely separate
+      // lots CAN be identical — a member selling two bags of the same shrimp at
+      // the same price on the same night is ordinary, not a mistake. So the check
+      // counts occurrences rather than testing existence: if the file holds three
+      // matching lots and the database already holds one, two get inserted.
+      //
+      // The previous version keyed on existence alone, which silently dropped the
+      // second and subsequent copies of any identical row — the file said three,
+      // one landed, and nothing in the report said otherwise.
+      var existingCount = {}, dateList = Object.keys(datesInFile);
       if (dateList.length){
         var exRes = await sb.from('auction_lots').select('member_id, auction_date, item, role, amount').in('auction_date', dateList);
         (exRes.data || []).forEach(function(a){
-          existingSet[[a.member_id, a.auction_date, String(a.item).trim().toLowerCase(), a.role, Number(a.amount)].join('|')] = true;
+          var k = [a.member_id, a.auction_date, String(a.item).trim().toLowerCase(), a.role, Number(a.amount)].join('|');
+          existingCount[k] = (existingCount[k] || 0) + 1;
         });
       }
-      var toInsert = [], seen = {}, already = 0;
+      // Walk the file in order, allocating each row against what the database
+      // already holds. The first N copies of a key are treated as the ones already
+      // recorded; every copy beyond that is a new lot.
+      var toInsert = [], usedCount = {}, already = 0;
       parsed.forEach(function(p){
         var key = [p.member_id, p.auction_date, p.item.toLowerCase(), p.role, p.amount].join('|');
-        if (existingSet[key]){ already++; return; }
-        if (seen[key]) return;
-        seen[key] = true;
+        usedCount[key] = (usedCount[key] || 0) + 1;
+        if (usedCount[key] <= (existingCount[key] || 0)){ already++; return; }
         toInsert.push({ member_id: p.member_id, auction_date: p.auction_date, item: p.item, role: p.role, amount: p.amount, created_by: window.currentMember.id });
       });
       var inserted = 0, insertErr = null;
