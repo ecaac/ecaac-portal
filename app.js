@@ -1353,11 +1353,13 @@ window.initPortal = function(){
   function tanksForMember(m){
     if (!m) return [];
     if (window.currentMember && m.memberId === window.currentMember.id){
-      return tanks.map(function(t, i){ return Object.assign({}, t, { owner: member.name, mine:true, myIndex:i }); });
+      // Same as the gallery: myIndex indexes `tanks`, so it is taken before the
+      // archived ones are dropped.
+      return unarchived(tanks).map(function(t){ return Object.assign({}, t, { owner: member.name, mine:true, myIndex: tanks.indexOf(t) }); });
     }
-    if (m.memberId) return (otherMemberTanks || []).filter(function(t){ return t.ownerId === m.memberId; });
+    if (m.memberId) return unarchived(otherMemberTanks).filter(function(t){ return t.ownerId === m.memberId; });
     // Demo entries have no id — fall back to matching the owner name.
-    return (otherMemberTanks || []).filter(function(t){ return (t.owner || '') === m.name; });
+    return unarchived(otherMemberTanks).filter(function(t){ return (t.owner || '') === m.name; });
   }
 
   function mdTanksHtml(list){
@@ -1461,8 +1463,11 @@ window.initPortal = function(){
     if (out[3] && !out[3].error) res.registerEver = out[3].count || 0;
     else res.failed.push('register');
     // Tank count comes from data already in memory — no extra round trip.
-    if (window.currentMember && memberId === window.currentMember.id) res.tankCount = tanks.length;
-    else res.tankCount = (otherMemberTanks || []).filter(function(t){ return t.ownerId === memberId || t.owner_id === memberId; }).length;
+    // Archived tanks excluded on both branches. getBadgeCategories() has always
+    // filtered them, so counting them here made a member's own drawer show a
+    // higher Aquarium Collection tier than their badges page.
+    if (window.currentMember && memberId === window.currentMember.id) res.tankCount = unarchived(tanks).length;
+    else res.tankCount = unarchived(otherMemberTanks).filter(function(t){ return t.ownerId === memberId || t.owner_id === memberId; }).length;
     return res;
   }
 
@@ -1754,8 +1759,9 @@ window.initPortal = function(){
       .eq('member_id', window.currentMember.id);
     if (res.error) return; // leave the previous figure rather than zeroing a badge
     myRegisterEver = res.count || 0;
+    // checkBadgeChanges debounces and repaints the badges page itself when it is
+    // the visible view, so no direct render call here.
     if (window.checkBadgeChanges) window.checkBadgeChanges();
-    if (typeof renderBadgeCategories === 'function') renderBadgeCategories();
   }
 
   function renderMyListings(){
@@ -3206,6 +3212,13 @@ window.initPortal = function(){
     popToast(t.name + (next ? ' archived' : ' restored'));
     renderDetail();
     renderTanks();
+    // The club gallery and the directory drawer now hide archived tanks, so they
+    // have to be repainted here or the card lingers until a reload.
+    if (typeof renderMemberAquariums === 'function') renderMemberAquariums();
+    // Aquarium Collection counts non-archived tanks, so archiving can change a
+    // tier. Without this the badges page stayed stale until a navigation, and the
+    // earned-badge popup could then fire at an unrelated moment.
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
   });
   function setArchBtn(t){
     var on = !!(t && t.archived);
@@ -3276,14 +3289,35 @@ window.initPortal = function(){
     var t = tanks[currentTank];
     if (sb && t.id){
       delBtn2.disabled = true; delBtn2.textContent = 'Deleting…';
+      // Captured before the delete, because tank_photos is ON DELETE CASCADE:
+      // the rows holding these storage paths disappear with the tank, and with
+      // them the only reference to the uploaded files. Removing a single photo
+      // already cleans its object up (see renderPhotoGrid); deleting a whole
+      // tank used to leave every one of them stranded in the bucket.
+      var photoPaths = (t.photos || []).map(function(p){ return p.path; })
+        .filter(function(p){ return !!p; });
       var res = await dbDeleteRow('tanks', t.id);
       delBtn2.disabled = false;
       if (res.error){ resetDelBtn(); popToast('Could not delete — try again'); return; }
+      // Best effort, and deliberately after the row delete: the paths are held in
+      // a local, so nothing is lost by ordering it this way, and a storage hiccup
+      // must not report a delete that actually succeeded as a failure. Worst case
+      // is the files linger — the same state as before this fix.
+      if (photoPaths.length){
+        try {
+          var rm = await sb.storage.from('tank-photos').remove(photoPaths);
+          if (rm && rm.error) console.warn('Tank deleted, but its photo files could not be removed:', rm.error);
+        } catch (e){
+          console.warn('Tank deleted, but its photo files could not be removed:', e);
+        }
+      }
     }
     tanks.splice(currentTank, 1);
     resetDelBtn();
     popToast(t.name + ' deleted');
     renderTanks();
+    if (typeof renderMemberAquariums === 'function') renderMemberAquariums();
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
     show('tanks');
   });
   function resetDelBtn(){
@@ -3490,9 +3524,10 @@ window.initPortal = function(){
       auctionValue: auctionValue,
       awardPoints: stats.awardPoints,
       // "active aquariums" has to mean the same thing here as it does on the
-      // dashboard, which filters archived tanks out. Counting them made archiving
-      // a tank leave the Aquarium Collection tier untouched.
-      tankCount: tanks.filter(function(t){ return !t.archived; }).length,
+      // dashboard and in loadMemberStanding, which is why both go through
+      // unarchived(). Counting archived tanks made archiving one leave the
+      // Aquarium Collection tier untouched.
+      tankCount: unarchived(tanks).length,
       tenureYears: stats.tenureYears,
       awardEntries: window.currentMember ? myApprovedEntries : 3,
       auctionsSold: soldCount,
@@ -4074,6 +4109,11 @@ window.initPortal = function(){
         volume: row.volume || 0, dims: row.dims || '—', started: row.started || '',
         owner: ownerName || 'ECAAC member',
         ownerId: row.owner_id,
+        // Never mapped before, so archiving hid a tank from its owner's own grid
+        // and dashboard while it stayed on show to the whole club. Mapped rather
+        // than filtered out in the query: the load stays faithful and each
+        // consumer decides, via unarchived(), what it shows.
+        archived: !!row.archived,
         tags: (row.tank_tags || []).map(function(t){ return t.label; }),
         params: params,
         livestock: (row.tank_livestock || []).map(function(l){ return [l.name, l.note || '', l.qty || '']; }),
@@ -4085,11 +4125,21 @@ window.initPortal = function(){
     renderMemberAquariums();
   }
 
+  // Archived means hidden everywhere a tank is shown to anyone other than its
+  // owner managing it — the club gallery, the directory drawer and the badge
+  // counts. Own tanks keep their archived entries in `tanks`, since that grid has
+  // a Show archived toggle and is the only way to restore one.
+  function unarchived(list){
+    return (list || []).filter(function(t){ return !t.archived; });
+  }
+
   function getAllMemberTanks(){
-    var mine = tanks.map(function(t, i){
-      return Object.assign({}, t, { owner: member.name, mine:true, myIndex:i });
+    var mine = unarchived(tanks).map(function(t){
+      // myIndex must stay an index into `tanks`, not into the filtered copy, or
+      // opening a card from the gallery lands on the wrong aquarium.
+      return Object.assign({}, t, { owner: member.name, mine:true, myIndex: tanks.indexOf(t) });
     });
-    return mine.concat(otherMemberTanks);
+    return mine.concat(unarchived(otherMemberTanks));
   }
 
   // ===== Tank hearts =====
