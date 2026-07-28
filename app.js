@@ -3482,7 +3482,7 @@ window.initPortal = function(){
       // Auction Trading sums rands, so a heavy buyer outranks a steady supplier.
       // This counts lots actually contributed to the club's auctions.
       { id:'lots', label:'Auction Lots Sold', icon:'tag', unit:'lots sold at auction', unit1:'lot sold at auction', value:stats.auctionsSold || 0,
-        noun:'lots sold', noun1:'lot sold', tiers:[1, 5, 15, 30] },
+        noun:'lots sold', noun1:'lot sold', tiers:[15, 30, 45, 60] },
       // Counts listings ever added, not listings currently live: tierProgress
       // recomputes from scratch every render, so a live count would un-earn a
       // badge the moment someone tidied up their register entries.
@@ -4016,7 +4016,7 @@ window.initPortal = function(){
   // marked seen immediately, so it can never notify twice, this session or any
   // future one.
   // Bump whenever badges are added to or removed from the catalogue.
-  var BADGE_CATALOGUE_VERSION = 3;
+  var BADGE_CATALOGUE_VERSION = 4;
 
   function checkBadgeChanges(){
     if (seenBadges === null) loadSeenBadges();
