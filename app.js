@@ -2162,7 +2162,11 @@ window.initPortal = function(){
       var thumbInner = cover
         ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
         : ICONS[st[2]];
-      return '<button class="tank-card' + (t.archived ? ' is-archived' : '') + '" data-tank="' + i + '">' +
+      // A div, not a <button>: the heart control inside is itself a button, and
+      // nested buttons are invalid HTML — the parser silently closes the outer
+      // one and throws the rest of the card out into the grid. This is the same
+      // pattern the directory cards already use.
+      return '<div class="tank-card' + (t.archived ? ' is-archived' : '') + '" role="button" tabindex="0" data-tank="' + i + '">' +
         '<div class="tank-thumb" style="background:linear-gradient(135deg,' + st[0] + ',' + st[1] + ')">' +
           '<span class="cat-pill" style="z-index:1">' + escT(t.type) + (t.subtitle ? ' · ' + escT(t.subtitle) : '') + '</span>' +
           (t.archived ? '<span class="arch-pill">Archived</span>' : '') + thumbInner +
@@ -2172,7 +2176,7 @@ window.initPortal = function(){
         '<div><b>' + t.plants.length + '</b><span>Plants</span></div>' +
         '<div><b>' + t.log.length + '</b><span>Logs</span></div>' +
         (heartHtml({ id: t.id, mine: true }, false) ? '<div class="tank-heart">' + heartHtml({ id: t.id, mine: true }, false) + '</div>' : '') +
-        '</div></div></button>';
+        '</div></div></div>';
     }).join('');
     grid.querySelectorAll('.tank-card').forEach(function(card){
       card.addEventListener('click', function(){ openTank(parseInt(card.getAttribute('data-tank'),10)); });
@@ -2217,11 +2221,11 @@ window.initPortal = function(){
             ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
             : ICONS[st[2]];
           var idx = tanks.indexOf(t);
-          return '<button class="tank-card" data-dash-tank="' + idx + '">' +
+          return '<div class="tank-card" role="button" tabindex="0" data-dash-tank="' + idx + '">' +
             '<div class="tank-thumb" style="background:linear-gradient(135deg,' + st[0] + ',' + st[1] + ')">' +
               '<span class="cat-pill" style="z-index:1">' + escT(t.type) + '</span>' + thumbInner +
             '</div><div class="tank-body"><h4>' + escT(t.name) + '</h4>' +
-            '<div class="meta">' + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm</div></div></button>';
+            '<div class="meta">' + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm</div></div></div>';
         }).join('');
         dashGrid.querySelectorAll('[data-dash-tank]').forEach(function(card){
           card.addEventListener('click', function(){
@@ -4014,18 +4018,39 @@ window.initPortal = function(){
     });
   }
 
+  // The tank cards became div[role=button] so the heart could be a real button
+  // inside them (see the card renderers). A div doesn't get Enter/Space for
+  // free the way a <button> does, so that has to be restored — delegated once,
+  // covering all three card grids and anything added later.
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    if (!e.target || !e.target.closest) return;
+    // The heart is a genuine button and handles its own keys; don't also open
+    // the tank behind it.
+    if (e.target.closest('[data-heart]')) return;
+    var card = e.target.closest('.tank-card');
+    if (!card) return;
+    e.preventDefault();
+    card.click();
+  });
+
   // Delegated at document level so it works on the grid, inside the preview
   // modal and inside the member drawer's gallery without three bindings, and
   // survives every re-render.
+  //
+  // Registered on the CAPTURE phase (the trailing `true`). The cards bind their
+  // own click handlers directly on the card element, so a bubble-phase listener
+  // at document level would fire *after* the card had already opened the preview
+  // — stopPropagation there is too late to stop anything. Capturing means this
+  // sees the tap first and can genuinely prevent the card from acting on it.
   document.addEventListener('click', function(e){
+    if (!e.target || !e.target.closest) return;
     var btn = e.target.closest('[data-heart]');
     if (!btn) return;
-    // The cards are themselves buttons that open the preview — a heart tap
-    // must not also open the tank.
     e.preventDefault();
     e.stopPropagation();
     toggleTankLike(btn.getAttribute('data-heart'));
-  });
+  }, true);
 
   var maFilter = 'All';
   function renderMemberAquariums(){
@@ -4047,7 +4072,7 @@ window.initPortal = function(){
       var thumbInner = cover
         ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
         : ICONS[st[2]];
-      return '<button class="tank-card" data-ma="' + idx + '">' +
+      return '<div class="tank-card" role="button" tabindex="0" data-ma="' + idx + '">' +
         '<div class="tank-thumb" style="background:linear-gradient(135deg,' + st[0] + ',' + st[1] + ')">' +
           '<span class="cat-pill" style="z-index:1">' + escT(t.type) + (t.subtitle ? ' · ' + escT(t.subtitle) : '') + '</span>' + thumbInner +
         '</div><div class="tank-body">' +
@@ -4056,7 +4081,7 @@ window.initPortal = function(){
           '<div class="meta">' + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm · started ' + escT(t.started) + '</div>' +
           '<div class="tank-stats"><div><b>' + (liveCount || '—') + '</b><span>Livestock</span></div><div><b>' + t.plants.length + '</b><span>Plants</span></div>' +
             (heartHtml(t, true) ? '<div class="tank-heart">' + heartHtml(t, true) + '</div>' : '') + '</div>' +
-        '</div></button>';
+        '</div></div>';
     }).join('');
     grid.querySelectorAll('.tank-card').forEach(function(card){
       card.addEventListener('click', function(){ openMaPreview(filtered[parseInt(card.getAttribute('data-ma'),10)]); });
