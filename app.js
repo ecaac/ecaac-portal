@@ -4102,6 +4102,74 @@ window.initPortal = function(){
 
   var maModal = document.getElementById('ma-preview-modal');
   var maCurrent = null;
+  // ===== Aquarium preview gallery =====
+  //
+  // The preview showed no photographs at all, which for an aquarium is the one
+  // thing people actually want to see. Every photo a tank has is already in
+  // memory from the tanks fetch (tank_photos comes down in the same nested
+  // select), so this needs no extra query.
+  //
+  // 16/9 throughout, matching .tank-thumb on the cards, so a tank looks the same
+  // shape whether you're scanning the grid or looking at one in detail.
+  //
+  // Tapping the main image opens the EXISTING photo lightbox rather than a
+  // second viewer — the same reuse decision the drawer's gallery made when it
+  // handed off to this modal. The lightbox is z-index 300 against this modal's
+  // 180, so it correctly opens on top; worth stating because getting that
+  // backwards is exactly what went wrong between the drawer and this preview.
+  function maGalleryHtml(t){
+    var st = TYPE_STYLE[t.type] || TYPE_STYLE['Freshwater'];
+    var photos = (t.photos || []).filter(function(p){ return p && p.url; });
+    if (!photos.length){
+      // Same gradient and species icon the card falls back to, rather than an
+      // empty box or a broken-image frame.
+      return '<div class="ma-gal-main ma-gal-empty" style="background:linear-gradient(135deg,' +
+        st[0] + ',' + st[1] + ')">' + ICONS[st[2]] + '</div>';
+    }
+    // Lead with whichever photo the owner chose as the cover, so the preview
+    // opens on the same image the card showed.
+    var cover = coverUrl(t);
+    if (cover){
+      photos = photos.slice().sort(function(a, b){
+        return (b.url === cover ? 1 : 0) - (a.url === cover ? 1 : 0);
+      });
+    }
+    var main = '<button type="button" class="ma-gal-main" id="ma-gal-main" data-src="' + escA(photos[0].url) +
+      '" aria-label="View this photo full size">' +
+      '<img src="' + escA(photos[0].url) + '" alt="' + escA(t.name) + '" loading="lazy">' +
+      (photos.length > 1 ? '<span class="ma-gal-count" id="ma-gal-count">1 / ' + photos.length + '</span>' : '') +
+      '</button>';
+    if (photos.length < 2) return main;
+    return main + '<div class="ma-gal-strip">' + photos.map(function(p, i){
+      return '<button type="button" class="ma-gal-thumb' + (i === 0 ? ' on' : '') + '" data-gal="' + i +
+        '" data-src="' + escA(p.url) + '" aria-label="Photo ' + (i + 1) + ' of ' + photos.length + '">' +
+        '<img src="' + escA(p.url) + '" alt="" loading="lazy"></button>';
+    }).join('') + '</div>';
+  }
+
+  // Bound fresh on each open because the markup is rebuilt each time. Cheap, and
+  // it avoids stacking a second set of listeners on every preview.
+  function wireMaGallery(wrap, total){
+    var main = wrap.querySelector('#ma-gal-main');
+    var count = wrap.querySelector('#ma-gal-count');
+    if (main) main.addEventListener('click', function(){ openLightbox(main.getAttribute('data-src')); });
+    wrap.querySelectorAll('.ma-gal-thumb').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var src = btn.getAttribute('data-src');
+        // Swap the hero rather than opening the lightbox: a thumbnail strip that
+        // jumps straight to full screen makes browsing several photos tedious.
+        if (main){
+          main.setAttribute('data-src', src);
+          var img = main.querySelector('img');
+          if (img) img.src = src;
+        }
+        if (count) count.textContent = (parseInt(btn.getAttribute('data-gal'), 10) + 1) + ' / ' + total;
+        wrap.querySelectorAll('.ma-gal-thumb').forEach(function(b){ b.classList.remove('on'); });
+        btn.classList.add('on');
+      });
+    });
+  }
+
   function openMaPreview(t){
     maCurrent = t;
     document.getElementById('ma-preview-avatar').textContent = maInitials(t.owner);
@@ -4120,6 +4188,11 @@ window.initPortal = function(){
     }).join('') : '<div class="reg-empty" style="padding:18px">Nothing listed yet.</div>';
     var likeSlot = document.getElementById('ma-preview-like');
     if (likeSlot) likeSlot.innerHTML = heartHtml(t, true);
+    var gal = document.getElementById('ma-preview-gallery');
+    if (gal){
+      gal.innerHTML = maGalleryHtml(t);
+      wireMaGallery(gal, (t.photos || []).filter(function(p){ return p && p.url; }).length);
+    }
     document.getElementById('ma-preview-mine-cta').style.display = t.mine ? 'block' : 'none';
     maModal.classList.add('show');
   }

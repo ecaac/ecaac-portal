@@ -896,3 +896,89 @@ body.modal-open{overflow:hidden}
 /* The heart sits in the card's stats row, pushed to the far end so it reads as
    a footnote to the tank rather than a fourth statistic. */
 .tank-heart{margin-left:auto;align-self:center}
+
+/* ===== Dropdowns =====
+   Every <select> was rendering with the operating system's own control — a grey
+   bevel on Windows, a blue-tinted pill on macOS, a chunky bar on Android — which
+   is what made them read as stock next to everything else here.
+
+   appearance:none strips that chrome so the border, radius, type and focus ring
+   can match the cards and inputs around them. The chevron is drawn back in as an
+   inline SVG background image: no extra markup around 23 elements, no icon font,
+   and it inherits nothing that can drift.
+
+   Honest limitation: this styles the CLOSED control only. The open option list is
+   drawn by the operating system and cannot be reached from CSS. Styling it would
+   mean rebuilding the control in JavaScript and losing native keyboard handling,
+   screen-reader support and the iOS/Android pickers — a bad trade for a club
+   portal. Option colours below are set anyway; some platforms honour them, most
+   ignore them, and nothing breaks either way. */
+/* Held in a custom property, then applied inside each variant. The obvious
+   approach — background-image on the bare `select` rule — silently does nothing,
+   because both .field select and .tank-toolbar select already set the background
+   SHORTHAND, and a shorthand resets every longhand it covers. Those rules are
+   also more specific and appear earlier, so the image was being wiped before it
+   ever reached the screen. Verified from the computed style, not assumed. */
+select{
+  --select-chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23565A72' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  background-image:var(--select-chevron);
+  background-repeat:no-repeat;
+  cursor:pointer;
+  transition:border-color .16s,box-shadow .16s,background-color .16s;
+}
+/* Removes the legacy Edge/IE arrow, which sits on top of ours. */
+select::-ms-expand{display:none}
+select option{background:var(--paper);color:var(--ink)}
+select:disabled{opacity:.55;cursor:not-allowed;background-color:var(--sand)}
+
+/* Form fields: same 11px radius and sand border as the text inputs beside them,
+   so a row of mixed inputs and dropdowns reads as one set of controls. */
+.field select{
+  background-image:var(--select-chevron);
+  background-repeat:no-repeat;
+  padding-right:38px;
+  background-position:right 13px center;
+  background-size:14px;
+}
+.field select:hover:not(:disabled){border-color:var(--leaf);background-color:#FCFBF7}
+.field select:focus{box-shadow:0 0 0 3px rgba(143,217,161,0.28)}
+
+/* Toolbar pills: rounder and bolder, matching the filter chips they sit among. */
+.tank-toolbar select{
+  background-image:var(--select-chevron);
+  background-repeat:no-repeat;
+  padding-right:32px;
+  background-position:right 11px center;
+  background-size:12px;
+}
+.tank-toolbar select:hover{border-color:var(--leaf);color:var(--ink)}
+.tank-toolbar select:focus{box-shadow:0 0 0 3px rgba(143,217,161,0.28)}
+
+/* ===== Aquarium preview gallery =====
+   16/9 everywhere, matching .tank-thumb on the cards, so a tank keeps the same
+   shape whether it's being scanned in the grid or looked at in the preview. */
+.ma-gallery{margin-top:16px}
+.ma-gal-main{display:block;width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;
+  border-radius:16px;border:none;padding:0;background:var(--sand);cursor:zoom-in}
+.ma-gal-main img{width:100%;height:100%;object-fit:cover;display:block}
+.ma-gal-main:focus-visible{outline:3px solid var(--leaf-light);outline-offset:2px}
+/* No photos: the card's own gradient-and-icon fallback, not an empty frame. */
+.ma-gal-empty{display:flex;align-items:center;justify-content:center;cursor:default;
+  color:rgba(255,255,255,0.85)}
+.ma-gal-empty svg{width:46px;height:46px}
+.ma-gal-count{position:absolute;right:10px;bottom:10px;font-size:11px;font-weight:800;
+  letter-spacing:.03em;color:#fff;background:rgba(6,7,15,0.55);padding:4px 9px;border-radius:999px}
+/* Thumbnails share the ratio so nothing is cropped differently to the hero. */
+.ma-gal-strip{display:flex;gap:8px;margin-top:8px;overflow-x:auto;padding-bottom:2px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.ma-gal-thumb{flex:0 0 76px;aspect-ratio:16/9;border-radius:9px;overflow:hidden;padding:0;
+  border:2px solid transparent;background:var(--sand);cursor:pointer;transition:border-color .16s,opacity .16s;opacity:.72}
+.ma-gal-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ma-gal-thumb:hover{opacity:1}
+.ma-gal-thumb.on{border-color:var(--leaf);opacity:1}
+.ma-gal-thumb:focus-visible{outline:2px solid var(--leaf-light);outline-offset:1px}
+@media (max-width:640px){
+  .ma-gal-main{border-radius:13px}
+  .ma-gal-thumb{flex:0 0 64px}
+}
