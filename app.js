@@ -4338,6 +4338,188 @@ window.initPortal = function(){
     }
   }
 
+  // ===== Documents: committee-published downloads, filtered by category =====
+  //
+  // Two halves that have to stay in step: a `documents` row holding the title,
+  // description and category, and the actual file in a *private* Storage bucket.
+  // Private matters — a public bucket hands out permanent unauthenticated URLs, so
+  // one leaked link would expose the constitution or minutes to anyone with it.
+  // Every download below mints a 60-second signed URL instead.
+  var DOC_BUCKET = 'documents';
+  var DOC_MAX_BYTES = 25 * 1024 * 1024;
+  var docFilter = 'All';
+  var docRowsCache = [];
+
+  function docSizeLabel(bytes){
+    if (!bytes) return '';
+    return bytes >= 1048576
+      ? (bytes / 1048576).toFixed(1) + ' MB'
+      : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+  }
+  function docExtLabel(name){
+    var m = /\.([A-Za-z0-9]+)$/.exec(name || '');
+    return m ? m[1].toUpperCase() : 'FILE';
+  }
+  var DOC_TONE = { 'Meeting Minutes':'deep', 'Club Documents':'gold', 'Certificates':'warn' };
+  var DOC_FOLDER = { 'Meeting Minutes':'minutes', 'Club Documents':'club', 'Certificates':'certificates' };
+  var DOC_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>';
+
+  function renderDocs(){
+    var wrap = document.getElementById('doc-rows');
+    var empty = document.getElementById('doc-empty');
+    var count = document.getElementById('doc-count');
+    if (!wrap) return;
+
+    var rows = docFilter === 'All'
+      ? docRowsCache
+      : docRowsCache.filter(function(d){ return d.category === docFilter; });
+
+    if (count) count.textContent = rows.length + (rows.length === 1 ? ' document' : ' documents');
+    if (empty) empty.style.display = rows.length ? 'none' : 'block';
+    wrap.style.display = rows.length ? '' : 'none';
+
+    wrap.innerHTML = rows.map(function(d){
+      var when = d.created_at
+        ? new Date(d.created_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short', year:'numeric' })
+        : '';
+      var meta = [d.category, docExtLabel(d.file_name || d.file_path), docSizeLabel(d.file_size), when]
+        .filter(Boolean).join(' \u00B7 ');
+      var tone = DOC_TONE[d.category] || 'gold';
+      return '<div class="row">' +
+        '<div class="row-icon ' + tone + '">' + DOC_ICON + '</div>' +
+        '<div class="row-body"><b>' + escT(d.title) + '</b>' +
+          (d.description ? '<span>' + escT(d.description) + '</span>' : '') +
+          '<span>' + escT(meta) + '</span></div>' +
+        '<button class="btn btn-outline btn-sm" data-doc-dl="' + d.id + '">Download</button>' +
+      '</div>';
+    }).join('');
+
+    wrap.querySelectorAll('[data-doc-dl]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var id = b.getAttribute('data-doc-dl');
+        var doc = docRowsCache.filter(function(x){ return String(x.id) === id; })[0];
+        if (doc) openDocument(doc, b);
+      });
+    });
+  }
+
+  async function openDocument(doc, btn){
+    if (!sb) return;
+    var label = btn ? btn.textContent : null;
+    if (btn){ btn.disabled = true; btn.textContent = 'Preparing\u2026'; }
+    var res = await sb.storage.from(DOC_BUCKET).createSignedUrl(doc.file_path, 60, {
+      download: doc.file_name || true
+    });
+    if (btn){ btn.disabled = false; btn.textContent = label; }
+    if (res.error || !res.data){ popToast('Could not open that file \u2014 try again in a moment'); return; }
+    window.open(res.data.signedUrl, '_blank', 'noopener');
+  }
+
+  async function loadDocuments(){
+    if (!sb) return;
+    var res = await sb.from('documents').select('*').order('created_at', { ascending: false });
+    docRowsCache = res.data || [];
+    renderDocs();
+
+    var list = document.getElementById('admin-doc-list');
+    if (list && IS_ADMIN) {
+      list.innerHTML = docRowsCache.length ? docRowsCache.map(function(d){
+        return '<div class="row"><div class="row-body"><b>' + escT(d.title) + '</b>' +
+          '<span>' + escT(d.category) + ' \u00B7 ' + escT(docExtLabel(d.file_name || d.file_path)) + '</span></div>' +
+          '<button class="rm-btn" data-doc-id="' + d.id + '" data-doc-path="' + escT(d.file_path) + '" aria-label="Delete document">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>';
+      }).join('') : '<div class="reg-empty" style="padding:20px">Nothing uploaded yet.</div>';
+
+      list.querySelectorAll('[data-doc-id]').forEach(function(b){
+        b.addEventListener('click', async function(){
+          // Row first, then the file: a listing pointing at a missing file is a
+          // broken download members will report, while an orphaned file in the
+          // bucket is invisible and harmless.
+          var del = await sb.from('documents').delete().eq('id', b.getAttribute('data-doc-id'));
+          if (del.error){ popToast('Could not delete \u2014 are you signed in as an admin?'); return; }
+          await sb.storage.from(DOC_BUCKET).remove([b.getAttribute('data-doc-path')]);
+          popToast('Document deleted');
+          loadDocuments();
+        });
+      });
+    }
+  }
+
+  var docFilterWrap = document.getElementById('doc-filters');
+  if (docFilterWrap) docFilterWrap.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-docf]');
+    if (!btn) return;
+    docFilterWrap.querySelectorAll('.chip-btn').forEach(function(c){ c.classList.remove('active'); });
+    btn.classList.add('active');
+    docFilter = btn.getAttribute('data-docf');
+    renderDocs();
+  });
+
+  var uploadingDoc = false;
+  var adBtn = document.getElementById('ad-upload-btn');
+  if (adBtn) adBtn.addEventListener('click', async function(){
+    if (uploadingDoc || !sb) return;
+    var titleEl = document.getElementById('ad-title');
+    var descEl  = document.getElementById('ad-desc');
+    var catEl   = document.getElementById('ad-category');
+    var fileEl  = document.getElementById('ad-file');
+    var errEl   = document.getElementById('ad-error');
+    function fail(msg){ errEl.textContent = msg; errEl.style.display = 'block'; }
+
+    var title = titleEl.value.trim();
+    var file = fileEl.files && fileEl.files[0];
+    if (!title){ fail('Give the document a title.'); return; }
+    if (!file){ fail('Choose a file to upload.'); return; }
+    if (file.size > DOC_MAX_BYTES){ fail('That file is larger than 25\u00A0MB \u2014 compress it or split it up.'); return; }
+    errEl.style.display = 'none';
+
+    // Timestamp-prefixed, slugged filename: keeps the original name readable in
+    // the bucket without letting two "minutes.pdf" uploads collide.
+    var safeName = file.name.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
+    var folder = DOC_FOLDER[catEl.value] || 'club';
+    var path = folder + '/' + Date.now() + '-' + safeName;
+
+    uploadingDoc = true;
+    adBtn.disabled = true; adBtn.textContent = 'Uploading\u2026';
+
+    var up = await sb.storage.from(DOC_BUCKET).upload(path, file, {
+      cacheControl: '3600', upsert: false, contentType: file.type || 'application/octet-stream'
+    });
+    if (up.error){
+      uploadingDoc = false; adBtn.disabled = false; adBtn.textContent = 'Upload document';
+      fail('Upload failed \u2014 ' + (up.error.message || 'try again.'));
+      return;
+    }
+
+    var ins = await sb.from('documents').insert({
+      title: title,
+      description: descEl.value.trim() || null,
+      category: catEl.value,
+      file_path: path,
+      file_name: file.name,
+      file_size: file.size,
+      mime_type: file.type || null,
+      uploaded_by: (window.currentMember && window.currentMember.id) || null
+    });
+
+    uploadingDoc = false;
+    adBtn.disabled = false; adBtn.textContent = 'Upload document';
+
+    if (ins.error){
+      // Never leave a file nobody can see or delete from the UI.
+      await sb.storage.from(DOC_BUCKET).remove([path]);
+      fail('Could not save the listing \u2014 ' + (ins.error.message || 'try again.'));
+      return;
+    }
+
+    titleEl.value = ''; descEl.value = ''; fileEl.value = '';
+    popToast('Document published \u2014 members can download it now');
+    if (typeof pushNotification === 'function') {
+      pushNotification('news', 'New document: ' + title, catEl.value + ' \u2014 now available in Documents.', null);
+    }
+    loadDocuments();
+  });
+
   // ===== Events: real committee-managed calendar + attendance tracking =====
   var MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function eventRowToMeeting(row){
@@ -5775,7 +5957,7 @@ window.initPortal = function(){
       'If this wasn\u2019t you, contact the committee straight away.', window.currentMember.id);
   });
 
-  if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadTankLikes(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); loadBreederListings(); }
+  if (window.currentMember) { loadLiveMembers(); loadNews(); loadDocuments(); loadTanksFromDB(); loadOtherMemberTanks(); loadTankLikes(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); loadBreederListings(); }
 
   applyLiveMember();
 
