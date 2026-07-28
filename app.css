@@ -339,9 +339,29 @@ button{font-family:inherit}
 .chip-btn:hover{border-color:var(--leaf)}
 .chip-btn.active{background:#EAF3DE;color:var(--leaf-dark);border-color:var(--leaf-light)}
 .dir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.dir-card{background:var(--paper);border-radius:18px;padding:22px;border-top:4px solid var(--leaf);box-shadow:0 1px 2px rgba(11,59,76,0.03),0 12px 26px -18px rgba(11,59,76,0.16);transition:transform .2s,box-shadow .2s;display:flex;gap:14px;align-items:flex-start}
-.dir-card:nth-child(even){border-top-color:var(--deep)}
-.dir-card:hover{transform:translateY(-4px);box-shadow:0 20px 36px -16px rgba(11,59,76,0.24)}
+/* Same deep gradient as the hero, member card and detail hero, so the directory
+   reads as part of that family rather than as a fourth surface treatment.
+   Everything below re-colours the card's own text: on this background the
+   original dark values measured 3.15:1 (.dir-role) and 2.26:1 (.dir-meta),
+   both well under the 4.5:1 minimum. All overrides are scoped to .dir-card so
+   the empty-state text, which sits in the grid but outside any card, keeps its
+   dark-on-sand colours. */
+.dir-card{background:radial-gradient(120% 160% at 15% 10%, #142542 0%, var(--deep) 50%, var(--deep-3) 100%);color:#fff;border-radius:18px;padding:22px;border-top:4px solid var(--leaf);box-shadow:0 18px 34px -20px rgba(6,7,15,0.55);transition:transform .2s,box-shadow .2s;display:flex;gap:14px;align-items:flex-start}
+/* The alternating top edge was green/navy; navy is now invisible against the
+   card itself, so the second colour moves to the light leaf tint. The rhythm
+   survives, in one hue family. */
+.dir-card:nth-child(even){border-top-color:var(--leaf-light)}
+.dir-card:hover{transform:translateY(-4px);box-shadow:0 26px 46px -18px rgba(6,7,15,0.62)}
+/* h4 would otherwise inherit var(--deep) from the global heading rule. */
+.dir-card .dir-body h4{color:#fff}
+.dir-card .dir-role{color:var(--leaf-light)}
+.dir-card .dir-body p{color:rgba(255,255,255,0.7)}
+.dir-card .dir-open{color:var(--leaf-light)}
+.dir-card .dir-meta{color:rgba(255,255,255,0.7)}
+.dir-card .dir-meta b{color:#fff}
+/* Pills are deliberately left alone: they are pastel backgrounds with their own
+   dark text, so they stay legible on the dark card and keep matching the pills
+   used everywhere else. */
 .dir-avatar{flex:none;width:48px;height:48px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;border:2px solid var(--leaf-light)}
 .dir-body{min-width:0;flex:1}
 .dir-body h4{font-size:15.5px;margin-bottom:2px}
@@ -364,8 +384,12 @@ button{font-family:inherit}
 /* Founding member — recognition, so gold rather than a category colour.
    .dir-tags span is (0,1,1), so the in-card variant must be at least as specific
    or the green category styling would win. */
-.founding{font-size:10px;font-weight:800;letter-spacing:.02em;color:var(--gold-dark);background:#FAF0DA;border:1px solid rgba(217,164,65,0.45);padding:3px 9px;border-radius:12px;white-space:nowrap}
-.dir-tags span.founding{color:var(--gold-dark);background:#FAF0DA;border:1px solid rgba(217,164,65,0.45);font-size:10px;font-weight:800}
+/* Silver rather than gold, drawn from the same family as the .tier-silver badge
+   ring (#C7CEDC/#8892A6) so the two read as the same metal. The text is taken
+   darker than that family's mid-tone, which only reaches 2.7:1 on a pale pill;
+   this lands at 6.5:1. */
+.founding{font-size:10px;font-weight:800;letter-spacing:.02em;color:#4C5568;background:#EDEFF4;border:1px solid rgba(136,146,166,0.5);padding:3px 9px;border-radius:12px;white-space:nowrap}
+.dir-tags span.founding{color:#4C5568;background:#EDEFF4;border:1px solid rgba(136,146,166,0.5);font-size:10px;font-weight:800}
 .md-bio .founding{margin-left:6px;display:inline-block;vertical-align:1px}
 .dir-meta{font-size:11px;color:var(--ink-soft);margin-top:10px;display:flex;gap:12px;flex-wrap:wrap}
 .dir-meta b{color:var(--deep)}
