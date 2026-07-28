@@ -4015,8 +4015,25 @@ window.initPortal = function(){
   // loading can never cause a false "new" badge — and once shown, a badge is
   // marked seen immediately, so it can never notify twice, this session or any
   // future one.
-  // Bump whenever badges are added to or removed from the catalogue.
-  var BADGE_CATALOGUE_VERSION = 4;
+  // Derived from the tier catalogue rather than hand-maintained, because the
+  // hand-maintained version was missed exactly once and produced the popup storm
+  // this guard exists to prevent. Any category added or removed, any label
+  // renamed and any threshold moved changes this string, which trips the silent
+  // absorb below with no one having to remember anything.
+  //
+  // Built from badgeCatsFrom({}) — ids, labels and thresholds only, never member
+  // values — so it is identical on every call for a given build.
+  function tierCatalogueSignature(){
+    return badgeCatsFrom({}).map(function(c){
+      return c.id + ':' + c.label + ':' + c.tiers.join('/');
+    }).join('|');
+  }
+  // The leading number still has to be bumped by hand for changes to the `ms:`
+  // milestone badges. Their keys come from labels computed inside
+  // getMilestoneBadges() alongside tank and entry data, so folding them in here
+  // would let the signature shift mid-session as those load — and every shift
+  // silently swallows that session's genuine badge popups.
+  var BADGE_CATALOGUE_VERSION = '4|' + tierCatalogueSignature();
 
   function checkBadgeChanges(){
     if (seenBadges === null) loadSeenBadges();
