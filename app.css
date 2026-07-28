@@ -982,3 +982,63 @@ select:disabled{opacity:.55;cursor:not-allowed;background-color:var(--sand)}
   .ma-gal-main{border-radius:13px}
   .ma-gal-thumb{flex:0 0 64px}
 }
+
+/* ===== Scrollbars =====
+   The sidebar was showing the operating system's stock scrollbar — a wide grey
+   track with stepper arrows on Windows — straight down the middle of a dark
+   navy panel. Nothing else in the app looks like that.
+
+   Two rules, because the app has two backgrounds: a light thumb for the dark
+   sidebar, a dark one everywhere else. Both are translucent, so they tint
+   whatever they sit on rather than needing a fixed colour per surface.
+
+   Support, honestly: ::-webkit-scrollbar covers Chrome, Edge and Safari;
+   scrollbar-width/scrollbar-color covers Firefox with less control. macOS and
+   iOS use overlay scrollbars that stay hidden until you scroll, so this changes
+   little there — it's Windows and desktop Linux that were showing the stock
+   control. Purely cosmetic either way: nothing depends on it. */
+
+/* Everything on a light surface: modals, the drawer, the register, search. */
+.card-modal,.preview-modal-inner,.md-body,.reg-table-wrap,.gsearch-results,.ma-gal-strip{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(11,59,76,0.22) transparent;
+}
+.card-modal::-webkit-scrollbar,
+.preview-modal-inner::-webkit-scrollbar,
+.md-body::-webkit-scrollbar,
+.reg-table-wrap::-webkit-scrollbar,
+.gsearch-results::-webkit-scrollbar,
+.ma-gal-strip::-webkit-scrollbar{width:9px;height:9px}
+.card-modal::-webkit-scrollbar-track,
+.preview-modal-inner::-webkit-scrollbar-track,
+.md-body::-webkit-scrollbar-track,
+.reg-table-wrap::-webkit-scrollbar-track,
+.gsearch-results::-webkit-scrollbar-track,
+.ma-gal-strip::-webkit-scrollbar-track{background:transparent}
+.card-modal::-webkit-scrollbar-thumb,
+.preview-modal-inner::-webkit-scrollbar-thumb,
+.md-body::-webkit-scrollbar-thumb,
+.reg-table-wrap::-webkit-scrollbar-thumb,
+.gsearch-results::-webkit-scrollbar-thumb,
+.ma-gal-strip::-webkit-scrollbar-thumb{
+  background:rgba(11,59,76,0.20);border-radius:999px;
+  /* A transparent border with background-clip is what keeps the thumb slimmer
+     than its track, so it reads as a floating pill rather than a filled gutter. */
+  border:2px solid transparent;background-clip:padding-box}
+.card-modal::-webkit-scrollbar-thumb:hover,
+.preview-modal-inner::-webkit-scrollbar-thumb:hover,
+.md-body::-webkit-scrollbar-thumb:hover,
+.reg-table-wrap::-webkit-scrollbar-thumb:hover,
+.gsearch-results::-webkit-scrollbar-thumb:hover,
+.ma-gal-strip::-webkit-scrollbar-thumb:hover{background:rgba(11,59,76,0.34);background-clip:padding-box}
+
+/* The dark sidebar needs the opposite treatment. */
+.side-nav{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.20) transparent}
+.side-nav::-webkit-scrollbar{width:8px}
+.side-nav::-webkit-scrollbar-track{background:transparent}
+.side-nav::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,0.18);border-radius:999px;
+  border:2px solid transparent;background-clip:padding-box}
+.side-nav::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.32);background-clip:padding-box}
+/* Removes the stepper arrows Windows puts at each end of the track. */
+::-webkit-scrollbar-button{display:none;width:0;height:0}
