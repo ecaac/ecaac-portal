@@ -4325,6 +4325,30 @@ window.initPortal = function(){
   renderMemberAquariums();
 
   // ===== Live member: patch all personal content for real logged-in users =====
+  // Pulled out of applyLiveMember so the Cancel button can reuse it. Calling the
+  // whole of applyLiveMember to revert a form would also reset the notifications
+  // panel to "Loading…" and rewrite the dashboard activity row.
+  function fillProfileForm(cm){
+    if (!cm) return;
+    var setVal = function(id, v){ var el = document.getElementById(id); if (el) el.value = v || ''; };
+    setVal('f-name', cm.first_name);
+    setVal('f-surname', cm.last_name);
+    setVal('f-email', cm.email);
+    setVal('f-phone', cm.phone);
+    setVal('f-city', cm.city);
+    // Province was written on save but never read back: the select fell to its
+    // first option, so a member outside the Eastern Cape had their real province
+    // silently overwritten the next time they saved anything at all.
+    var provEl = document.getElementById('f-province');
+    if (provEl && cm.province){
+      var match = Array.prototype.filter.call(provEl.options, function(o){ return o.value === cm.province || o.text === cm.province; })[0];
+      if (match) provEl.value = match.value;
+    }
+    setSelectedInterests(cm.interests);
+    setBirthdayValue(cm.birthday);
+    var bioEl = document.getElementById('f-bio'); if (bioEl) bioEl.value = cm.bio || '';
+  }
+
   function applyLiveMember(){
     var cm = window.currentMember;
     if (!cm) return; // demo mode — leave everything as-is
@@ -4381,15 +4405,7 @@ window.initPortal = function(){
     });
 
     // profile form: real values (blank where the member hasn't filled anything in yet)
-    var setVal = function(id, v){ var el = document.getElementById(id); if (el) el.value = v || ''; };
-    setVal('f-name', cm.first_name);
-    setVal('f-surname', cm.last_name);
-    setVal('f-email', cm.email);
-    setVal('f-phone', cm.phone);
-    setVal('f-city', cm.city);
-    setSelectedInterests(cm.interests);
-    setBirthdayValue(cm.birthday);
-    var bioEl = document.getElementById('f-bio'); if (bioEl) bioEl.value = cm.bio || '';
+    fillProfileForm(cm);
     if (window.checkBirthday) window.checkBirthday();
     if (window.renderMemberTimeline) window.renderMemberTimeline();
 
@@ -5999,6 +6015,18 @@ window.initPortal = function(){
     monthSel.addEventListener('change', populateBdayDays);
     populateBdayDays();
   })();
+
+  // "Changes discarded" used to be a bare toast on a button that discarded
+  // nothing: the edited values stayed in the fields, and the next Save wrote them.
+  var profileCancelBtn = document.getElementById('profile-cancel-btn');
+  if (profileCancelBtn) profileCancelBtn.addEventListener('click', function(){
+    if (window.currentMember){
+      fillProfileForm(window.currentMember);
+      popToast('Changes discarded');
+    } else {
+      popToast('Nothing to discard');
+    }
+  });
 
   var profileSaveBtn = document.getElementById('profile-save-btn');
   if (profileSaveBtn) profileSaveBtn.addEventListener('click', async function(){
