@@ -1543,6 +1543,7 @@ window.initPortal = function(){
   var regSearch = document.getElementById('reg-search');
   var regCat = 'All', regStat = 'All', regSortKey = 'member', regSortAsc = true;
   var regLoading = IS_LIVE;                     // true until the first live fetch resolves
+  var regError = false;                         // sticky: a failed fetch must not read as an empty register
   var REG_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function fmtRegDate(iso){
     var d = new Date(String(iso).slice(0, 10) + 'T00:00:00');
@@ -1555,8 +1556,15 @@ window.initPortal = function(){
   function renderRegStats(){
     var el = document.getElementById('reg-stats');
     if (!el) return;
+    // Keyed on member id where there is one. Counting by display name merged two
+    // members who happen to share one, and collapsed every row whose owner name
+    // failed to load — they all fall back to the same "ECAAC member" string — into
+    // a single breeder.
     var seen = {};
-    BREG.forEach(function(d){ if (d.member) seen[d.member] = true; });
+    BREG.forEach(function(d){
+      var key = d.memberId ? 'id:' + d.memberId : (d.member ? 'nm:' + d.member : null);
+      if (key) seen[key] = true;
+    });
     var breeders = Object.keys(seen).length;
     var species = BREG.length;
     var current = BREG.filter(function(d){ return d.status === 'Current'; }).length;
@@ -1589,7 +1597,11 @@ window.initPortal = function(){
       var statusHtml = d.status === 'Current'
         ? '<span class="reg-dot cur"></span><span class="badge ok">Breeding now</span>'
         : '<span class="reg-dot fut"></span><span class="badge pend">Planned</span>';
-      var shipHtml = d.shipping === 'Yes' ? '<span class="badge info">Ships</span>' : '<span style="color:var(--ink-soft)">Collection</span>';
+      // Both values are pills so the column reads as one thing. Plain text next
+      // to a badge looked like a missing value rather than the other option.
+      var shipHtml = d.shipping === 'Yes'
+        ? '<span class="badge info">Ships</span>'
+        : '<span class="badge mute">Collection</span>';
       return '<tr><td class="reg-member" data-label="Breeder">' + esc(d.member) + '</td>' +
         '<td class="reg-species" data-label="Species / item">' + esc(d.species) + '</td>' +
         '<td class="reg-cat" data-label="Category">' + esc(d.category) + '</td>' +
@@ -1599,6 +1611,11 @@ window.initPortal = function(){
     }).join('');
     // Distinguish "still loading", "register is empty" and "filters match nothing".
     if (regLoading) regEmpty.textContent = 'Loading the register\u2026';
+    // Without this the message reverted the moment anyone touched the search box
+    // or a filter chip: renderReg saw an empty BREG and reported the register as
+    // empty, which is a different and much more discouraging claim than a failed
+    // fetch.
+    else if (regError) regEmpty.textContent = 'Could not load the register just now \u2014 try refreshing.';
     else if (!BREG.length) regEmpty.textContent = IS_LIVE
       ? 'Nothing on the register yet \u2014 add what you\u2019re breeding using the panel below.'
       : 'Nothing on the register yet.';
@@ -1614,7 +1631,12 @@ window.initPortal = function(){
       updEl.textContent = (newest ? 'Register last updated ' + fmtRegDate(newest) + ' \u00B7 ' : '') +
         'Contact a breeder through the committee to arrange a swap or collection.';
     }
-    document.querySelectorAll('.reg-table thead th').forEach(function(th){
+    // Scoped to #view-breeders and to headers that actually carry data-key. The
+    // auction history table reuses .reg-table with data-akey, so the unscoped
+    // selector matched its four headers as well: getAttribute('data-key') returns
+    // null there, and once a stray click had set regSortKey to null, null === null
+    // lit up all four auction headers as "sorted" at once.
+    document.querySelectorAll('#view-breeders .reg-table thead th[data-key]').forEach(function(th){
       var on = th.getAttribute('data-key') === regSortKey;
       th.classList.toggle('sorted', on);
       var arr = th.querySelector('.arr');
@@ -1634,9 +1656,14 @@ window.initPortal = function(){
       b.classList.add('active'); regStat = b.getAttribute('data-regstat'); renderReg();
     });
   });
-  document.querySelectorAll('.reg-table thead th').forEach(function(th){
+  // Same scoping, and the more consequential half: this handler was bound to the
+  // auction table's headers too, so clicking "Amount" or "Role" over on Auctions
+  // set the register's sort key to null and silently reshuffled the breeders
+  // table on a page the member wasn't even looking at.
+  document.querySelectorAll('#view-breeders .reg-table thead th[data-key]').forEach(function(th){
     th.addEventListener('click', function(){
       var k = th.getAttribute('data-key');
+      if (!k) return;
       if (k === regSortKey) regSortAsc = !regSortAsc; else { regSortKey = k; regSortAsc = true; }
       renderReg();
     });
@@ -1673,12 +1700,13 @@ window.initPortal = function(){
     regLoading = false;
     if (res.error){
       // Don't leave a failed fetch looking like "nobody is breeding anything".
+      regError = true;
       renderRegStats();
       renderReg();
-      regEmpty.textContent = 'Could not load the register just now \u2014 try refreshing.';
       regEmpty.style.display = 'block';
       return;
     }
+    regError = false;
     BREG.length = 0;
     (res.data || []).forEach(function(r){ BREG.push(blRowToReg(r)); });
     renderRegStats();
