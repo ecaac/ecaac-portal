@@ -1271,11 +1271,14 @@ window.initPortal = function(){
   var dirVisible = [];
 
   // Matches a member against a directory filter. Legacy demo rules (committee /
-  // breeder / plants / shrimp) are preserved; live members also match on their
-  // stored interests, and the new interest pills match purely on those.
+  // plants / shrimp) are preserved; live members also match on their stored
+  // interests, and the new interest pills match purely on those.
+  //
+  // The "breeder" branch is gone with its chip. It tested m.breeder, which
+  // loadLiveMembers always sets to false, so for a signed-in member the filter
+  // could only ever return an empty directory.
   function memberMatchesDirFilter(m, f){
     if (f === 'committee') return !!m.committee;
-    if (f === 'breeder') return !!m.breeder;
     var interests = (m.interests || []).map(function(s){ return String(s).toLowerCase(); });
     if (f === 'plants') return interests.indexOf('plants') !== -1 || m.cats.indexOf('Plant') !== -1;
     if (f === 'shrimp') return interests.indexOf('shrimp') !== -1 || !!m.shrimp;
