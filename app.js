@@ -1104,7 +1104,7 @@ window.initPortal = function(){
     });
     var body = document.getElementById('auction-tbody');
     body.innerHTML = rows.map(function(a){
-      var roleBadge = a.role === 'Sold' ? '<span class="badge ok">Sold</span>' : '<span class="badge warn">Bought</span>';
+      var roleBadge = a.role === 'Sold' ? '<span class="badge ok">Sold</span>' : '<span class="badge new">Bought</span>';
       var amountDisplay = (a.role === 'Sold' ? '+' : '−') + money2(a.amount);
       return '<tr><td class="reg-member">' + escT(a.date) + '</td><td class="reg-species" style="font-style:normal">' + escT(a.item) + '</td>' +
         '<td>' + roleBadge + '</td>' +
@@ -1584,9 +1584,9 @@ window.initPortal = function(){
   // (actively breeding) and Future (planned). One lookup instead of the three
   // ternaries this used to be, so the label and colour can never drift apart.
   var REG_STATUS = {
-    Available: { label:'Available',  badge:'ok',   dot:'avail' },
-    Current:   { label:'Breeding',   badge:'sky',  dot:'cur' },
-    Future:    { label:'Planned',    badge:'pend', dot:'fut' }
+    Available: { label:'Available', badge:'ok' },
+    Current:   { label:'Breeding',  badge:'sky' },
+    Future:    { label:'Planned',   badge:'pend' }
   };
   function regStatus(s){ return REG_STATUS[s] || REG_STATUS.Future; }
 
@@ -1608,8 +1608,7 @@ window.initPortal = function(){
     });
     regBody.innerHTML = rows.map(function(d){
       var st = regStatus(d.status);
-      var statusHtml = '<span class="reg-dot ' + st.dot + '"></span>' +
-        '<span class="badge ' + st.badge + '">' + st.label + '</span>';
+      var statusHtml = '<span class="badge dot ' + st.badge + '">' + st.label + '</span>';
       // Both values are pills so the column reads as one thing. Plain text next
       // to a badge looked like a missing value rather than the other option.
       var shipHtml = d.shipping === 'Yes'
@@ -5219,7 +5218,7 @@ window.initPortal = function(){
       var path = NOTIF_ICONS[n.kind] || NOTIF_ICONS.general;
       var end = n.__read
         ? 'Read · ' + escT(notifAgo(n.created_at))
-        : '<span class="badge warn">New</span><div style="margin-top:4px">' + escT(notifAgo(n.created_at)) + '</div>';
+        : '<span class="badge new">New</span><div style="margin-top:4px">' + escT(notifAgo(n.created_at)) + '</div>';
       return '<div class="row notif-row" data-notif-id="' + n.id + '"' + (n.__read ? '' : ' style="cursor:pointer"') + '>' +
         '<div class="row-icon' + (tone ? ' ' + tone : '') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + path + '</svg></div>' +
         '<div class="row-body"><b>' + escT(n.title) + '</b>' + (n.body ? '<span>' + escT(n.body) + '</span>' : '') + '</div>' +
@@ -5454,7 +5453,7 @@ window.initPortal = function(){
     if (!rows.length){ list.innerHTML = '<div class="reg-empty" style="padding:20px">No auction lots logged yet.</div>'; return; }
     list.innerHTML = rows.map(function(r){
       var nm = r.members ? ((r.members.first_name||'') + ' ' + (r.members.last_name||'')).trim() : 'Member';
-      var roleBadge = r.role === 'Sold' ? '<span class="badge ok">Sold</span>' : '<span class="badge warn">Bought</span>';
+      var roleBadge = r.role === 'Sold' ? '<span class="badge ok">Sold</span>' : '<span class="badge new">Bought</span>';
       return '<div class="row"><div class="row-body"><b>' + escT(r.item) + '</b><span>' + escT(nm) + ' · ' + escT(fmtAuctionDate(r.auction_date)) + ' · R' + Number(r.amount).toFixed(2) + '</span></div>' +
         roleBadge +
         '<button class="rm-btn" data-lot-id="' + r.id + '" aria-label="Delete lot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>';

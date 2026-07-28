@@ -208,12 +208,30 @@ button{font-family:inherit}
 .row-body b{display:block;font-size:13.5px;color:var(--deep)}
 .row-body span{font-size:12px;color:var(--ink-soft)}
 .row-end{flex:none;text-align:right;font-size:12px;color:var(--ink-soft)}
-.badge{display:inline-block;font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:12px;letter-spacing:.02em}
-.badge.ok{background:#EAF3DE;color:var(--leaf-dark)}
-.badge.pend{background:#FBF0DA;color:var(--gold-dark)}
+/* line-height is pinned so every pill is the same height whatever it sits
+   inside; nowrap stops a two-word label breaking across lines inside the pill on
+   narrow screens; vertical-align:middle keeps it from baseline-drifting when it
+   sits beside a heading. */
+.badge{display:inline-block;font-size:10.5px;font-weight:800;line-height:1.45;padding:4px 10px;border-radius:12px;letter-spacing:.02em;white-space:nowrap;vertical-align:middle}
+/* Text colours are badge-specific rather than the shared --*-dark vars: at
+   10.5px on these pastel backgrounds the shared values land between 3.2:1 and
+   4.3:1, under the 4.5:1 WCAG AA minimum (weight 800 does not make 10.5px
+   "large text" — that starts at 18.66px bold). These are the same hues taken
+   darker, so the pills look unchanged; the shared vars are left alone because
+   the rest of the portal uses them on white, where they already pass. */
+.badge.ok{background:#EAF3DE;color:#1D6C2E}
+.badge.pend{background:#FBF0DA;color:#7A520B}
 .badge.info{background:#E3EBED;color:var(--deep)}
 .badge.sky{background:#E4EDFC;color:var(--sky-dark)}
-.badge.warn{background:#FCEBDD;color:var(--coral-dark)}
+.badge.warn{background:#FCEBDD;color:#A34428}
+/* "New", "Bought" and similar were wearing .warn, whose coral reads as
+   something-is-wrong. This is the quiet attention tone, which lets coral go back
+   to meaning an actual warning. */
+.badge.new{background:#EDE9FB;color:#5B45B8}
+/* Optional leading dot, tinted from the pill's own text colour, for a status
+   column that wants a little more scanning weight. Replaces the old separate
+   .reg-dot span. */
+.badge.dot::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px;opacity:.85}
 /* For a value that's the plain alternative rather than a status worth flagging —
    "Collection" beside "Ships". Sand on sand keeps it quieter than .info while
    still reading as a pill, so the shipping column scans as one thing. */
@@ -365,6 +383,8 @@ button{font-family:inherit}
 .reg-table tbody tr:hover{background:#FBF8F0}
 .reg-member{font-weight:700;color:var(--deep);white-space:nowrap}
 .reg-species{font-style:italic;color:var(--ink)}
+/* Superseded by .badge.dot, which draws the dot inside the pill. Kept so any
+   markup still emitting .reg-dot keeps rendering. */
 .reg-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px}
 .reg-dot.avail{background:var(--leaf)}
 .reg-dot.cur{background:var(--sky)}
