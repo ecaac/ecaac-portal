@@ -2170,7 +2170,9 @@ window.initPortal = function(){
         '<div class="meta">' + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm · started ' + escT(t.started) + '</div>' +
         '<div class="tank-stats"><div><b>' + (live || '—') + '</b><span>' + liveLabel + '</span></div>' +
         '<div><b>' + t.plants.length + '</b><span>Plants</span></div>' +
-        '<div><b>' + t.log.length + '</b><span>Logs</span></div></div></div></button>';
+        '<div><b>' + t.log.length + '</b><span>Logs</span></div>' +
+        (heartHtml({ id: t.id, mine: true }, false) ? '<div class="tank-heart">' + heartHtml({ id: t.id, mine: true }, false) + '</div>' : '') +
+        '</div></div></button>';
     }).join('');
     grid.querySelectorAll('.tank-card').forEach(function(card){
       card.addEventListener('click', function(){ openTank(parseInt(card.getAttribute('data-tank'),10)); });
@@ -3457,7 +3459,9 @@ window.initPortal = function(){
     shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="7" cy="17" r="4"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.4"/><path d="M12 2.5l4.6 8.2H7.4Z"/></svg>',
     hourglass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2h12M6 22h12"/><path d="M8 2v3.6c0 1.6 1.2 2.6 2.6 3.6L12 11l1.4-1.8C14.8 8.2 16 7.2 16 5.6V2"/><path d="M8 22v-3.6c0-1.6 1.2-2.6 2.6-3.6L12 13l1.4 1.8c1.4 1 2.6 2 2.6 3.6V22"/></svg>',
     moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.5 14.8A8.6 8.6 0 1 1 9.2 3.5a6.9 6.9 0 0 0 11.3 11.3Z"/></svg>',
-    sunrise: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.5v3M5.2 8.2 7.3 10.3M2.5 15h2.6M18.9 15h2.6M16.7 10.3l2.1-2.1"/><path d="M8 15a4 4 0 0 1 8 0"/><path d="M2 19.5h20"/></svg>'
+    heart: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20.7 4.6 13.4a4.6 4.6 0 0 1 6.5-6.5l.9.9.9-.9a4.6 4.6 0 1 1 6.5 6.5Z"/></svg>',
+    hearts: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9.5 19.5 3.6 13.6a3.9 3.9 0 0 1 5.5-5.5l.4.4.4-.4a3.9 3.9 0 0 1 5.5 5.5Z"/><path d="M16.5 4.2a3.2 3.2 0 0 1 4 4.6l-2.6 2.7"/></svg>',
+        sunrise: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.5v3M5.2 8.2 7.3 10.3M2.5 15h2.6M18.9 15h2.6M16.7 10.3l2.1-2.1"/><path d="M8 15a4 4 0 0 1 8 0"/><path d="M2 19.5h20"/></svg>'
   };
 
   // Tanks are created with placeholder parameters ('—') and an automatic
@@ -3496,6 +3500,22 @@ window.initPortal = function(){
     if (changed){ try { localStorage.setItem(funBadgeKey, JSON.stringify(funBadges)); } catch (e){} }
   })();
 
+  // Hearts live further down the file (see "Tank hearts"), and getMilestoneBadges
+  // can run before those vars are assigned — badge checks fire as each loader
+  // lands, in no fixed order. Reading them defensively here is cheaper than
+  // moving a whole feature to satisfy declaration order.
+  function heartStats(){
+    var counts = (typeof likeCounts === 'undefined' || !likeCounts) ? {} : likeCounts;
+    var mine   = (typeof myLikes   === 'undefined' || !myLikes)   ? {} : myLikes;
+    var received = 0, best = 0;
+    (tanks || []).forEach(function(t){
+      var n = (t && t.id && counts[t.id]) ? counts[t.id] : 0;
+      received += n;
+      if (n > best) best = n;
+    });
+    return { given: Object.keys(mine).length, received: received, best: best };
+  }
+
   function getMilestoneBadges(){
     var hasBAP = ENTRIES.some(function(e){ return /^BAP/.test(e.title); });
     var hasHAP = ENTRIES.some(function(e){ return /^HAP/.test(e.title); });
@@ -3511,6 +3531,10 @@ window.initPortal = function(){
     var types = {};
     tanks.forEach(function(t){ if (t.type) types[String(t.type).trim()] = true; });
     var meetingsAttended = isLiveUser ? (window.myTotalMeetingsAttended || 0) : 71;
+    // Demo mode has no hearts at all (no database, no signed-in member), so it
+    // gets illustrative figures the same way meetings does — otherwise the demo
+    // shows four permanently-locked badges nobody can explain.
+    var hearts = isLiveUser ? heartStats() : { given: 12, received: 9, best: 6 };
     var roleIs = function(want){
       return AUCTIONS.some(function(a){ return String(a.role || '').toLowerCase() === want; });
     };
@@ -3531,6 +3555,8 @@ window.initPortal = function(){
       { group:'club', label:'Meet the Club', icon:'people', earned: meetingsAttended > 0, hint:'Attend your first club meeting' },
       { group:'club', label:'Going Once', icon:'cart', earned: roleIs('bought'), hint:'Buy your first lot at auction' },
       { group:'club', label:'Sold!', icon:'note', earned: roleIs('sold'), hint:'Sell your first lot at auction' },
+      { group:'club', label:'Showing Love', icon:'heart', earned: hearts.given >= 1, hint:'Heart another member\u2019s aquarium' },
+      { group:'club', label:'Generous Heart', icon:'hearts', earned: hearts.given >= 10, hint:'Heart ten different aquariums' },
 
       // --- award programs ---
       { group:'club', label:'First Spawn', icon:'spawn', earned: hasBAP, hint:'Log a BAP entry for a spawn' },
@@ -3542,6 +3568,8 @@ window.initPortal = function(){
       // --- depth ---
       { group:'collect', label:'Clean Sweep', icon:'sparkle', earned: totalLogs >= 5, hint:'Log five maintenance entries' },
       { group:'collect', label:'Species Collector', icon:'layers', earned: totalLivestock >= 10, hint:'Log ten livestock entries' },
+      { group:'collect', label:'First Heart', icon:'heart', earned: hearts.received >= 1, hint:'Have one of your aquariums hearted' },
+      { group:'collect', label:'Well Loved', icon:'hearts', earned: hearts.best >= 5, hint:'Get five hearts on a single aquarium' },
 
       // --- tank personality ---
       { group:'collect', label:'Nano Nut', icon:'nano', earned: tanks.some(function(t){ var v = Number(t.volume); return v > 0 && v < 30; }), hint:'Register a tank under 30 ℓ' },
@@ -3762,7 +3790,7 @@ window.initPortal = function(){
   // marked seen immediately, so it can never notify twice, this session or any
   // future one.
   // Bump whenever badges are added to or removed from the catalogue.
-  var BADGE_CATALOGUE_VERSION = 2;
+  var BADGE_CATALOGUE_VERSION = 3;
 
   function checkBadgeChanges(){
     if (seenBadges === null) loadSeenBadges();
@@ -3836,6 +3864,11 @@ window.initPortal = function(){
         .map(function(p){ return [p.value, p.label]; });
       var photos = (row.tank_photos || []).map(function(p){ return { id: p.id, url: p.url, path: p.path }; });
       return {
+        // The tank's own id was never carried across here — the mapping kept
+        // owner_id but dropped the primary key, so nothing downstream could
+        // address an individual tank. Hearts need it. Same trap as ownerId:
+        // if this mapping is ever refactored, both must survive.
+        id: row.id,
         name: row.name, type: row.type, subtitle: row.subtitle || '',
         volume: row.volume || 0, dims: row.dims || '—', started: row.started || '',
         owner: ownerName || 'ECAAC member',
@@ -3857,6 +3890,142 @@ window.initPortal = function(){
     });
     return mine.concat(otherMemberTanks);
   }
+
+  // ===== Tank hearts =====
+  //
+  // A quiet bit of appreciation: any member can heart another member's
+  // aquarium, and every tank shows its running total. Deliberately small —
+  // this is a nod, not a scoreboard, so there's no ranking, no "most loved"
+  // list and no notification when someone hearts your tank. It appears on the
+  // Member Aquariums cards, in the aquarium preview, and as a read-only count
+  // on your own tanks so you can see appreciation without farming it.
+  //
+  // You can't heart your own tank. The count still shows; the control just
+  // isn't tappable.
+  //
+  // Backed by tank_likes (see tank_likes.sql). Demo mode has no database and
+  // no signed-in member, so hearts are hidden entirely rather than faked.
+  var likeCounts = {};      // tank id -> total hearts
+  var myLikes = {};         // tank id -> true if I've hearted it
+  var likeBusy = {};        // tank id -> true while a toggle is in flight
+  var likesLoaded = false;
+
+  // One query for the whole feature. The club is small enough that fetching
+  // every row and counting client-side is cheaper than a per-tank aggregate,
+  // and it answers both questions at once: the totals, and which ones are mine.
+  async function loadTankLikes(){
+    if (!sb || !window.currentMember) return;
+    var res = await sb.from('tank_likes').select('tank_id, member_id');
+    if (res.error) return;                 // leave hearts hidden rather than showing a wrong zero
+    likeCounts = {}; myLikes = {};
+    (res.data || []).forEach(function(r){
+      likeCounts[r.tank_id] = (likeCounts[r.tank_id] || 0) + 1;
+      if (r.member_id === window.currentMember.id) myLikes[r.tank_id] = true;
+    });
+    likesLoaded = true;
+    renderMemberAquariums();
+    renderTanks();
+    // Four milestone badges read these counts, so this is a badge-changing event
+    // like any other loader finishing. Debounced, so the dozen callers collapse
+    // into one check once everything has settled.
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
+  }
+
+  var HEART_PATH = 'M12 20.7 4.6 13.4a4.6 4.6 0 0 1 6.5-6.5l.9.9.9-.9a4.6 4.6 0 1 1 6.5 6.5Z';
+  function heartSvg(filled){
+    return '<svg viewBox="0 0 24 24" fill="' + (filled ? 'currentColor' : 'none') +
+      '" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="' + HEART_PATH + '"/></svg>';
+  }
+
+  // t         — a tank object (needs .id and .mine)
+  // clickable — false renders a plain count with no button semantics
+  function heartHtml(t, clickable){
+    if (!sb || !window.currentMember || !t || !t.id) return '';
+    var n = likeCounts[t.id] || 0;
+    var mine = !!myLikes[t.id];
+    var own = !!t.mine;
+    // Zero hearts on your own tank is just a sad zero — say nothing instead.
+    if (own && !n) return '';
+    var label = own
+      ? (n + ' member' + (n === 1 ? '' : 's') + ' hearted this tank')
+      : (mine ? 'Remove your heart' : 'Heart this aquarium');
+    if (own || !clickable){
+      return '<span class="heart heart-static' + (n ? ' has' : '') + '" data-heart-static="' + escA(t.id) +
+        '" title="' + escA(label) + '">' +
+        heartSvg(n > 0 && !own ? mine : true) + '<b>' + n + '</b></span>';
+    }
+    return '<button type="button" class="heart' + (mine ? ' on' : '') + '" data-heart="' + escA(t.id) +
+      '" aria-pressed="' + (mine ? 'true' : 'false') + '" aria-label="' + escA(label) + '">' +
+      heartSvg(mine) + '<b>' + n + '</b></button>';
+  }
+
+  // Optimistic: the heart fills the instant it's tapped and rolls back if the
+  // write fails. Same shape as markNotificationsRead — a like that takes a
+  // round trip to respond feels broken even when it works.
+  async function toggleTankLike(tankId){
+    if (!sb || !window.currentMember || !tankId) return;
+    if (likeBusy[tankId]) return;          // re-entrancy guard, per tank
+    likeBusy[tankId] = true;
+
+    var wasMine = !!myLikes[tankId];
+    var before = likeCounts[tankId] || 0;
+    myLikes[tankId] = !wasMine;
+    likeCounts[tankId] = Math.max(0, before + (wasMine ? -1 : 1));
+    paintHearts();
+
+    var res;
+    if (wasMine){
+      res = await sb.from('tank_likes').delete()
+        .eq('tank_id', tankId).eq('member_id', window.currentMember.id);
+    } else {
+      res = await sb.from('tank_likes').insert({ tank_id: tankId, member_id: window.currentMember.id });
+      // The unique constraint means a duplicate isn't a failure — it means the
+      // heart was already there (another tab, a double-fire). Treat 23505 as
+      // success rather than rolling back something that's actually correct.
+      if (res && res.error && String(res.error.code) === '23505') res = { error: null };
+    }
+    if (res && res.error){
+      myLikes[tankId] = wasMine;
+      likeCounts[tankId] = before;
+      paintHearts();
+      popToast('Could not save that — try again');
+    }
+    likeBusy[tankId] = false;
+    // Hearting someone else's tank can earn Showing Love or Generous Heart
+    // immediately — no reason to make the member reload to find out.
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
+  }
+
+  // Repaints just the hearts, rather than re-rendering the whole grid — a full
+  // re-render on every tap would rebuild the cards under the member's finger.
+  function paintHearts(){
+    document.querySelectorAll('[data-heart]').forEach(function(btn){
+      var id = btn.getAttribute('data-heart');
+      var n = likeCounts[id] || 0;
+      var mine = !!myLikes[id];
+      btn.classList.toggle('on', mine);
+      btn.setAttribute('aria-pressed', mine ? 'true' : 'false');
+      btn.setAttribute('aria-label', mine ? 'Remove your heart' : 'Heart this aquarium');
+      btn.innerHTML = heartSvg(mine) + '<b>' + n + '</b>';
+    });
+    document.querySelectorAll('.heart-static[data-heart-static]').forEach(function(el){
+      var n = likeCounts[el.getAttribute('data-heart-static')] || 0;
+      el.innerHTML = heartSvg(true) + '<b>' + n + '</b>';
+    });
+  }
+
+  // Delegated at document level so it works on the grid, inside the preview
+  // modal and inside the member drawer's gallery without three bindings, and
+  // survives every re-render.
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-heart]');
+    if (!btn) return;
+    // The cards are themselves buttons that open the preview — a heart tap
+    // must not also open the tank.
+    e.preventDefault();
+    e.stopPropagation();
+    toggleTankLike(btn.getAttribute('data-heart'));
+  });
 
   var maFilter = 'All';
   function renderMemberAquariums(){
@@ -3885,7 +4054,8 @@ window.initPortal = function(){
           '<div class="tank-owner"><div class="mini-avatar" style="background:' + MA_AVATAR_GRADS[gradIdx] + '">' + initials + '</div><span>' + escT(t.owner) + '</span>' + (t.mine ? '<span class="mine-pill">Yours</span>' : '') + '</div>' +
           '<h4>' + escT(t.name) + '</h4>' +
           '<div class="meta">' + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm · started ' + escT(t.started) + '</div>' +
-          '<div class="tank-stats"><div><b>' + (liveCount || '—') + '</b><span>Livestock</span></div><div><b>' + t.plants.length + '</b><span>Plants</span></div></div>' +
+          '<div class="tank-stats"><div><b>' + (liveCount || '—') + '</b><span>Livestock</span></div><div><b>' + t.plants.length + '</b><span>Plants</span></div>' +
+            (heartHtml(t, true) ? '<div class="tank-heart">' + heartHtml(t, true) + '</div>' : '') + '</div>' +
         '</div></button>';
     }).join('');
     grid.querySelectorAll('.tank-card').forEach(function(card){
@@ -3923,6 +4093,8 @@ window.initPortal = function(){
     document.getElementById('ma-preview-plants').innerHTML = t.plants.length ? t.plants.map(function(p){
       return '<div class="row"><div class="row-icon">' + plantRowIcon + '</div><div class="row-body"><b>' + escT(p[0]) + '</b><span>' + escT(p[1]||'') + '</span></div>' + (p[2] ? '<div class="row-end"><b style="color:var(--deep)">' + escT(p[2]) + '</b></div>' : '') + '</div>';
     }).join('') : '<div class="reg-empty" style="padding:18px">Nothing listed yet.</div>';
+    var likeSlot = document.getElementById('ma-preview-like');
+    if (likeSlot) likeSlot.innerHTML = heartHtml(t, true);
     document.getElementById('ma-preview-mine-cta').style.display = t.mine ? 'block' : 'none';
     maModal.classList.add('show');
   }
@@ -5505,7 +5677,7 @@ window.initPortal = function(){
       'If this wasn\u2019t you, contact the committee straight away.', window.currentMember.id);
   });
 
-  if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); loadBreederListings(); }
+  if (window.currentMember) { loadLiveMembers(); loadNews(); loadTanksFromDB(); loadOtherMemberTanks(); loadTankLikes(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); loadBreederListings(); }
 
   applyLiveMember();
 

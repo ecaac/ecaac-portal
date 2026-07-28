@@ -874,3 +874,25 @@ body.modal-open{overflow:hidden}
 .gate-back svg{width:14px;height:14px;flex:none}
 .gate-back:hover{color:#1B6B2C;gap:10px}
 .gate-back:focus-visible{outline:3px solid #8FD9A1;outline-offset:3px;border-radius:6px}
+
+/* ===== Tank hearts =====
+   Deliberately quiet: no fill until it's yours, no colour until there's
+   something to show. A heart that shouts would turn a nod into a scoreboard. */
+.heart{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;
+  border:1.5px solid var(--line);background:var(--paper);color:var(--ink-soft);
+  font:inherit;font-size:12px;font-weight:700;cursor:pointer;line-height:1;
+  transition:color .16s,border-color .16s,background .16s,transform .12s}
+.heart svg{width:14px;height:14px;flex:none}
+.heart b{font-size:12px;font-weight:800}
+.heart:hover{color:var(--coral-dark);border-color:var(--coral)}
+.heart:active{transform:scale(.94)}
+.heart.on{color:var(--coral-dark);border-color:var(--coral);background:#FCEBDD}
+.heart:focus-visible{outline:2px solid var(--coral);outline-offset:2px}
+/* Own tanks and any non-interactive placement: a count, not a control. */
+.heart-static{cursor:default;border-color:transparent;background:transparent;padding-left:0}
+.heart-static.has{color:var(--coral-dark)}
+.heart-static:hover{color:var(--ink-soft);border-color:transparent}
+.heart-static.has:hover{color:var(--coral-dark)}
+/* The heart sits in the card's stats row, pushed to the far end so it reads as
+   a footnote to the tank rather than a fourth statistic. */
+.tank-heart{margin-left:auto;align-self:center}
