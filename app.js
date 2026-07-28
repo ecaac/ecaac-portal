@@ -330,25 +330,48 @@ window.initPortal = function(){
 
   var MEMBER_TYPES = {
     'Full': {
-      label: 'Full', pill: 'Member', fee: 270,
+      label: 'Full', pill: 'Member', plural: 'Full members', fee: 270,
       note: 'Local household rate — Gqeberha, Jeffreys Bay, Humansdorp, Uitenhage &amp; Despatch.'
     },
     'Country': {
-      label: 'Country', pill: 'Country Member', fee: 100,
+      label: 'Country', pill: 'Country Member', plural: 'Country members', fee: 100,
       note: 'Country member rate — households outside Gqeberha, Jeffreys Bay, Humansdorp, Uitenhage &amp; Despatch.'
     },
     'Scholar': {
-      label: 'Scholar', pill: 'Scholar', fee: 100,
+      label: 'Scholar', pill: 'Scholar', plural: 'Scholar members', fee: 100,
       note: 'Scholar rate — full member benefits at the reduced scholar fee.'
+    },
+    // Fee of 0 is what marks a member as non-paying — nothing else keys off the
+    // name. Deliberately no link to whoever pays the household fee: the club just
+    // needs to know this person owes nothing, so there is no main-member field to
+    // keep accurate, and no broken pointer when a main member leaves or is deleted.
+    'Family': {
+      label: 'Family Member', pill: 'Family Member', plural: 'Family members', fee: 0,
+      note: 'Covered by a household membership — no fee payable.'
     }
   };
+  // Aliases for values that may already be sitting in the column, or that a
+  // future SQL edit might reasonably write. Without this, "Family Member" in the
+  // database normalises to "Family member", misses the map, and silently falls
+  // back to Full — which would bill a non-paying member R270.
+  var MEMBER_TYPE_ALIASES = {
+    'family member': 'Family', 'family-member': 'Family', 'familymember': 'Family',
+    'family': 'Family', 'household': 'Family'
+  };
   function memberTypeKey(raw){
-    var k = String(raw || 'Full').trim();
-    k = k.charAt(0).toUpperCase() + k.slice(1).toLowerCase();
+    var s = String(raw || 'Full').trim();
+    var alias = MEMBER_TYPE_ALIASES[s.toLowerCase()];
+    if (alias) return alias;
+    var k = s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
     return MEMBER_TYPES[k] ? k : 'Full';
   }
   function memberTypeInfo(raw){ return MEMBER_TYPES[memberTypeKey(raw)]; }
   function memberFee(raw){ return memberTypeInfo(raw).fee; }
+  // A zero fee is a different kind of fact from a small fee, so it never renders
+  // as "R0.00" — that reads like a billing error, or like a debt of nothing.
+  function isNonPaying(raw){ return memberFee(raw) === 0; }
+  function feeShort(fee){ return fee ? 'R' + fee : 'No fee'; }
+  function feeAmountText(fee){ return fee ? fmtRand(fee) : 'No fee payable'; }
 
   // ===== Membership status & renewal =====
   // members.status and members.renewal_date were previously never read, so the
@@ -388,6 +411,9 @@ window.initPortal = function(){
   function memberRoleLine(isAdmin, rawType){
     var key = memberTypeKey(rawType);
     var lead = isAdmin ? 'Committee' : (key === 'Full' ? 'Member' : MEMBER_TYPES[key].label);
+    // "Family Member · Full Member" reads as a contradiction, so the paid-up
+    // second segment is dropped for family members — they're covered, not paid up.
+    if (!isAdmin && key === 'Family') return 'Family Member';
     return lead + ' · Full Member';
   }
 
@@ -1136,11 +1162,12 @@ window.initPortal = function(){
     if (feeRows){
       var areaNote = { 'Full': 'Local households — ' + CLUB.localAreas,
                        'Country': 'Households outside the local areas above',
-                       'Scholar': 'Full member benefits at the reduced scholar rate' };
+                       'Scholar': 'Full member benefits at the reduced scholar rate',
+                       'Family': 'Already covered by a household membership — nothing to pay' };
       feeRows.innerHTML = Object.keys(MEMBER_TYPES).map(function(k){
         var t = MEMBER_TYPES[k];
-        return '<div class="row"><div class="row-body"><b>R' + t.fee + ' · ' + escT(t.label) +
-          ' members</b><span>' + (areaNote[k] || '') + '</span></div></div>';
+        return '<div class="row"><div class="row-body"><b>' + escT(feeShort(t.fee)) + ' · ' + escT(t.plural) +
+          '</b><span>' + (areaNote[k] || '') + '</span></div></div>';
       }).join('');
     }
     var feeHeading = document.getElementById('fee-heading');
@@ -1149,7 +1176,7 @@ window.initPortal = function(){
     var mtSel = document.getElementById('mt-type');
     if (mtSel){
       mtSel.innerHTML = Object.keys(MEMBER_TYPES).map(function(k){
-        return '<option value="' + k + '">' + escT(MEMBER_TYPES[k].label) + ' — R' + MEMBER_TYPES[k].fee + '</option>';
+        return '<option value="' + k + '">' + escT(MEMBER_TYPES[k].label) + ' — ' + escT(feeShort(MEMBER_TYPES[k].fee)) + '</option>';
       }).join('');
     }
 
@@ -1205,7 +1232,12 @@ window.initPortal = function(){
   var BREG = [];
 
   // ===== Members directory (derived from register + club roles) =====
-  var gradients = ['linear-gradient(135deg,var(--deep),var(--leaf))','linear-gradient(135deg,var(--leaf),var(--leaf-dark))','linear-gradient(135deg,var(--deep-2),var(--deep))','linear-gradient(135deg,var(--leaf-dark),var(--deep))','linear-gradient(135deg,var(--deep),var(--deep-3))'];
+  // One green for every member's initials, in the directory and in the drawer it
+  // opens. The old rotating palette assigned colours by position in the filtered
+  // list, so the same person changed colour as soon as a filter or a search
+  // narrowed the results — a colour that means nothing and won't sit still is
+  // worse than no colour at all.
+  var MEMBER_AVATAR_BG = 'linear-gradient(180deg,var(--leaf),var(--leaf-dark))';
   function initials(n){ return n.split(/\s+/).map(function(w){return w[0];}).slice(0,2).join('').toUpperCase(); }
 
   var byMember = {};
@@ -1272,7 +1304,7 @@ window.initPortal = function(){
         ? '<div class="dir-meta"><span><b>' + m.listings + '</b> register listings</span><span><b>' + m.current + '</b> breeding now</span></div>'
         : '<div class="dir-meta"><span>' + (m.email ? '<a href="mailto:' + escA(m.email) + '" style="color:var(--leaf-dark);font-weight:700">' + escT(m.email) + '</a>' : '<b>' + escT(m.metaLine || '') + '</b>') + '</span></div>';
       return '<div class="dir-card" data-dir-idx="' + i + '" role="button" tabindex="0" aria-label="View ' + escA(m.name) + '\u2019s profile">' +
-        '<div class="dir-avatar" style="background:' + gradients[i % gradients.length] + '">' + initials(m.name) + '</div>' +
+        '<div class="dir-avatar" style="background:' + MEMBER_AVATAR_BG + '">' + initials(m.name) + '</div>' +
         // name/role/bio are member-editable, so they get escaped here just as the
         // drawer already does (textContent for name/role, escT for the bio).
         '<div class="dir-body"><h4>' + escT(m.name) + '</h4><div class="dir-role">' + escT(m.role || '') + '</div>' +
@@ -1468,7 +1500,7 @@ window.initPortal = function(){
     document.getElementById('md-role').textContent = m.role || '';
     var av = document.getElementById('md-avatar');
     av.textContent = initials(m.name);
-    av.style.background = gradients[0];
+    av.style.background = MEMBER_AVATAR_BG;
 
     // Static parts render immediately; the numbers stream in after.
     var head = '';
@@ -3311,16 +3343,28 @@ window.initPortal = function(){
   function badgeCatsFrom(stats){
     return [
       { id:'meetings', label:'Meeting Attendance', icon:'calendar', unit:'meetings attended', unit1:'meeting attended', value:stats.meetings,
-        tiers:[12, 24, 36, 48] },
+        noun:'meetings', noun1:'meeting', tiers:[12, 24, 36, 48] },
       { id:'auctions', label:'Auction Trading', icon:'gavel', unit:'traded at auctions', value:stats.auctionValue, isMoney:true,
-        tiers:[500, 1500, 2500, 5000] },
+        noun:'in auction trade', tiers:[500, 1500, 2500, 5000] },
       { id:'awards', label:'Award Program Points', icon:'trophy', unit:'points earned', unit1:'point earned', value:stats.awardPoints,
-        tiers:[50, 100, 200, 400] },
+        noun:'points', noun1:'point', tiers:[50, 100, 200, 400] },
       { id:'aquariums', label:'Aquarium Collection', icon:'fish', unit:'active aquariums', unit1:'active aquarium', value:stats.tankCount,
-        tiers:[1, 5, 10, 15] },
+        noun:'aquariums', noun1:'aquarium', tiers:[1, 5, 10, 15] },
       { id:'tenure', label:'Membership Tenure', icon:'star', unit:'years as a member', unit1:'year as a member', value:stats.tenureYears,
-        tiers:[1, 3, 5, 10] }
+        noun:'years', noun1:'year', tiers:[1, 3, 5, 10] }
     ];
+  }
+
+  // Calendar-year subtraction gave someone who joined on 20 December a full
+  // "1 year as a member" — and a Bronze tenure badge — twelve days later. Count
+  // elapsed time instead. 365.25 absorbs leap years; an unparseable or future
+  // join date reads as 0 rather than something negative.
+  function tenureYearsFrom(joinDate){
+    if (!joinDate) return 0;
+    var t = new Date(joinDate).getTime();
+    if (!isFinite(t)) return 0;
+    var years = (Date.now() - t) / (365.25 * 24 * 60 * 60 * 1000);
+    return years > 0 ? Math.floor(years) : 0;
   }
 
   function getBadgeCategories(){
@@ -3329,14 +3373,17 @@ window.initPortal = function(){
       ? {
           meetings: window.myTotalMeetingsAttended || 0,
           awardPoints: myApprovedPoints,
-          tenureYears: Math.max(0, new Date().getFullYear() - (window.currentMember.join_date ? new Date(window.currentMember.join_date).getFullYear() : new Date().getFullYear()))
+          tenureYears: tenureYearsFrom(window.currentMember.join_date)
         }
       : { meetings: 71, awardPoints: 245, tenureYears: 8 };
     return badgeCatsFrom({
       meetings: stats.meetings,
       auctionValue: auctionValue,
       awardPoints: stats.awardPoints,
-      tankCount: tanks.length,
+      // "active aquariums" has to mean the same thing here as it does on the
+      // dashboard, which filters archived tanks out. Counting them made archiving
+      // a tank leave the Aquarium Collection tier untouched.
+      tankCount: tanks.filter(function(t){ return !t.archived; }).length,
       tenureYears: stats.tenureYears
     });
   }
@@ -3344,16 +3391,24 @@ window.initPortal = function(){
   function tierProgress(cat){
     var achieved = 0;
     cat.tiers.forEach(function(t){ if (cat.value >= t) achieved++; });
-    var nextIdx = achieved; // index of next unearned tier, or -1 if maxed
+    var nextIdx = achieved; // index of the next unearned tier
     var maxed = nextIdx >= cat.tiers.length;
     var nextThreshold = maxed ? null : cat.tiers[nextIdx];
+    // How far through the *current* stretch this member is, 0–1. Only used to
+    // rank categories against each other for the "next badge" card: the raw
+    // remainders can't be compared, since 400 rands of trading and 3 meetings
+    // are different quantities entirely.
+    var prevThreshold = achieved > 0 ? cat.tiers[achieved - 1] : 0;
+    var span = maxed ? 0 : (nextThreshold - prevThreshold);
+    var stretchFrac = (maxed || span <= 0) ? 1 : Math.max(0, Math.min(1, (cat.value - prevThreshold) / span));
     // Progress toward the final (Platinum) threshold, not just the current
     // stretch. Nothing on screen says "progress within this tier", so a
     // stretch-relative bar reads as wrong — and it resets to near-zero each time
     // you cross a tier. 6 of 10 years now shows 60%, as anyone would expect.
     var finalThreshold = cat.tiers[cat.tiers.length - 1];
     var pct = finalThreshold > 0 ? Math.round((cat.value / finalThreshold) * 100) : 0;
-    return { achieved: achieved, maxed: maxed, nextThreshold: nextThreshold, pct: Math.max(0, Math.min(100, pct)) };
+    return { achieved: achieved, maxed: maxed, nextThreshold: nextThreshold, stretchFrac: stretchFrac,
+             pct: Math.max(0, Math.min(100, pct)) };
   }
 
   // Thresholds and remainders are almost always whole rands, so trailing cents
@@ -3365,19 +3420,27 @@ window.initPortal = function(){
   // fall back to the one form.
   function unitFor(cat, n){ return (n === 1 && cat.unit1) ? cat.unit1 : cat.unit; }
 
+  // Short noun for a "still to go" phrase — "3 meetings", not "3 meetings
+  // attended". Money categories have nothing to inflect.
+  function nounFor(cat, n){ return (n === 1 && cat.noun1) ? cat.noun1 : (cat.noun || cat.unit); }
+
   function renderBadgeCategories(){
     var cats = getBadgeCategories();
     var wrap = document.getElementById('badge-categories');
-    var totalEarned = 0, totalAway = null, awayLabel = '';
+    var totalEarned = 0;
+    var nearest = null;   // { away, cat, tierIdx } — the badge this member is closest to
     var highestTierIdx = -1;
 
     wrap.innerHTML = cats.map(function(cat){
       var prog = tierProgress(cat);
       totalEarned += prog.achieved;
       if (prog.achieved - 1 > highestTierIdx) highestTierIdx = prog.achieved - 1;
-      if (!prog.maxed){
-        var away = prog.nextThreshold - cat.value;
-        if (totalAway === null || away < totalAway){ totalAway = away; awayLabel = fmtVal(away, cat.isMoney) + ' more ' + cat.unit.replace(/^\w+ /, '') + ' for ' + TIER_NAMES[prog.achieved] + ' in ' + cat.label; }
+      // "Closest" means furthest through its current stretch, not the smallest
+      // number: comparing rands to meetings picked whichever category happened to
+      // use small units, and the card then printed a bare figure with no way to
+      // tell which one it meant.
+      if (!prog.maxed && (nearest === null || prog.stretchFrac > nearest.frac)){
+        nearest = { away: prog.nextThreshold - cat.value, frac: prog.stretchFrac, cat: cat, tierIdx: prog.achieved };
       }
 
       var ladder = cat.tiers.map(function(t, i){
@@ -3411,7 +3474,19 @@ window.initPortal = function(){
       document.querySelectorAll('[data-live="aw-badges"]').forEach(function(el){ el.textContent = totalEarned; });
     }
     document.getElementById('badges-standing').textContent = highestTierIdx >= 0 ? TIER_NAMES[highestTierIdx] : 'Unranked';
-    document.getElementById('badges-next-away').textContent = totalAway === null ? 'All maxed!' : fmtVal(totalAway, false);
+
+    var awayEl = document.getElementById('badges-next-away');
+    var awayLabelEl = document.getElementById('badges-next-label');
+    if (nearest === null){
+      awayEl.textContent = 'All maxed!';
+      if (awayLabelEl) awayLabelEl.textContent = 'Every tier in every category earned';
+    } else {
+      awayEl.textContent = fmtVal(nearest.away, nearest.cat.isMoney);
+      if (awayLabelEl){
+        awayLabelEl.textContent = nounFor(nearest.cat, nearest.away) + ' to ' +
+          TIER_NAMES[nearest.tierIdx] + ' \u00B7 ' + nearest.cat.label;
+      }
+    }
 
     // showcase grid: every tier of every category, earned or locked
     var showcase = document.getElementById('badges-showcase');
@@ -3844,6 +3919,16 @@ window.initPortal = function(){
       // shown on both the Dashboard and the Awards page) never has to wait for
       // a view navigation to stop showing stale/placeholder badges.
       if (typeof renderAwardBadgeStrip === 'function') renderAwardBadgeStrip();
+      // The Badges page itself only ever rendered from show(). A #/badges deep
+      // link is applied before entries, tanks, events and auctions have landed,
+      // so it painted every category at zero and stayed that way until the member
+      // navigated away and back — a bug that looked intermittent because any
+      // other route reached the page after the loaders had finished. Repaint it
+      // here too, but only while it's the visible view.
+      var badgeView = document.getElementById('view-badges');
+      if (badgeView && badgeView.classList.contains('active') && typeof renderBadgeCategories === 'function'){
+        renderBadgeCategories();
+      }
     }, 500);
   };
 
@@ -4231,7 +4316,11 @@ window.initPortal = function(){
       'fullname': name,
       'initials': initials,
       'welcome': 'Welcome back, ' + firstName + ' 🌿',
-      'side-sub': roleLine.replace(/ Member$/, '') + ' · ' + member.number,
+      // The trailing-" Member" trim turns "Member · Full Member" into the shorter
+      // "Member · Full". Applied to "Family Member" it would leave a bare "Family",
+      // so that one is passed through whole.
+      'side-sub': (isNonPaying(cm.membership_type) && cm.role !== 'admin'
+        ? 'Family Member' : roleLine.replace(/ Member$/, '')) + ' · ' + member.number,
       'role-line': roleLine,
       'member-number': member.number,
       'profile-sub': (cm.role === 'admin' ? 'Committee member' : memberTypeInfo(cm.membership_type).pill) + ' · Member since ' + joinYear,
@@ -4243,9 +4332,13 @@ window.initPortal = function(){
       'mem-status': memStatusLabel(cm.status),
       'mem-status-label': 'Membership' + (renewalText(cm.renewal_date) ? ' · ' + renewalText(cm.renewal_date) : ''),
       'mem-type': memberTypeInfo(cm.membership_type).label,
-      'mem-type-label': 'Annual membership type · ' + fmtRand(memberFee(cm.membership_type)),
-      'renew-days': renewalDaysText(cm.renewal_date),
-      'renew-label': renewalText(cm.renewal_date) || 'Renewal date not recorded',
+      'mem-type-label': 'Annual membership type · ' + feeAmountText(memberFee(cm.membership_type)),
+      // A family member has nothing to renew, so a countdown to a fee they don't
+      // owe is noise at best and alarming at worst.
+      'renew-days': isNonPaying(cm.membership_type) ? 'Covered' : renewalDaysText(cm.renewal_date),
+      'renew-label': isNonPaying(cm.membership_type)
+        ? 'No fee — covered by a household membership'
+        : (renewalText(cm.renewal_date) || 'Renewal date not recorded'),
       // Placeholders, not real values — these scrub the demo figures at login and
       // are replaced by refreshAwardStats() / renderBadgeCategories() once the
       // member's entries land. A dash reads as "loading", where 0 read as fact.
@@ -4289,9 +4382,27 @@ window.initPortal = function(){
     // renewal amount + rate note follow the member's tier (Full R270, Country/Scholar R100)
     var tInfo = memberTypeInfo(cm.membership_type);
     var amtEl = document.getElementById('renew-amount');
-    if (amtEl) amtEl.textContent = fmtRand(tInfo.fee);
+    if (amtEl) amtEl.textContent = feeAmountText(tInfo.fee);
     var noteEl = document.getElementById('renew-rate-note');
     if (noteEl) noteEl.innerHTML = tInfo.note;
+
+    // Non-paying members: hide the banking details and the "I've paid" button
+    // rather than inviting a payment of nothing, and take the Renew buttons out of
+    // the dashboard and the FAB so nothing points at a fee they don't owe.
+    var nonPaying = isNonPaying(cm.membership_type);
+    var eftBox = document.getElementById('renew-eft-box');
+    if (eftBox) eftBox.style.display = nonPaying ? 'none' : '';
+    var renewActions = document.getElementById('renew-actions');
+    if (renewActions && nonPaying) renewActions.style.display = 'none';
+    var famNote = document.getElementById('renew-family-note');
+    if (famNote) famNote.style.display = nonPaying ? 'flex' : 'none';
+    var renewIntro = document.getElementById('renew-intro');
+    if (renewIntro && nonPaying){
+      renewIntro.textContent = 'Your membership is covered by a household membership, so there is nothing for you to pay. Ask the committee if you think this is wrong.';
+    }
+    document.querySelectorAll('#renew-open-btn, #fab-renew').forEach(function(b){
+      b.style.display = nonPaying ? 'none' : '';
+    });
   }
   // ===== Live Supabase wiring: roles, club news, members directory, profile save =====
   var IS_ADMIN = !!(window.currentMember && window.currentMember.role === 'admin');
@@ -5210,7 +5321,8 @@ window.initPortal = function(){
     if (noteEl){
       noteEl.textContent = (row.role === 'admin')
         ? 'This member is on the committee — committee members are always Full.'
-        : 'Currently ' + MEMBER_TYPES[key].pill + ' · ' + fmtRand(MEMBER_TYPES[key].fee) + ' a year.';
+        : 'Currently ' + MEMBER_TYPES[key].pill + ' · ' +
+          (MEMBER_TYPES[key].fee ? fmtRand(MEMBER_TYPES[key].fee) + ' a year.' : 'no fee — covered by a household membership.');
     }
   }
   var mtMemberSel = document.getElementById('mt-member');
@@ -5232,7 +5344,9 @@ window.initPortal = function(){
     if (res.error){ popToast('Could not save — try again'); return; }
     popToast('Membership type set to ' + MEMBER_TYPES[newType].pill);
     pushNotification('renewal', 'Your membership type changed',
-      'You are now recorded as a ' + MEMBER_TYPES[newType].pill + ' — ' + fmtRand(MEMBER_TYPES[newType].fee) + ' a year.', memberId);
+      'You are now recorded as a ' + MEMBER_TYPES[newType].pill + ' — ' +
+      (MEMBER_TYPES[newType].fee ? fmtRand(MEMBER_TYPES[newType].fee) + ' a year.'
+                                 : 'no fee is payable, as a household membership covers you.'), memberId);
     // If the admin changed their own tier, refresh their card, role line and renewal amount.
     if (window.currentMember && String(memberId) === String(window.currentMember.id)){
       window.currentMember.membership_type = newType;
