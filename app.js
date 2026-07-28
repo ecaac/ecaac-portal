@@ -75,6 +75,7 @@ window.initPortal = function(){
     if (id === 'admin' && typeof loadAdminAwardQueue === 'function') loadAdminAwardQueue();
     if (id === 'admin' && typeof loadEvents === 'function') loadEvents();
     if (id === 'admin' && typeof loadAdminAuctionList === 'function') loadAdminAuctionList();
+    if (id === 'admin' && typeof loadAdminRenewals === 'function') loadAdminRenewals();
     if ((id === 'tanks' || id === 'dashboard') && typeof loadTanksFromDB === 'function') loadTanksFromDB();
     if (id === 'notifications' && typeof window.loadNotifications === 'function') window.loadNotifications();
     sidebar.classList.remove('open'); scrim.classList.remove('show');
@@ -1194,14 +1195,6 @@ window.initPortal = function(){
   })();
   document.getElementById('renew-copy-ref').addEventListener('click', function(){
     copyText(document.getElementById('renew-ref').textContent, this);
-  });
-  document.getElementById('renew-mark-paid').addEventListener('click', function(){
-    document.getElementById('renew-actions').style.display = 'none';
-    document.getElementById('renew-confirmed').style.display = 'flex';
-    document.querySelectorAll('#renew-open-btn, #fab-renew').forEach(function(b){
-      b.textContent = b.id === 'fab-renew' ? 'Renewal submitted ✓' : 'Renewal submitted — awaiting confirmation';
-    });
-    popToast('Payment marked — the treasurer will confirm your renewal shortly');
   });
 
   // esc closes the new modals too
@@ -2589,7 +2582,7 @@ window.initPortal = function(){
       var isCover = t.cover_photo_id === p.id;
       return '<div class="photo-tile' + (isCover ? ' is-cover' : '') + '" data-photo-id="' + p.id + '">' +
         '<img src="' + escT(p.url) + '" alt="Photo of ' + escT(t.name) + '" loading="lazy">' +
-        '<button class="photo-cover-btn" data-photo-id3="' + p.id + '" aria-label="' + (isCover ? 'Remove as card image' : 'Use as card image') + '"><svg viewBox="0 0 24 24" fill="' + (isCover ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2"><path d="M12 2 15 8 22 9 17 14 18 21 12 17.5 6 21 7 14 2 9 9 8 12 2Z"/></svg>' + (isCover ? 'Cover' : 'Set cover') + '</button>' +
+        '<button class="photo-cover-btn" data-photo-id3="' + p.id + '" aria-label="' + (isCover ? 'Remove as card image' : 'Use as card image') + '"><svg viewBox="0 0 24 24" fill="' + (isCover ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2"><path d="M12 2 15 8 22 9 17 14 18 21 12 17.5 6 21 7 14 2 9 9 8 12 2Z"/></svg>' + (isCover ? 'Cover photo' : 'Set as cover') + '</button>' +
         '<button class="photo-rm" data-photo-id2="' + p.id + '" aria-label="Delete photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
       '</div>';
     }).join('');
@@ -3965,6 +3958,279 @@ window.initPortal = function(){
       }
     }, 500);
   };
+
+  // ===== Membership renewal: member claims, committee confirms =====
+  //
+  // Two separate facts, deliberately. A row in renewal_payments is the member
+  // saying "I've paid"; members.renewal_date only moves when the treasurer has
+  // matched it against the bank statement. The old "I've paid" button did neither
+  // — it hid itself, showed a green tick, promised the treasurer would confirm
+  // shortly, and wrote nothing anywhere. A reload undid it and no committee member
+  // ever saw it.
+  var myRenewalClaim = null;        // the current year's claim, if any
+  var renewClaiming = false;
+
+  // The membership year a payment is for: the same year feesDueYear() reports as
+  // next due, so a claim in January counts toward that February's fees.
+  function renewalForYear(){ return feesDueYear(); }
+
+  function renewalDueDateFor(year){ return year + '-02-28'; }
+
+  async function loadMyRenewalClaim(){
+    if (!sb || !window.currentMember) return;
+    if (isNonPaying(window.currentMember.membership_type)) { myRenewalClaim = null; applyRenewClaimUI(); return; }
+    var res = await sb.from('renewal_payments')
+      .select('*')
+      .eq('member_id', window.currentMember.id)
+      .eq('for_year', renewalForYear())
+      .order('claimed_at', { ascending: false })
+      .limit(1);
+    // A failed read must not make an existing claim look absent — that's how the
+    // member ends up paying twice.
+    if (res.error) return;
+    myRenewalClaim = (res.data || [])[0] || null;
+    applyRenewClaimUI();
+  }
+
+  // Reflects the claim in the modal and on both Renew buttons. Called after load
+  // and after a claim, so the state survives a reload.
+  function applyRenewClaimUI(){
+    var actions = document.getElementById('renew-actions');
+    var confirmed = document.getElementById('renew-confirmed');
+    var claimNote = document.getElementById('renew-claim-note');
+    var nonPaying = window.currentMember && isNonPaying(window.currentMember.membership_type);
+    if (nonPaying) return;   // the family-member branch in applyLiveMember owns this
+
+    var st = myRenewalClaim ? myRenewalClaim.status : null;
+    var pending = st === 'pending';
+    var done = st === 'confirmed';
+
+    if (actions) actions.style.display = (pending || done) ? 'none' : 'flex';
+    if (confirmed){
+      confirmed.style.display = pending ? 'flex' : 'none';
+    }
+    if (claimNote){
+      if (done){
+        claimNote.textContent = 'Renewal confirmed by the committee for ' + renewalForYear() + '. Nothing further to do.';
+        claimNote.style.display = 'block';
+      } else if (st === 'rejected'){
+        claimNote.textContent = 'The committee couldn\u2019t match this payment' +
+          (myRenewalClaim.review_note ? ' \u2014 ' + myRenewalClaim.review_note : '') +
+          '. Check the reference and mark it paid again, or speak to the treasurer.';
+        claimNote.style.display = 'block';
+      } else {
+        claimNote.style.display = 'none';
+      }
+    }
+
+    document.querySelectorAll('#renew-open-btn, #fab-renew').forEach(function(b){
+      if (b.style.display === 'none') return;      // hidden for family members
+      if (done) b.textContent = b.id === 'fab-renew' ? 'Renewal confirmed \u2713' : 'Renewal confirmed for ' + renewalForYear();
+      else if (pending) b.textContent = b.id === 'fab-renew' ? 'Renewal submitted \u2713' : 'Renewal submitted \u2014 awaiting confirmation';
+      else b.textContent = b.id === 'fab-renew' ? 'Renew membership' : 'Renew membership';
+    });
+  }
+
+  var renewMarkPaidBtn = document.getElementById('renew-mark-paid');
+  if (renewMarkPaidBtn) renewMarkPaidBtn.addEventListener('click', async function(){
+    if (renewClaiming) return;
+
+    // Demo mode keeps the original optimistic behaviour — there's no database to
+    // write to and nobody to confirm it.
+    if (!sb || !window.currentMember){
+      document.getElementById('renew-actions').style.display = 'none';
+      document.getElementById('renew-confirmed').style.display = 'flex';
+      popToast('Payment marked \u2014 the treasurer will confirm your renewal shortly');
+      return;
+    }
+
+    renewClaiming = true;
+    renewMarkPaidBtn.disabled = true;
+    var label = renewMarkPaidBtn.textContent;
+    renewMarkPaidBtn.textContent = 'Submitting\u2026';
+
+    var year = renewalForYear();
+    var res = await sb.from('renewal_payments').insert({
+      member_id: window.currentMember.id,
+      amount: memberFee(window.currentMember.membership_type),
+      for_year: year,
+      reference: member.number,
+      status: 'pending'
+    }).select().single();
+
+    renewClaiming = false;
+    renewMarkPaidBtn.disabled = false;
+    renewMarkPaidBtn.textContent = label;
+
+    if (res.error){
+      // The partial unique index means a second claim for the same year is a
+      // duplicate, not a failure — the member already told us, possibly from
+      // another device. Show them that rather than an error.
+      if (String(res.error.code) === '23505'){
+        await loadMyRenewalClaim();
+        popToast('You\u2019ve already marked this year\u2019s fees as paid');
+        return;
+      }
+      popToast('Could not submit \u2014 try again, or tell the treasurer directly');
+      return;
+    }
+
+    myRenewalClaim = res.data || null;
+    applyRenewClaimUI();
+    popToast('Payment marked \u2014 the treasurer will confirm your renewal shortly');
+    pushNotification('renewal', 'Renewal payment submitted',
+      'You marked your ' + year + ' fees as paid (' + fmtRand(memberFee(window.currentMember.membership_type)) +
+      ', reference ' + member.number + '). The treasurer will confirm it against the bank statement.',
+      window.currentMember.id);
+    loadAdminRenewals();
+  });
+
+  // ===== Admin: the renewal queue =====
+  var RENEW_HISTORY_LIMIT = 15;
+
+  function renewRowName(r){
+    return r.members
+      ? (((r.members.first_name || '') + ' ' + (r.members.last_name || '')).trim() || 'ECAAC member')
+      : 'ECAAC member';
+  }
+
+  function renewPendingRowHtml(r){
+    var when = r.claimed_at ? new Date(r.claimed_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short' }) : '';
+    return '<div class="row renew-review-row" data-renew-id="' + r.id + '">' +
+      '<div class="row-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></div>' +
+      '<div class="row-body"><b>' + escT(renewRowName(r)) + ' \u00B7 ' + fmtRand(r.amount || 0) + '</b>' +
+      '<span>' + r.for_year + ' fees \u00B7 reference ' + escT(r.reference || '\u2014') + ' \u00B7 claimed ' + when + '</span></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button class="btn btn-primary btn-sm" data-renew-ok="' + r.id + '">Confirm</button>' +
+        '<button class="btn btn-outline btn-sm" data-renew-no="' + r.id + '">Reject</button>' +
+      '</div></div>';
+  }
+
+  function renewReviewedRowHtml(r){
+    var ok = r.status === 'confirmed';
+    var when = r.reviewed_at ? new Date(r.reviewed_at).toLocaleDateString('en-ZA', { day:'numeric', month:'short' }) : '';
+    return '<div class="row"><div class="row-body"><b>' + escT(renewRowName(r)) + ' \u00B7 ' + fmtRand(r.amount || 0) + '</b>' +
+      '<span>' + r.for_year + ' \u00B7 ' + (ok ? 'confirmed' : 'rejected') + (when ? ' ' + when : '') +
+      (r.review_note ? ' \u00B7 ' + escT(r.review_note) : '') + '</span></div>' +
+      '<span class="badge ' + (ok ? 'ok' : 'warn') + '">' + (ok ? 'Confirmed' : 'Rejected') + '</span></div>';
+  }
+
+  async function loadAdminRenewals(){
+    if (!sb || !IS_ADMIN) return;
+    var list = document.getElementById('admin-renew-list');
+    var countEl = document.getElementById('admin-renew-count');
+    if (!list) return;
+
+    var pendRes = await sb.from('renewal_payments')
+      .select('*, members!member_id(first_name,last_name)')
+      .eq('status', 'pending')
+      .order('claimed_at', { ascending: true });
+    var histRes = await sb.from('renewal_payments')
+      .select('*, members!member_id(first_name,last_name)')
+      .in('status', ['confirmed', 'rejected'])
+      .order('reviewed_at', { ascending: false, nullsFirst: false })
+      .limit(RENEW_HISTORY_LIMIT);
+
+    if (pendRes.error){
+      if (countEl) countEl.textContent = '';
+      list.innerHTML = '<div class="reg-empty" style="padding:20px">Couldn\u2019t load the renewal queue \u2014 reload the page to try again.</div>';
+      return;
+    }
+    var pending = pendRes.data || [];
+    var reviewed = histRes.error ? [] : (histRes.data || []);
+    if (countEl) countEl.textContent = pending.length + ' awaiting confirmation';
+
+    var html = pending.length
+      ? pending.map(renewPendingRowHtml).join('')
+      : '<div class="reg-empty" style="padding:20px">No payments waiting to be confirmed.</div>';
+    if (reviewed.length){
+      html += '<div class="row" style="background:var(--sand)"><div class="row-body">' +
+        '<b>Recently reviewed</b><span>Last ' + reviewed.length + ' decision' + (reviewed.length === 1 ? '' : 's') + '.</span></div></div>';
+      html += reviewed.map(renewReviewedRowHtml).join('');
+    }
+    list.innerHTML = html;
+
+    var byId = {};
+    pending.forEach(function(r){ byId[r.id] = r; });
+
+    list.querySelectorAll('[data-renew-ok]').forEach(function(b){
+      b.addEventListener('click', function(){ reviewRenewal(byId[b.getAttribute('data-renew-ok')], true, b); });
+    });
+    list.querySelectorAll('[data-renew-no]').forEach(function(b){
+      b.addEventListener('click', function(){ reviewRenewal(byId[b.getAttribute('data-renew-no')], false, b); });
+    });
+  }
+
+  var renewReviewing = false;
+  async function reviewRenewal(row, approve, btn){
+    if (!row || renewReviewing || !sb || !IS_ADMIN) return;
+
+    var note = null;
+    if (!approve){
+      note = window.prompt('Why couldn\u2019t this payment be matched? The member sees this.', '');
+      if (note === null) return;             // cancelled
+      note = note.trim() || null;
+    }
+
+    renewReviewing = true;
+    var label = btn ? btn.textContent : '';
+    if (btn){ btn.disabled = true; btn.textContent = approve ? 'Confirming\u2026' : 'Rejecting\u2026'; }
+
+    var res = await sb.from('renewal_payments').update({
+      status: approve ? 'confirmed' : 'rejected',
+      reviewed_at: new Date().toISOString(),
+      reviewed_by: window.currentMember ? window.currentMember.id : null,
+      review_note: note
+    }).eq('id', row.id);
+
+    if (res.error){
+      renewReviewing = false;
+      if (btn){ btn.disabled = false; btn.textContent = label; }
+      popToast('Could not save that decision \u2014 try again');
+      return;
+    }
+
+    // The claim is now decided. Moving the member's renewal date is a second
+    // write, and it's the one that actually matters, so a failure here is
+    // reported rather than swallowed — otherwise the queue would look handled
+    // while the membership stayed lapsed.
+    var memberFailed = false;
+    if (approve){
+      var mRes = await sb.from('members').update({
+        renewal_date: renewalDueDateFor(row.for_year + 1),
+        status: 'active'
+      }).eq('id', row.member_id);
+      memberFailed = !!mRes.error;
+    }
+
+    renewReviewing = false;
+    if (btn){ btn.disabled = false; btn.textContent = label; }
+
+    pushNotification('renewal',
+      approve ? 'Renewal confirmed' : 'Renewal payment not matched',
+      approve
+        ? 'The treasurer confirmed your ' + row.for_year + ' membership fees. Your membership is active until end February ' + (row.for_year + 1) + '.'
+        : 'The committee couldn\u2019t match your ' + row.for_year + ' payment' + (note ? ' \u2014 ' + note : '') + '. Check the reference and mark it paid again, or speak to the treasurer.',
+      row.member_id);
+
+    popToast(approve
+      ? (memberFailed
+          ? 'Payment confirmed, but the member\u2019s renewal date didn\u2019t save \u2014 set it manually'
+          : 'Renewal confirmed for ' + renewRowName(row))
+      : 'Payment rejected \u2014 the member has been told why');
+
+    // If the treasurer confirmed their own payment, refresh their own card.
+    if (window.currentMember && String(row.member_id) === String(window.currentMember.id)){
+      if (approve){
+        window.currentMember.renewal_date = renewalDueDateFor(row.for_year + 1);
+        window.currentMember.status = 'active';
+        applyLiveMember();
+      }
+      loadMyRenewalClaim();
+    }
+    loadAdminRenewals();
+    loadLiveMembers();
+  }
 
   // ===== Member Aquariums (club-wide directory) =====
   var MA_AVATAR_GRADS = ['linear-gradient(135deg,var(--deep),var(--leaf))','linear-gradient(135deg,var(--leaf),var(--leaf-dark))','linear-gradient(135deg,var(--deep-2),var(--deep))','linear-gradient(135deg,var(--leaf-dark),var(--deep))','linear-gradient(135deg,var(--deep),var(--deep-3))','linear-gradient(135deg,var(--coral),var(--coral-dark))'];
@@ -6133,7 +6399,7 @@ window.initPortal = function(){
       'If this wasn\u2019t you, contact the committee straight away.', window.currentMember.id);
   });
 
-  if (window.currentMember) { loadLiveMembers(); loadNews(); loadDocuments(); loadTanksFromDB(); loadOtherMemberTanks(); loadTankLikes(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); loadBreederListings(); }
+  if (window.currentMember) { loadLiveMembers(); loadNews(); loadDocuments(); loadMyRenewalClaim(); loadAdminRenewals(); loadTanksFromDB(); loadOtherMemberTanks(); loadTankLikes(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); loadBreederListings(); }
 
   applyLiveMember();
 
