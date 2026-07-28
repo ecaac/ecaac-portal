@@ -3261,10 +3261,13 @@ window.initPortal = function(){
     { label:'Notifications', view:'notifications', cat:'Page' },
     { label:'Settings', view:'settings', cat:'Page' }
   ];
-  var DOC_TITLES = [
-    'Meeting minutes — July 2026', 'Club constitution', 'Award program rules — 2026 edition',
-    'Certificate — AAP 2nd place, Spring 2026', 'Newsletter — Winter 2026', 'Expo 2027 volunteer pack'
-  ];
+  // Documents in the search index come from whatever the committee has actually
+  // uploaded. This was a frozen list of the sample rows that used to be hardcoded
+  // into the Documents page — searching "constitution" found a document that no
+  // longer existed and dropped the member on a page that didn't list it.
+  function searchableDocs(){
+    return (typeof docRowsCache !== 'undefined' && docRowsCache) ? docRowsCache : [];
+  }
 
   function buildSearchIndex(){
     var idx = NAV_PAGES.map(function(p){
@@ -3282,8 +3285,8 @@ window.initPortal = function(){
         }});
       });
     });
-    DOC_TITLES.forEach(function(d){
-      idx.push({ label:d, sub:'Document', icon:'doc', action:function(){ show('documents'); } });
+    searchableDocs().forEach(function(d){
+      idx.push({ label:d.title, sub:d.category || 'Document', icon:'doc', action:function(){ show('documents'); } });
     });
     DIR.forEach(function(m){
       idx.push({ label:m.name, sub:m.committee ? 'Committee · ' + m.role : 'Member', icon:'person', action:function(){
