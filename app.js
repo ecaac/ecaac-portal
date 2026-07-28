@@ -1435,12 +1435,16 @@ window.initPortal = function(){
   // reports as unknown rather than a misleading zero.
   async function loadMemberStanding(memberId){
     var res = { awardPoints:0, programPoints:{ BAP:0, HAP:0, AAP:0, SBP:0 }, entryCount:0,
-                meetings:0, auctionValue:0, tankCount:0, failed:[] };
+                meetings:0, auctionValue:0, auctionsSold:0, registerEver:0, tankCount:0, failed:[] };
     if (!sb || !memberId) return res;
     var out = await Promise.all([
       sb.from('award_entries').select('program,points,status').eq('member_id', memberId).eq('status', 'approved'),
       sb.from('event_attendance').select('id').eq('member_id', memberId),
-      sb.from('auction_lots').select('amount').eq('member_id', memberId)
+      // `role` added so the drawer can count lots sold, not just their value.
+      sb.from('auction_lots').select('amount,role').eq('member_id', memberId),
+      // Every listing ever added, soft-deleted ones included — see the comment on
+      // the register category in badgeCatsFrom.
+      sb.from('breeder_listings').select('id', { count:'exact', head:true }).eq('member_id', memberId)
     ].map(function(p){ return Promise.resolve(p).then(function(r){ return r; }, function(err){ return { error: err }; }); }));
     if (out[0] && !out[0].error){
       (out[0].data || []).forEach(function(r){
@@ -1450,8 +1454,12 @@ window.initPortal = function(){
       });
     } else res.failed.push('awards');
     if (out[1] && !out[1].error) res.meetings = (out[1].data || []).length; else res.failed.push('meetings');
-    if (out[2] && !out[2].error) res.auctionValue = (out[2].data || []).reduce(function(s, r){ return s + Number(r.amount || 0); }, 0);
-    else res.failed.push('auctions');
+    if (out[2] && !out[2].error){
+      res.auctionValue = (out[2].data || []).reduce(function(s, r){ return s + Number(r.amount || 0); }, 0);
+      res.auctionsSold = (out[2].data || []).filter(function(r){ return r.role === 'Sold'; }).length;
+    } else res.failed.push('auctions');
+    if (out[3] && !out[3].error) res.registerEver = out[3].count || 0;
+    else res.failed.push('register');
     // Tank count comes from data already in memory — no extra round trip.
     if (window.currentMember && memberId === window.currentMember.id) res.tankCount = tanks.length;
     else res.tankCount = (otherMemberTanks || []).filter(function(t){ return t.ownerId === memberId || t.owner_id === memberId; }).length;
@@ -1462,7 +1470,8 @@ window.initPortal = function(){
     var tenure = joinDate ? Math.max(0, new Date().getFullYear() - new Date(joinDate).getFullYear()) : 0;
     var cats = badgeCatsFrom({
       meetings: stats.meetings, auctionValue: stats.auctionValue, awardPoints: stats.awardPoints,
-      tankCount: stats.tankCount, tenureYears: tenure
+      tankCount: stats.tankCount, tenureYears: tenure,
+      awardEntries: stats.entryCount, auctionsSold: stats.auctionsSold, registerEver: stats.registerEver
     });
     var highest = -1, earned = 0, badges = [];
     cats.forEach(function(cat){
@@ -1687,6 +1696,11 @@ window.initPortal = function(){
   // BREG is the single array the table renders from. In demo mode it holds the
   // sample data; in live mode it is filled from breeder_listings below, so all the
   // existing filter, sort and render code above works unchanged.
+  // Every listing this member has ever added, soft-deleted ones included. Feeds
+  // the Register Contributions badge; see badgeCatsFrom for why it isn't a live
+  // count.
+  var myRegisterEver = 0;
+
   function blRowToReg(r){
     var nm = r.members
       ? ((r.members.first_name || '') + ' ' + (r.members.last_name || '')).trim()
@@ -1720,10 +1734,28 @@ window.initPortal = function(){
     }
     regError = false;
     BREG.length = 0;
-    (res.data || []).forEach(function(r){ BREG.push(blRowToReg(r)); });
+    // Soft-deleted rows are filtered here rather than in the query: r.deleted_at
+    // is simply undefined on a database that hasn't had the migration applied
+    // yet, so this behaves correctly either way and the register can't break on a
+    // deploy-order mistake.
+    (res.data || []).forEach(function(r){ if (!r.deleted_at) BREG.push(blRowToReg(r)); });
     renderRegStats();
     renderReg();
     renderMyListings();
+    loadMyRegisterEver();
+  }
+
+  // Counted with a separate head request rather than off BREG, which holds only
+  // live rows. No deleted_at filter, so it counts every listing ever added.
+  async function loadMyRegisterEver(){
+    if (!sb || !window.currentMember) return;
+    var res = await sb.from('breeder_listings')
+      .select('id', { count:'exact', head:true })
+      .eq('member_id', window.currentMember.id);
+    if (res.error) return; // leave the previous figure rather than zeroing a badge
+    myRegisterEver = res.count || 0;
+    if (window.checkBadgeChanges) window.checkBadgeChanges();
+    if (typeof renderBadgeCategories === 'function') renderBadgeCategories();
   }
 
   function renderMyListings(){
@@ -1768,12 +1800,30 @@ window.initPortal = function(){
     list.querySelectorAll('[data-bl-id]').forEach(function(b){
       b.addEventListener('click', async function(){
         b.disabled = true;
-        var res = await dbDeleteRow('breeder_listings', b.getAttribute('data-bl-id'));
+        var res = await blRemoveListing(b.getAttribute('data-bl-id'));
         if (res && res.error){ b.disabled = false; popToast('Could not remove that listing'); return; }
         popToast('Listing removed');
         loadBreederListings();
       });
     });
+  }
+
+  // Removing a listing is a soft delete, so the Register Contributions badge
+  // counts contributions rather than current inventory. Two things can stop the
+  // update landing — the deleted_at column not being migrated yet, or no UPDATE
+  // policy on the table, which RLS reports as success with zero rows affected —
+  // so both fall back to a real delete. The member's listing always disappears;
+  // only the history is lost, and the console says why.
+  async function blRemoveListing(id){
+    if (!sb) return { error: null };
+    var res = await sb.from('breeder_listings')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('id');
+    if (!res.error && res.data && res.data.length) return res;
+    console.warn('Soft delete unavailable on breeder_listings, falling back to delete.',
+      res.error || 'update affected no rows (check the UPDATE policy)');
+    return await dbDeleteRow('breeder_listings', id);
   }
 
   // FAB shortcut: jump to the register and put the cursor in the species field.
@@ -3371,6 +3421,9 @@ window.initPortal = function(){
     gavel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg>',
     trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/></svg>',
     fish: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg>',
+    rosette: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="9" r="6"/><path d="M9.5 14.5 8 22l4-2.2L16 22l-1.5-7.5"/></svg>',
+    tag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 12 22l-9-9 8.6-8.6a2 2 0 0 1 1.4-.6H20a2 2 0 0 1 2 2v6.2a2 2 0 0 1-.6 1.4Z"/><circle cx="17" cy="7" r="1.2"/></svg>',
+    shell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21a9 9 0 0 0 9-9 9 9 0 0 0-18 0 9 9 0 0 0 9 9Z"/><path d="M12 21V3M12 21c-2.5-3-4-6-4-9M12 21c2.5-3 4-6 4-9"/></svg>',
     star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 15 8 22 9 17 14 18 21 12 17.5 6 21 7 14 2 9 9 8 12 2Z"/></svg>',
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>',
     lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
@@ -3387,6 +3440,20 @@ window.initPortal = function(){
         noun:'in auction trade', tiers:[500, 1500, 2500, 5000] },
       { id:'awards', label:'Award Program Points', icon:'trophy', unit:'points earned', unit1:'point earned', value:stats.awardPoints,
         noun:'points', noun1:'point', tiers:[50, 100, 200, 400] },
+      // Points reward one strong result; this rewards turning up repeatedly. A
+      // member with a dozen modest spawns and one with a single big haul used to
+      // look identical.
+      { id:'entries', label:'Award Entries', icon:'rosette', unit:'entries approved', unit1:'entry approved', value:stats.awardEntries || 0,
+        noun:'approved entries', noun1:'approved entry', tiers:[3, 10, 25, 50] },
+      // Auction Trading sums rands, so a heavy buyer outranks a steady supplier.
+      // This counts lots actually contributed to the club's auctions.
+      { id:'lots', label:'Auction Lots Sold', icon:'tag', unit:'lots sold at auction', unit1:'lot sold at auction', value:stats.auctionsSold || 0,
+        noun:'lots sold', noun1:'lot sold', tiers:[1, 5, 15, 30] },
+      // Counts listings ever added, not listings currently live: tierProgress
+      // recomputes from scratch every render, so a live count would un-earn a
+      // badge the moment someone tidied up their register entries.
+      { id:'register', label:'Register Contributions', icon:'shell', unit:'listings added to the register', unit1:'listing added to the register', value:stats.registerEver || 0,
+        noun:'listings', noun1:'listing', tiers:[1, 3, 6, 12] },
       { id:'aquariums', label:'Aquarium Collection', icon:'fish', unit:'active aquariums', unit1:'active aquarium', value:stats.tankCount,
         noun:'aquariums', noun1:'aquarium', tiers:[1, 5, 10, 15] },
       { id:'tenure', label:'Membership Tenure', icon:'star', unit:'years as a member', unit1:'year as a member', value:stats.tenureYears,
@@ -3415,6 +3482,9 @@ window.initPortal = function(){
           tenureYears: tenureYearsFrom(window.currentMember.join_date)
         }
       : { meetings: 71, awardPoints: 245, tenureYears: 8 };
+    // Lots sold comes straight off AUCTIONS, which already carries `role` in both
+    // demo and live mode — no extra query.
+    var soldCount = AUCTIONS.filter(function(a){ return a.role === 'Sold'; }).length;
     return badgeCatsFrom({
       meetings: stats.meetings,
       auctionValue: auctionValue,
@@ -3423,7 +3493,10 @@ window.initPortal = function(){
       // dashboard, which filters archived tanks out. Counting them made archiving
       // a tank leave the Aquarium Collection tier untouched.
       tankCount: tanks.filter(function(t){ return !t.archived; }).length,
-      tenureYears: stats.tenureYears
+      tenureYears: stats.tenureYears,
+      awardEntries: window.currentMember ? myApprovedEntries : 3,
+      auctionsSold: soldCount,
+      registerEver: window.currentMember ? myRegisterEver : 6
     });
   }
 
@@ -5469,6 +5542,9 @@ window.initPortal = function(){
 
   // ===== Award entries: member's own list + admin approval queue =====
   var myApprovedPoints = 0;
+  // Feeds the Award Entries badge category. Approved only, to match the points
+  // total — a pending entry is not an achievement yet.
+  var myApprovedEntries = 0;
   var myEntryRows = [];                       // raw rows, kept so tanks can be re-linked at any time
   var myProgramPoints = { BAP:0, HAP:0, AAP:0, SBP:0 };
   var mySbpSpecies = 0;                       // distinct approved species under the Specialist Breeder program
@@ -5591,6 +5667,7 @@ window.initPortal = function(){
     var rows = res.data || [];
     myEntryRows = rows;
     myApprovedPoints = rows.reduce(function(sum, r){ return sum + (r.status === 'approved' ? (r.points || 0) : 0); }, 0);
+    myApprovedEntries = rows.filter(function(r){ return r.status === 'approved'; }).length;
 
     myProgramPoints = { BAP:0, HAP:0, AAP:0, SBP:0 };
     var sbpSeen = {};
