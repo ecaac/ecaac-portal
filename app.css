@@ -1093,3 +1093,93 @@ select:disabled{opacity:.55;cursor:not-allowed;background-color:var(--sand)}
 .side-nav::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.32);background-clip:padding-box}
 /* Removes the stepper arrows Windows puts at each end of the track. */
 ::-webkit-scrollbar-button{display:none;width:0;height:0}
+/* The dark sidebar needs the opposite treatment. */
+.side-nav{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.20) transparent}
+.side-nav::-webkit-scrollbar{width:8px}
+.side-nav::-webkit-scrollbar-track{background:transparent}
+.side-nav::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,0.18);border-radius:999px;
+  border:2px solid transparent;background-clip:padding-box}
+.side-nav::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.32);background-clip:padding-box}
+/* Removes the stepper arrows Windows puts at each end of the track. */
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+
+/* ===== Breeding Hub =========================================================
+   Additive only — nothing above this line is touched. Everything is namespaced
+   under .bp-*, and every colour comes from the existing :root palette so the
+   hub reads as part of the Breeders Register page it sits on rather than a
+   bolted-on module. The .badge-pop .bp-* rules further up are scoped to their
+   parent and do not collide with any of these.
+   ========================================================================== */
+
+#bp-mine-panel .stat-grid{margin-bottom:20px}
+.bp-mine-cols{gap:20px}
+.bp-sub{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 10px}
+.bp-rows{box-shadow:none;border:1px solid #F0EADB}
+
+/* status pill — one shape, three tones, so a glance down the page tells you
+   what is alive, what finished and what didn't work out */
+.bp-pill{display:inline-flex;align-items:center;font-size:11px;font-weight:800;letter-spacing:.03em;
+  text-transform:uppercase;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.bp-pill-live{background:rgba(53,173,81,0.12);color:var(--teal-dark)}
+.bp-pill-done{background:rgba(217,164,65,0.16);color:var(--gold-dark)}
+.bp-pill-fail{background:rgba(232,131,106,0.16);color:var(--coral-dark)}
+
+/* ----- project cards (reuse .tank-card's grid, restyle the interior) ----- */
+.bp-card{cursor:pointer;overflow:hidden;display:flex;flex-direction:column}
+.bp-card:focus-visible{outline:2px solid var(--leaf);outline-offset:2px}
+.bp-card-cover{height:132px;background-size:cover;background-position:center;position:relative;
+  display:flex;align-items:flex-start;justify-content:flex-end;padding:10px}
+.bp-card-cover-empty{background:linear-gradient(135deg,var(--deep-2),var(--deep))}
+.bp-card-cover .bp-pill{background:rgba(255,255,255,0.94);box-shadow:0 2px 8px -2px rgba(13,16,38,.35)}
+.bp-card-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:5px;flex:1}
+.bp-card-body h4{font-size:16.5px;line-height:1.25}
+.bp-card-owner{font-size:12.5px;font-weight:700;color:var(--ink-soft);margin:0}
+.bp-card-line{font-size:13px;color:var(--ink-soft);margin:2px 0 0;line-height:1.45;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bp-card-foot{display:flex;align-items:center;gap:12px;margin-top:auto;padding-top:10px}
+.bp-follow-count{font-size:12px;font-weight:700;color:var(--ink-soft)}
+
+.bp-row{cursor:pointer}
+.bp-row:hover{background:var(--sand)}
+.bp-row:focus-visible{outline:2px solid var(--leaf);outline-offset:-2px}
+
+/* ----- project detail ----- */
+.bp-detail-head{margin-bottom:6px}
+.bp-hero{height:240px;border-radius:18px;background-size:cover;background-position:center;
+  box-shadow:0 10px 30px -18px rgba(13,16,38,.55)}
+.bp-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:18px 0 24px}
+.bp-notes p{font-size:14px;line-height:1.6;color:var(--ink-soft);margin:8px 0 0}
+
+/* ----- timeline: the spine of the whole feature ----- */
+.bp-timeline{list-style:none;margin:14px 0 0;padding:0;position:relative}
+.bp-timeline:before{content:'';position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:var(--sand-line)}
+.bp-tl-item{position:relative;padding:0 0 22px 30px}
+.bp-tl-item:last-child{padding-bottom:0}
+.bp-tl-dot{position:absolute;left:0;top:5px;width:14px;height:14px;border-radius:50%;
+  background:var(--leaf);border:3px solid var(--paper);box-shadow:0 0 0 2px var(--leaf-light)}
+.bp-tl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bp-tl-head b{font-size:14px;color:var(--deep)}
+.bp-tl-body p{font-size:13.5px;line-height:1.55;color:var(--ink-soft);margin:6px 0 0}
+.bp-tl-photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.bp-tl-photo{width:96px;height:96px;object-fit:cover;border-radius:10px;cursor:pointer;
+  border:1px solid var(--sand-line)}
+.bp-tl-del{margin-left:auto;border:none;background:none;color:var(--ink-soft);font-size:19px;
+  line-height:1;cursor:pointer;padding:0 4px;border-radius:6px}
+.bp-tl-del:hover{color:var(--coral-dark);background:rgba(232,131,106,0.1)}
+
+/* ----- lessons learned ----- */
+.bp-lessons h4{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--leaf-dark);margin:16px 0 4px}
+.bp-lessons p{font-size:13.5px;line-height:1.6;color:var(--ink-soft);margin:0}
+.bp-lesson-block{padding:14px 0;border-bottom:1px solid #F0EADB}
+.bp-lesson-block:last-child{border-bottom:none}
+.bp-lesson-block h4{font-size:14.5px;margin:0 0 8px}
+.bp-lesson-block p{font-size:13.5px;line-height:1.6;color:var(--ink-soft);margin:0 0 6px}
+
+.bp-modal-foot{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.bp-danger{color:var(--coral-dark);border-color:var(--coral)}
+
+@media (max-width:900px){
+  .bp-hero{height:180px}
+}

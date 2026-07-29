@@ -67,6 +67,11 @@ window.initPortal = function(){
     if (id === 'tank-detail') {
       links.forEach(function(l){ l.classList.toggle('active', l.getAttribute('data-view') === 'tanks'); });
     }
+    // A project journal and a species page are both reached from the Breeding
+    // Hub, so they keep that nav item lit - same reasoning as tank-detail.
+    if (id === 'breeding-project' || id === 'species') {
+      links.forEach(function(l){ l.classList.toggle('active', l.getAttribute('data-view') === 'breeding-hub'); });
+    }
     // The Awards page shows an earned-badge count and badge strip fed by the same
     // computation, so it needs this too — it previously only ran on the Badges view,
     // leaving the Awards card stuck on its login placeholder.
@@ -77,6 +82,7 @@ window.initPortal = function(){
     if (id === 'admin' && typeof loadAdminAuctionList === 'function') loadAdminAuctionList();
     if ((id === 'tanks' || id === 'dashboard') && typeof loadTanksFromDB === 'function') loadTanksFromDB();
     if (id === 'notifications' && typeof window.loadNotifications === 'function') window.loadNotifications();
+    if ((id === 'my-breeding' || id === 'breeding-hub') && typeof window.renderBreedingAll === 'function') window.renderBreedingAll();
     sidebar.classList.remove('open'); scrim.classList.remove('show');
     window.scrollTo({top:0, behavior:'smooth'});
     // Last, deliberately: pushRoute reads currentTank for the tank-detail URL, and
@@ -106,6 +112,20 @@ window.initPortal = function(){
   var suppressPush = false;  // true while restoring a view from history
   var pendingTankKey = null; // a tank deep-linked before the tanks array had loaded
 
+  // Detail views beyond tank-detail register themselves here rather than each
+  // one adding another branch to routeFor/parseHash/applyRoute. A registration
+  // is { slug, fallback, key(), open(key) }:
+  //   slug     - the URL segment, e.g. 'breeding' for #/breeding/<id>
+  //   fallback - the view to show when the key can't be resolved
+  //   key()    - the current key, for building the URL
+  //   open(k)  - true if it opened, false if not, or 'pending' when the data
+  //              is still in flight and the URL should be left alone
+  //
+  // tank-detail deliberately does NOT use this. Its cold-load path is threaded
+  // through renderTanks() via pendingTankKey and is left exactly as it was.
+  var DETAIL_ROUTES = {};
+  var pendingDetail = null;  // { view, key } for a registered detail route still loading
+
   // Live tanks carry the database uuid; demo tanks are an anonymous literal array
   // with no id at all, so they're addressed positionally as i0/i1/i2. Demo data is
   // static and identical on every load, so a positional key is stable there in a
@@ -132,7 +152,20 @@ window.initPortal = function(){
       var k = tankRouteKey(currentTank);
       return k ? '#/tank/' + k : '#/tanks';
     }
+    var d = DETAIL_ROUTES[id];
+    if (d) {
+      var dk = d.key();
+      return dk ? '#/' + d.slug + '/' + encodeURIComponent(dk) : '#/' + d.fallback;
+    }
     return '#/' + id;
+  }
+
+  // The key a detail view carries in its history entry. Kept as the `tank`
+  // state field rather than a new one so history entries written before the
+  // registry existed still restore correctly.
+  function detailKeyFor(id){
+    if (id === 'tank-detail') return tankRouteKey(currentTank);
+    return DETAIL_ROUTES[id] ? DETAIL_ROUTES[id].key() : null;
   }
 
   function parseHash(){
@@ -140,6 +173,11 @@ window.initPortal = function(){
     if (!h) return { view: 'dashboard', tank: null };
     var parts = h.split('/');
     if (parts[0] === 'tank' && parts[1]) return { view: 'tank-detail', tank: decodeURIComponent(parts[1]) };
+    for (var v in DETAIL_ROUTES) {
+      if (DETAIL_ROUTES[v].slug === parts[0] && parts[1]) {
+        return { view: v, tank: decodeURIComponent(parts[1]) };
+      }
+    }
     return { view: ROUTABLE[parts[0]] ? parts[0] : 'dashboard', tank: null };
   }
 
@@ -148,7 +186,7 @@ window.initPortal = function(){
     var hash = routeFor(id);
     if (window.location.hash === hash) return; // re-tapping the current nav item shouldn't stack entries
     try {
-      history.pushState({ view: id, tank: id === 'tank-detail' ? tankRouteKey(currentTank) : null }, '', hash);
+      history.pushState({ view: id, tank: detailKeyFor(id) }, '', hash);
     } catch (e) {
       // No history API (or a file:// origin). Navigation still works exactly as it
       // did before; only the back button is unimproved. Never fatal.
@@ -157,7 +195,7 @@ window.initPortal = function(){
 
   function replaceRoute(id){
     try {
-      history.replaceState({ view: id, tank: id === 'tank-detail' ? tankRouteKey(currentTank) : null }, '', routeFor(id));
+      history.replaceState({ view: id, tank: detailKeyFor(id) }, '', routeFor(id));
     } catch (e) {}
   }
 
@@ -184,6 +222,15 @@ window.initPortal = function(){
         // a security boundary, it just stops a stale URL showing a member a panel
         // whose every control would be rejected server-side.
         show('dashboard'); shown = 'dashboard';
+      } else if (DETAIL_ROUTES[id]) {
+        // Registered detail route. 'pending' means the data is still loading -
+        // park the key so the loader can finish the job, and leave the URL
+        // alone so it isn't rewritten to the fallback and thrown away.
+        var r = DETAIL_ROUTES[id].open(tankKey);
+        if (r !== true) {
+          if (r === 'pending') pendingDetail = { view: id, key: tankKey };
+          show(DETAIL_ROUTES[id].fallback); shown = DETAIL_ROUTES[id].fallback;
+        }
       } else if (ROUTABLE[id]) {
         show(id);
       } else {
@@ -206,7 +253,7 @@ window.initPortal = function(){
     // pendingTankKey means the tank is still on its way — leave the URL alone so
     // renderTanks() can still resolve it, rather than rewriting it to #/tanks and
     // throwing away the id we're waiting for.
-    if (shown !== id && !pendingTankKey) replaceRoute(shown);
+    if (shown !== id && !pendingTankKey && !pendingDetail) replaceRoute(shown);
   });
 
   links.forEach(function(l){ l.addEventListener('click', function(){ show(l.getAttribute('data-view')); }); });
@@ -5292,16 +5339,16 @@ window.initPortal = function(){
   // notification kind -> the preference checkbox that controls it
   var NOTIF_PREF_FOR_KIND = {
     award: 'award_updates', event: 'event_reminders', news: 'committee_announcements',
-    resource: 'resource_alerts', renewal: 'renewal_reminders'
+    resource: 'resource_alerts', renewal: 'renewal_reminders', breeding: 'breeding_updates'
   };
-  var NOTIF_PREF_FIELDS = ['award_updates','event_reminders','committee_announcements','resource_alerts','renewal_reminders'];
+  var NOTIF_PREF_FIELDS = ['award_updates','event_reminders','committee_announcements','resource_alerts','renewal_reminders','breeding_updates'];
   var NOTIF_PREF_INPUTS = {
     award_updates: 'np-award', event_reminders: 'np-event', committee_announcements: 'np-news',
-    resource_alerts: 'np-resource', renewal_reminders: 'np-renewal'
+    resource_alerts: 'np-resource', renewal_reminders: 'np-renewal', breeding_updates: 'np-breeding'
   };
   var NOTIF_PREF_DEFAULTS = {
     award_updates: true, event_reminders: true, committee_announcements: true,
-    resource_alerts: false, renewal_reminders: true
+    resource_alerts: false, renewal_reminders: true, breeding_updates: true
   };
   var myNotifPrefs = null;   // null until loaded; general kind is always shown
   var myNotifications = [];
@@ -6282,7 +6329,973 @@ window.initPortal = function(){
       'If this wasn\u2019t you, contact the committee straight away.', window.currentMember.id);
   });
 
-  if (window.currentMember) { loadLiveMembers(); loadNews(); loadDocuments(); loadTanksFromDB(); loadOtherMemberTanks(); loadTankLikes(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); loadBreederListings(); }
+  // ============================================================================
+  // Breeding Hub (Version 1)
+  // ============================================================================
+  //
+  // Three pages: My Breeding (#/my-breeding) is the member's own dashboard,
+  // the Breeding Hub (#/breeding-hub) is the club-wide browse, and the
+  // Breeders Register (#/breeders) is left exactly as it was.
+  //
+  // The register answers "who is breeding what"; a project is the journal of
+  // one attempt at it. They stay linked through listing_id, so a member still
+  // declares a species once even though the two now live on separate pages.
+  //
+  // Almost nothing here is new machinery. The timeline is tank_log's shape, the
+  // photo upload is the tank-photos flow pointed at another bucket, the hearts
+  // are the tank_likes pattern (optimistic, 23505-tolerant), and follow updates
+  // ride on pushNotification. The Species Hub is derived at render time rather
+  // than stored, because species is free text everywhere else in the portal
+  // and always will be.
+  //
+  // Backed by breeding_hub.sql. Demo mode (no sb, no signed-in member) runs off
+  // the fixtures below so the public demo still shows a working hub; writes and
+  // social controls are hidden there rather than faked.
+
+  var BP_STATUSES = ['Conditioning','Spawned','Eggs','Hatched','Fry','Growing Out','Completed','Failed'];
+  var BP_CLOSED   = { 'Completed':1, 'Failed':1 };
+  var BP_BUCKET   = 'breeding-photos';
+
+  var BPROJ = IS_LIVE ? [] : [
+    { id:'d1', memberId:'d-me', owner:'You', mine:true, tankId:null,
+      species:'Corydoras sterbai', strain:'', category:'Fish', status:'Fry',
+      startedOn:'2026-07-10', completedOn:null,
+      notes:'Group of six adults, heavy live food conditioning then a large cool water change.',
+      whatWorked:'', whatChange:'', advice:'',
+      updates:[
+        { id:'d1u3', stage:'Fry', loggedAt:'2026-07-28', notes:'Started baby brine shrimp. Roughly 60 fry still going strong.', photos:[] },
+        { id:'d1u2', stage:'Hatched', loggedAt:'2026-07-26', notes:'Eggs hatched overnight — wrigglers on the glass.', photos:[] },
+        { id:'d1u1', stage:'Spawned', loggedAt:'2026-07-10', notes:'Spawn observed after a 4 degree cool water change.', photos:[] }
+      ], photos:[], coverPhotoId:null },
+    { id:'d2', memberId:'d-pierre', owner:'Pierre Gerber', mine:false, tankId:null,
+      species:'Corydoras sterbai', strain:'', category:'Fish', status:'Eggs',
+      startedOn:'2026-07-19', completedOn:null,
+      notes:'Second attempt with the same group, this time eggs moved to a hatching tub.',
+      whatWorked:'', whatChange:'', advice:'',
+      updates:[
+        { id:'d2u1', stage:'Eggs', loggedAt:'2026-07-21', notes:'About 40 eggs collected off the glass and moved with methylene blue.', photos:[] }
+      ], photos:[], coverPhotoId:null },
+    { id:'d3', memberId:'d-venesh', owner:'Venesh Pillay', mine:false, tankId:null,
+      species:'Neocaridina davidi', strain:'Blue Dream', category:'Invertebrate', status:'Growing Out',
+      startedOn:'2026-05-02', completedOn:null,
+      notes:'Colony started from ten graded females.',
+      whatWorked:'', whatChange:'', advice:'',
+      updates:[
+        { id:'d3u1', stage:'Growing Out', loggedAt:'2026-07-15', notes:'First generation colouring up nicely, culling the pale ones.', photos:[] }
+      ], photos:[], coverPhotoId:null },
+    { id:'d4', memberId:'d-jonathan', owner:'Jonathan Balmer', mine:false, tankId:null,
+      species:'Fundulopanchax gardneri', strain:'Nsukka', category:'Fish', status:'Completed',
+      startedOn:'2026-02-14', completedOn:'2026-06-20',
+      notes:'Mop spawning, eggs picked daily and water-incubated.',
+      whatWorked:'Picking mops every single day rather than every few days — far fewer fungused eggs.',
+      whatChange:'I would move the fry off microworms onto brine shrimp about a week sooner.',
+      advice:'Do not let the mop dry out during peat storage. Damp, not wet, is the whole trick.',
+      updates:[
+        { id:'d4u1', stage:'Completed', loggedAt:'2026-06-20', notes:'32 juveniles grown out and distributed at the June meeting.', photos:[] }
+      ], photos:[], coverPhotoId:null }
+  ];
+
+  var bpLikeCounts = {}, bpMyLikes = {}, bpFollowCounts = {}, bpMyFollows = {};
+  var bpBusy = {};                  // project id -> true while a like/follow write is in flight
+  var bpFilter = 'All', bpQuery = '';
+  var currentProject = null;        // project id currently open on the detail view
+  var currentSpecies = null;        // species_key currently open on the Species Hub
+  var bpLoading = IS_LIVE;
+  var bpEditing = null;             // project id being edited, or null for a new project
+
+  // --------------------------------------------------------------- helpers --
+
+  // Mirrors the GENERATED species_key column in breeding_hub.sql. Only used for
+  // demo mode and for grouping rows that arrive without the column populated —
+  // live rows always carry the database's own value, so the two can never drift.
+  function bpSpeciesKey(s){
+    return String(s || '').trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+  function bpKeyOf(p){ return p.speciesKey || bpSpeciesKey(p.species); }
+  function bpFind(id){
+    for (var i = 0; i < BPROJ.length; i++) if (String(BPROJ[i].id) === String(id)) return BPROJ[i];
+    return null;
+  }
+  function bpIsActive(p){ return !BP_CLOSED[p.status]; }
+  function bpTitle(p){ return p.species + (p.strain ? ' \u2014 ' + p.strain : ''); }
+
+  // Day count is the number members actually quote to each other ("day 18, still
+  // free swimming"), so it leads the card rather than the start date.
+  function bpDayCount(p){
+    if (!p.startedOn) return null;
+    var start = new Date(p.startedOn + 'T00:00:00');
+    var end = p.completedOn ? new Date(p.completedOn + 'T00:00:00') : new Date();
+    var d = Math.floor((end - start) / 86400000);
+    return d >= 0 ? d : null;
+  }
+  function bpDayText(p){
+    var d = bpDayCount(p);
+    if (d === null) return '';
+    return bpIsActive(p) ? ('Day ' + d) : (d + ' day' + (d === 1 ? '' : 's'));
+  }
+  function bpDate(iso){
+    if (!iso) return '';
+    var d = new Date(iso.length > 10 ? iso : iso + 'T00:00:00');
+    if (isNaN(d)) return '';
+    return d.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+  }
+  function bpLatest(p){
+    if (!p.updates || !p.updates.length) return null;
+    return p.updates[0];   // loaders keep updates sorted newest first
+  }
+  function bpCover(p){
+    if (p.coverPhotoId && p.photos){
+      for (var i = 0; i < p.photos.length; i++) if (p.photos[i].id === p.coverPhotoId) return p.photos[i].url;
+    }
+    if (p.photos && p.photos.length) return p.photos[0].url;
+    for (var j = 0; j < (p.updates || []).length; j++){
+      var ph = p.updates[j].photos;
+      if (ph && ph.length) return ph[0].url;
+    }
+    return null;
+  }
+  function bpStatusPill(status){
+    var cls = BP_CLOSED[status] ? (status === 'Failed' ? 'bp-pill-fail' : 'bp-pill-done') : 'bp-pill-live';
+    return '<span class="bp-pill ' + cls + '">' + escT(status) + '</span>';
+  }
+  function bpCanWrite(){ return !!(sb && window.currentMember); }
+
+  // ---------------------------------------------------------------- loaders --
+
+  async function loadBreedingProjects(){
+    if (!sb || !window.currentMember){ bpLoading = false; renderBreedingAll(); return; }
+    var res = await sb.from('breeding_projects')
+      .select('*, members!member_id(first_name,last_name), breeding_updates(*), breeding_photos(*)')
+      .eq('archived', false)
+      .order('updated_at', { ascending: false });
+    bpLoading = false;
+    if (res.error || !res.data){ renderBreedingAll(); return; }
+    // Same guard as loadTanksFromDB: never let a suspicious empty response wipe
+    // a list that is already correct on screen.
+    if (res.data.length === 0 && BPROJ.length > 0){ return; }
+
+    BPROJ.length = 0;
+    res.data.forEach(function(row){
+      var owner = row.members
+        ? ((row.members.first_name || '') + ' ' + (row.members.last_name || '')).trim()
+        : '';
+      var allPhotos = (row.breeding_photos || []).map(function(ph){
+        return { id: ph.id, url: ph.url, path: ph.path, updateId: ph.update_id || null };
+      });
+      var updates = (row.breeding_updates || []).slice().sort(function(a, b){
+        var d = new Date(b.logged_at) - new Date(a.logged_at);
+        return d !== 0 ? d : (new Date(b.created_at) - new Date(a.created_at));
+      }).map(function(u){
+        return {
+          id: u.id, stage: u.stage || '', notes: u.notes || '', loggedAt: u.logged_at,
+          photos: allPhotos.filter(function(ph){ return ph.updateId === u.id; })
+        };
+      });
+      BPROJ.push({
+        id: row.id, memberId: row.member_id,
+        owner: owner || 'ECAAC member',
+        mine: row.member_id === window.currentMember.id,
+        tankId: row.tank_id || null, listingId: row.listing_id || null,
+        species: row.species || '', speciesKey: row.species_key || '',
+        strain: row.strain || '', category: row.category || 'Fish',
+        status: row.status || 'Conditioning',
+        startedOn: row.started_on || null, completedOn: row.completed_on || null,
+        notes: row.notes || '',
+        whatWorked: row.what_worked || '', whatChange: row.what_id_change || '', advice: row.advice || '',
+        coverPhotoId: row.cover_photo_id || null,
+        photos: allPhotos.filter(function(ph){ return !ph.updateId; }),
+        updates: updates
+      });
+    });
+
+    // A deep link that arrived before the fetch resolved — see applyRoute.
+    if (pendingDetail && pendingDetail.view === 'breeding-project'){
+      var want = pendingDetail.key; pendingDetail = null;
+      if (bpFind(want)) { openBreedingProject(want); return; }
+      replaceRoute('breeders');
+    }
+    renderBreedingAll();
+  }
+
+  // Likes and follows in one pass each. The club is small enough that pulling
+  // every row and counting client-side beats a per-project aggregate, and it
+  // answers both questions at once — the totals, and which ones are mine. Same
+  // reasoning as loadTankLikes.
+  async function loadBreedingSocial(){
+    if (!sb || !window.currentMember) return;
+    var likes = await sb.from('breeding_likes').select('project_id, member_id');
+    if (!likes.error){
+      bpLikeCounts = {}; bpMyLikes = {};
+      (likes.data || []).forEach(function(r){
+        bpLikeCounts[r.project_id] = (bpLikeCounts[r.project_id] || 0) + 1;
+        if (r.member_id === window.currentMember.id) bpMyLikes[r.project_id] = true;
+      });
+    }
+    var follows = await sb.from('breeding_follows').select('project_id, member_id');
+    if (!follows.error){
+      bpFollowCounts = {}; bpMyFollows = {};
+      (follows.data || []).forEach(function(r){
+        bpFollowCounts[r.project_id] = (bpFollowCounts[r.project_id] || 0) + 1;
+        if (r.member_id === window.currentMember.id) bpMyFollows[r.project_id] = true;
+      });
+    }
+    renderBreedingAll();
+  }
+
+  // ---------------------------------------------------------------- filters --
+
+  function bpVisible(){
+    var q = bpQuery.trim().toLowerCase();
+    return BPROJ.filter(function(p){
+      if (bpFilter === 'Active' && !bpIsActive(p)) return false;
+      if (bpFilter === 'Completed' && bpIsActive(p)) return false;
+      if (bpFilter === 'Mine' && !p.mine) return false;
+      if (!q) return true;
+      return (p.species + ' ' + p.strain + ' ' + p.owner + ' ' + p.category).toLowerCase().indexOf(q) !== -1;
+    });
+  }
+
+  // ----------------------------------------------------------- My Breeding --
+
+  function renderMyBreeding(){
+    var statsEl = document.getElementById('bp-my-stats');
+    var activeEl = document.getElementById('bp-my-active');
+    var doneEl = document.getElementById('bp-my-done');
+    if (!statsEl || !activeEl || !doneEl) return;
+
+    var mine = BPROJ.filter(function(p){ return p.mine; });
+    var active = mine.filter(bpIsActive);
+    var done = mine.filter(function(p){ return p.status === 'Completed'; });
+    var speciesBred = {};
+    done.forEach(function(p){ speciesBred[bpKeyOf(p)] = true; });
+
+    statsEl.innerHTML =
+      bpStatCard(active.length, 'Active project' + (active.length === 1 ? '' : 's'), 't-leaf') +
+      bpStatCard(done.length, 'Completed project' + (done.length === 1 ? '' : 's'), 't-deep') +
+      bpStatCard(Object.keys(speciesBred).length, 'Species successfully bred', 't-gold');
+
+    activeEl.innerHTML = active.length
+      ? active.map(bpMineRow).join('')
+      : '<div class="reg-empty" style="padding:18px">Nothing on the go yet \u2014 start a project to keep a journal of it.</div>';
+    doneEl.innerHTML = done.length
+      ? done.map(bpMineRow).join('')
+      : '<div class="reg-empty" style="padding:18px">Your successes will collect here.</div>';
+  }
+
+  // Same markup as renderRegStats so the Breeding Hub cards sit flush with the
+  // register cards directly above them on the page.
+  function bpStatCard(n, label, tone){
+    return '<div class="card ' + (tone || 't-leaf') + '"><div class="stat-num">' + n +
+      '</div><div class="stat-label">' + escT(label) + '</div></div>';
+  }
+
+  function bpMineRow(p){
+    var latest = bpLatest(p);
+    var meta = [bpDayText(p), p.status];
+    if (latest) meta.push('last update ' + bpDate(latest.loggedAt));
+    return '<div class="row bp-row" data-bp-open="' + escA(p.id) + '" role="button" tabindex="0">' +
+      '<div class="row-body"><b>' + escT(bpTitle(p)) + '</b><span>' + escT(meta.filter(Boolean).join(' \u00b7 ')) + '</span></div>' +
+      '<div class="row-actions">' + bpStatusPill(p.status) + '</div>' +
+    '</div>';
+  }
+
+  // -------------------------------------------------------- club grid ------
+
+  function renderBreedingGrid(){
+    var grid = document.getElementById('bp-grid');
+    var empty = document.getElementById('bp-empty');
+    var chip = document.getElementById('bp-count-chip');
+    if (!grid) return;
+
+    var list = bpVisible();
+    if (chip) chip.textContent = list.length + ' project' + (list.length === 1 ? '' : 's');
+
+    if (bpLoading && !list.length){
+      grid.innerHTML = '';
+      if (empty){ empty.textContent = 'Loading breeding projects\u2026'; empty.style.display = 'block'; }
+      return;
+    }
+    grid.innerHTML = list.map(bpCardHtml).join('');
+    if (empty){
+      empty.textContent = 'No breeding projects match that search \u2014 try another species or clear the filters.';
+      empty.style.display = list.length ? 'none' : 'block';
+    }
+  }
+
+  function bpCardHtml(p){
+    var cover = bpCover(p);
+    var latest = bpLatest(p);
+    var line = latest
+      ? (bpDate(latest.loggedAt) + ' \u2014 ' + (latest.notes || latest.stage || 'Update posted'))
+      : (p.notes || 'No updates yet.');
+    return '<article class="tank-card bp-card" data-bp-open="' + escA(p.id) + '" role="button" tabindex="0">' +
+      '<div class="bp-card-cover' + (cover ? '' : ' bp-card-cover-empty') + '"' +
+        (cover ? ' style="background-image:url(\'' + escA(cover) + '\')"' : '') + '>' +
+        bpStatusPill(p.status) +
+      '</div>' +
+      '<div class="bp-card-body">' +
+        '<h4>' + escT(bpTitle(p)) + '</h4>' +
+        '<p class="bp-card-owner">' + escT(p.owner) + (bpDayText(p) ? ' \u00b7 ' + escT(bpDayText(p)) : '') + '</p>' +
+        '<p class="bp-card-line">' + escT(line) + '</p>' +
+        '<div class="bp-card-foot">' + bpHeartHtml(p, false) + bpFollowCountHtml(p) + '</div>' +
+      '</div>' +
+    '</article>';
+  }
+
+  // ------------------------------------------------------ likes and follows --
+  //
+  // Deliberately the same contract as the tank hearts: optimistic paint, roll
+  // back on failure, and a 23505 is success rather than an error because the
+  // composite primary key means the row was already there.
+
+  function bpHeartHtml(p, clickable){
+    if (!bpCanWrite() || !p || !p.id) return '';
+    var n = bpLikeCounts[p.id] || 0;
+    var mine = !!bpMyLikes[p.id];
+    if (p.mine && !n) return '';
+    if (p.mine || !clickable){
+      return '<span class="heart heart-static' + (n ? ' has' : '') + '" data-bp-heart-static="' + escA(p.id) + '" ' +
+        'title="' + escA(n + ' member' + (n === 1 ? '' : 's') + ' hearted this project') + '">' +
+        heartSvg(true) + '<b>' + n + '</b></span>';
+    }
+    return '<button type="button" class="heart' + (mine ? ' on' : '') + '" data-bp-heart="' + escA(p.id) + '" ' +
+      'aria-pressed="' + (mine ? 'true' : 'false') + '" ' +
+      'aria-label="' + escA(mine ? 'Remove your heart' : 'Heart this project') + '">' +
+      heartSvg(mine) + '<b>' + n + '</b></button>';
+  }
+
+  function bpFollowCountHtml(p){
+    if (!bpCanWrite()) return '';
+    var n = bpFollowCounts[p.id] || 0;
+    if (!n) return '';
+    return '<span class="bp-follow-count" title="' + escA(n + ' member' + (n === 1 ? '' : 's') + ' following') + '">\u2b50 ' + n + '</span>';
+  }
+
+  function bpFollowBtnHtml(p){
+    if (!bpCanWrite() || p.mine) return '';
+    var on = !!bpMyFollows[p.id];
+    return '<button type="button" class="btn btn-sm ' + (on ? 'btn-primary' : 'btn-outline') + '" ' +
+      'data-bp-follow="' + escA(p.id) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+      (on ? '\u2b50 Following' : '\u2606 Follow this project') + '</button>';
+  }
+
+  async function toggleBreedingLike(id){
+    if (!bpCanWrite() || !id || bpBusy['l' + id]) return;
+    bpBusy['l' + id] = true;
+    var was = !!bpMyLikes[id], before = bpLikeCounts[id] || 0;
+    bpMyLikes[id] = !was;
+    bpLikeCounts[id] = Math.max(0, before + (was ? -1 : 1));
+    bpPaintSocial();
+    var res;
+    if (was){
+      res = await sb.from('breeding_likes').delete().eq('project_id', id).eq('member_id', window.currentMember.id);
+    } else {
+      res = await sb.from('breeding_likes').insert({ project_id: id, member_id: window.currentMember.id });
+      if (res && res.error && String(res.error.code) === '23505') res = { error: null };
+    }
+    if (res && res.error){
+      bpMyLikes[id] = was; bpLikeCounts[id] = before; bpPaintSocial();
+      popToast('Could not save that \u2014 try again');
+    }
+    bpBusy['l' + id] = false;
+  }
+
+  async function toggleBreedingFollow(id){
+    if (!bpCanWrite() || !id || bpBusy['f' + id]) return;
+    bpBusy['f' + id] = true;
+    var was = !!bpMyFollows[id], before = bpFollowCounts[id] || 0;
+    bpMyFollows[id] = !was;
+    bpFollowCounts[id] = Math.max(0, before + (was ? -1 : 1));
+    bpPaintSocial();
+    var res;
+    if (was){
+      res = await sb.from('breeding_follows').delete().eq('project_id', id).eq('member_id', window.currentMember.id);
+    } else {
+      res = await sb.from('breeding_follows').insert({ project_id: id, member_id: window.currentMember.id });
+      if (res && res.error && String(res.error.code) === '23505') res = { error: null };
+    }
+    if (res && res.error){
+      bpMyFollows[id] = was; bpFollowCounts[id] = before; bpPaintSocial();
+      popToast('Could not save that \u2014 try again');
+    } else {
+      popToast(was ? 'Unfollowed \u2014 no more updates from this project' : 'Following \u2014 you\u2019ll be notified of new updates');
+    }
+    bpBusy['f' + id] = false;
+  }
+
+  // Repaints only the social controls rather than re-rendering the grid, so the
+  // cards don't rebuild under the member's finger mid-tap.
+  function bpPaintSocial(){
+    document.querySelectorAll('[data-bp-heart]').forEach(function(btn){
+      var id = btn.getAttribute('data-bp-heart');
+      var n = bpLikeCounts[id] || 0, mine = !!bpMyLikes[id];
+      btn.classList.toggle('on', mine);
+      btn.setAttribute('aria-pressed', mine ? 'true' : 'false');
+      btn.innerHTML = heartSvg(mine) + '<b>' + n + '</b>';
+    });
+    document.querySelectorAll('[data-bp-heart-static]').forEach(function(el){
+      var n = bpLikeCounts[el.getAttribute('data-bp-heart-static')] || 0;
+      el.classList.toggle('has', n > 0);
+      el.innerHTML = heartSvg(true) + '<b>' + n + '</b>';
+    });
+    document.querySelectorAll('[data-bp-follow]').forEach(function(btn){
+      var on = !!bpMyFollows[btn.getAttribute('data-bp-follow')];
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.classList.toggle('btn-primary', on);
+      btn.classList.toggle('btn-outline', !on);
+      btn.textContent = on ? '\u2b50 Following' : '\u2606 Follow this project';
+    });
+  }
+
+  // -------------------------------------------------------- project detail --
+
+  function openBreedingProject(id){
+    var p = bpFind(id);
+    if (!p) return false;
+    currentProject = String(id);
+    renderBreedingProject();
+    show('breeding-project');
+    return true;
+  }
+
+  function renderBreedingProject(){
+    var p = bpFind(currentProject);
+    var wrap = document.getElementById('bp-detail');
+    if (!wrap) return;
+    if (!p){ wrap.innerHTML = '<div class="reg-empty" style="padding:24px">That project is no longer available.</div>'; return; }
+
+    var cover = bpCover(p);
+    var tank = p.tankId ? tanks.filter(function(t){ return t.id === p.tankId; })[0] : null;
+    var meta = [];
+    if (p.category) meta.push(p.category);
+    if (tank) meta.push(tank.name);
+    if (p.startedOn) meta.push('started ' + bpDate(p.startedOn));
+    if (bpDayText(p)) meta.push(bpDayText(p));
+
+    var html = '';
+
+    html += '<div class="bp-detail-head">' +
+      '<button class="btn btn-outline btn-sm" data-view-jump="breeding-hub">\u2039 Back to Breeding Hub</button>' +
+    '</div>';
+
+    if (cover) html += '<div class="bp-hero" style="background-image:url(\'' + escA(cover) + '\')"></div>';
+
+    html += '<div class="view-head" style="margin-top:18px"><div>' +
+      '<span class="kicker">Breeding project</span>' +
+      '<h2>' + escT(bpTitle(p)) + '</h2>' +
+      '<p>' + escT(p.owner) + (meta.length ? ' \u00b7 ' + escT(meta.join(' \u00b7 ')) : '') + '</p>' +
+    '</div>' + bpStatusPill(p.status) + '</div>';
+
+    // Species Hub cross-link — the reason the hub exists is to get from one
+    // project to everyone else attempting the same fish.
+    html += '<div class="bp-actions">' +
+      bpHeartHtml(p, true) +
+      bpFollowBtnHtml(p) +
+      '<button class="btn btn-outline btn-sm" data-bp-species="' + escA(bpKeyOf(p)) + '">See everyone breeding this</button>' +
+      (p.mine && bpCanWrite() ? '<button class="btn btn-primary btn-sm" data-bp-add-update="' + escA(p.id) + '">+ Add update</button>' : '') +
+      (p.mine && bpCanWrite() ? '<button class="btn btn-outline btn-sm" data-bp-edit="' + escA(p.id) + '">Edit project</button>' : '') +
+    '</div>';
+
+    if (p.notes) html += '<div class="panel bp-notes"><h3>About this attempt</h3><p>' + escT(p.notes) + '</p></div>';
+
+    // ---- timeline
+    html += '<div class="panel"><h3>Timeline</h3>';
+    if (!p.updates.length){
+      html += '<div class="reg-empty" style="padding:18px">No updates yet' +
+        (p.mine ? ' \u2014 add the first one to start the journal.' : '.') + '</div>';
+    } else {
+      html += '<ol class="bp-timeline">' + p.updates.map(function(u){
+        var photos = (u.photos || []).map(function(ph){
+          return '<img src="' + escA(ph.url) + '" alt="" class="bp-tl-photo" data-bp-photo="' + escA(ph.url) + '">';
+        }).join('');
+        return '<li class="bp-tl-item">' +
+          '<div class="bp-tl-dot"></div>' +
+          '<div class="bp-tl-body">' +
+            '<div class="bp-tl-head"><b>' + escT(bpDate(u.loggedAt)) + '</b>' +
+              (u.stage ? bpStatusPill(u.stage) : '') +
+              (p.mine && bpCanWrite() ? '<button class="bp-tl-del" data-bp-del-update="' + escA(u.id) + '" aria-label="Delete this update">\u00d7</button>' : '') +
+            '</div>' +
+            (u.notes ? '<p>' + escT(u.notes) + '</p>' : '') +
+            (photos ? '<div class="bp-tl-photos">' + photos + '</div>' : '') +
+          '</div>' +
+        '</li>';
+      }).join('') + '</ol>';
+    }
+    html += '</div>';
+
+    // ---- lessons learned
+    var hasLessons = p.whatWorked || p.whatChange || p.advice;
+    if (hasLessons || (p.mine && BP_CLOSED[p.status])){
+      html += '<div class="panel bp-lessons"><h3>Lessons learned</h3>';
+      if (hasLessons){
+        if (p.whatWorked) html += '<h4>What worked</h4><p>' + escT(p.whatWorked) + '</p>';
+        if (p.whatChange) html += '<h4>What I\u2019d change</h4><p>' + escT(p.whatChange) + '</p>';
+        if (p.advice)     html += '<h4>Advice for other members</h4><p>' + escT(p.advice) + '</p>';
+      } else {
+        html += '<p style="color:var(--ink-soft);font-size:13px">This project is closed but has no reflection yet. ' +
+          'A few lines here is the most useful thing you can leave the next member who tries this species.</p>' +
+          '<button class="btn btn-primary btn-sm" data-bp-edit="' + escA(p.id) + '">Add your reflection</button>';
+      }
+      html += '</div>';
+    }
+
+    wrap.innerHTML = html;
+  }
+
+  // ------------------------------------------------------------ Species Hub --
+  //
+  // Derived, never stored. Groups breeding projects, register listings and
+  // award entries under one normalised species key so the page answers "what
+  // does this club actually know about breeding this fish".
+
+  function openSpecies(key){
+    if (!key) return false;
+    currentSpecies = String(key);
+    renderSpeciesHub();
+    show('species');
+    return true;
+  }
+
+  function renderSpeciesHub(){
+    var wrap = document.getElementById('bp-species-body');
+    if (!wrap || !currentSpecies) return;
+    var list = BPROJ.filter(function(p){ return bpKeyOf(p) === currentSpecies; });
+    var name = list.length ? list[0].species : currentSpecies.replace(/-/g, ' ');
+
+    var active = list.filter(bpIsActive);
+    var done = list.filter(function(p){ return p.status === 'Completed'; });
+
+    // Anyone with an active project, plus anyone with a register listing for the
+    // same species who hasn't started a journal yet.
+    var breeders = {};
+    active.forEach(function(p){ breeders[p.owner] = 'project'; });
+    BREG.forEach(function(r){
+      if (bpSpeciesKey(r.species) === currentSpecies && r.status === 'Current' && !breeders[r.member]){
+        breeders[r.member] = 'listing';
+      }
+    });
+
+    // Recent activity across every project for this species.
+    var recent = [];
+    list.forEach(function(p){
+      (p.updates || []).forEach(function(u){ recent.push({ p: p, u: u }); });
+    });
+    recent.sort(function(a, b){ return new Date(b.u.loggedAt) - new Date(a.u.loggedAt); });
+    recent = recent.slice(0, 8);
+
+    var html = '';
+    html += '<div class="bp-detail-head"><button class="btn btn-outline btn-sm" data-view-jump="breeding-hub">\u2039 Back to Breeding Hub</button></div>';
+    html += '<div class="view-head" style="margin-top:18px"><div>' +
+      '<span class="kicker">Species Hub</span><h2>' + escT(name) + '</h2>' +
+      '<p>Everything the club has recorded about breeding this species.</p>' +
+    '</div></div>';
+
+    html += '<div class="grid g3 stat-grid">' +
+      bpStatCard(active.length, 'Active project' + (active.length === 1 ? '' : 's'), 't-leaf') +
+      bpStatCard(done.length, 'Completed project' + (done.length === 1 ? '' : 's'), 't-deep') +
+      bpStatCard(Object.keys(breeders).length, 'Members breeding it', 't-gold') +
+    '</div>';
+
+    var names = Object.keys(breeders);
+    html += '<div class="grid g2" style="margin-top:24px">';
+    html += '<div class="panel"><h3>Members breeding this</h3>' + (names.length
+      ? '<div class="rows bp-rows">' + names.map(function(n){
+          return '<div class="row"><div class="row-body"><b>' + escT(n) + '</b><span>' +
+            (breeders[n] === 'project' ? 'Has an active journal' : 'Listed on the register') + '</span></div></div>';
+        }).join('') + '</div>'
+      : '<div class="reg-empty" style="padding:18px">Nobody is working with this species right now.</div>') + '</div>';
+
+    html += '<div class="panel"><h3>Recent updates</h3>' + (recent.length
+      ? '<div class="rows bp-rows">' + recent.map(function(r){
+          return '<div class="row bp-row" data-bp-open="' + escA(r.p.id) + '" role="button" tabindex="0">' +
+            '<div class="row-body"><b>' + escT(r.p.owner) + '</b><span>' + escT(bpDate(r.u.loggedAt) + ' \u2014 ' + (r.u.notes || r.u.stage || 'Update posted')) + '</span></div>' +
+          '</div>';
+        }).join('') + '</div>'
+      : '<div class="reg-empty" style="padding:18px">No journal updates recorded for this species yet.</div>') + '</div>';
+    html += '</div>';
+
+    // Lessons learned across every completed attempt — the payoff of the whole
+    // feature: one place a member can read what already went wrong for others.
+    var lessons = list.filter(function(p){ return p.whatWorked || p.whatChange || p.advice; });
+    if (lessons.length){
+      html += '<div class="panel" style="margin-top:24px"><h3>What members have learned</h3>' +
+        lessons.map(function(p){
+          return '<div class="bp-lesson-block">' +
+            '<h4>' + escT(p.owner) + '</h4>' +
+            (p.whatWorked ? '<p><b>Worked:</b> ' + escT(p.whatWorked) + '</p>' : '') +
+            (p.whatChange ? '<p><b>Would change:</b> ' + escT(p.whatChange) + '</p>' : '') +
+            (p.advice ? '<p><b>Advice:</b> ' + escT(p.advice) + '</p>' : '') +
+            '<button class="btn btn-outline btn-sm" data-bp-open="' + escA(p.id) + '">Read the full journal</button>' +
+          '</div>';
+        }).join('') + '</div>';
+    }
+
+    html += '<div class="panel" style="margin-top:24px"><h3>All projects</h3>' +
+      '<div class="tank-grid">' + list.map(bpCardHtml).join('') + '</div></div>';
+
+    wrap.innerHTML = html;
+  }
+
+  // ---------------------------------------------------------- project modal --
+
+  function bpFillTankSelect(sel, chosen){
+    if (!sel) return;
+    sel.innerHTML = '<option value="">No specific aquarium</option>' + tanks.map(function(t){
+      return '<option value="' + escA(t.id || '') + '"' + (t.id && t.id === chosen ? ' selected' : '') + '>' + escT(t.name) + '</option>';
+    }).join('');
+  }
+
+  function openProjectModal(id){
+    var modal = document.getElementById('bp-modal');
+    if (!modal) return;
+    bpEditing = id || null;
+    var p = id ? bpFind(id) : null;
+
+    document.getElementById('bp-modal-title').textContent = p ? 'Edit breeding project' : 'New breeding project';
+    document.getElementById('bpf-species').value  = p ? p.species : '';
+    document.getElementById('bpf-strain').value   = p ? p.strain : '';
+    document.getElementById('bpf-category').value = p ? p.category : 'Fish';
+    document.getElementById('bpf-status').value   = p ? p.status : 'Conditioning';
+    document.getElementById('bpf-started').value  = p && p.startedOn ? p.startedOn : new Date().toISOString().slice(0, 10);
+    document.getElementById('bpf-notes').value    = p ? p.notes : '';
+    document.getElementById('bpf-worked').value   = p ? p.whatWorked : '';
+    document.getElementById('bpf-change').value   = p ? p.whatChange : '';
+    document.getElementById('bpf-advice').value   = p ? p.advice : '';
+    document.getElementById('bpf-error').style.display = 'none';
+    document.getElementById('bpf-delete').style.display = p ? '' : 'none';
+    bpFillTankSelect(document.getElementById('bpf-tank'), p ? p.tankId : null);
+    bpSyncLessons();
+    openLocked(modal);
+    softFocus(document.getElementById('bpf-species'), modal);
+  }
+
+  // Lessons Learned only makes sense once a project is closed out, so the block
+  // reveals itself rather than sitting there half-answerable from day one.
+  function bpSyncLessons(){
+    var st = document.getElementById('bpf-status');
+    var box = document.getElementById('bpf-lessons');
+    if (st && box) box.style.display = BP_CLOSED[st.value] ? '' : 'none';
+  }
+
+  async function saveProject(){
+    var species = document.getElementById('bpf-species').value.trim();
+    if (!species){ document.getElementById('bpf-error').style.display = 'block'; return; }
+    var btn = document.getElementById('bpf-save');
+    btn.disabled = true; btn.textContent = 'Saving\u2026';
+
+    var status = document.getElementById('bpf-status').value;
+    var row = {
+      species: species,
+      strain: document.getElementById('bpf-strain').value.trim() || null,
+      category: document.getElementById('bpf-category').value,
+      status: status,
+      started_on: document.getElementById('bpf-started').value || new Date().toISOString().slice(0, 10),
+      completed_on: BP_CLOSED[status] ? (new Date().toISOString().slice(0, 10)) : null,
+      tank_id: document.getElementById('bpf-tank').value || null,
+      notes: document.getElementById('bpf-notes').value.trim() || null,
+      what_worked: document.getElementById('bpf-worked').value.trim() || null,
+      what_id_change: document.getElementById('bpf-change').value.trim() || null,
+      advice: document.getElementById('bpf-advice').value.trim() || null
+    };
+    // Keep the original completion date when editing an already-closed project.
+    var existing = bpEditing ? bpFind(bpEditing) : null;
+    if (existing && existing.completedOn && BP_CLOSED[status]) row.completed_on = existing.completedOn;
+
+    if (!bpCanWrite()){
+      btn.disabled = false; btn.textContent = 'Save project';
+      closeLocked(document.getElementById('bp-modal'));
+      popToast('Breeding projects need a live account \u2014 this is demo mode');
+      return;
+    }
+
+    var res;
+    if (bpEditing){
+      res = await dbUpdateRow('breeding_projects', bpEditing, row);
+    } else {
+      row.member_id = window.currentMember.id;
+      // If this member already has a register listing for the same species, tie
+      // the project to it so the two never drift apart.
+      var match = BREG.filter(function(r){
+        return r.memberId === window.currentMember.id && bpSpeciesKey(r.species) === bpSpeciesKey(species);
+      })[0];
+      if (match) row.listing_id = match.id;
+      res = await dbInsertRow('breeding_projects', row);
+    }
+    btn.disabled = false; btn.textContent = 'Save project';
+    if (res.error){ popToast('Could not save that project \u2014 try again'); return; }
+
+    closeLocked(document.getElementById('bp-modal'));
+    popToast(bpEditing ? 'Project updated' : 'Breeding project started');
+    var newId = (!bpEditing && res.data) ? res.data.id : bpEditing;
+    bpEditing = null;
+    await loadBreedingProjects();
+    if (newId && bpFind(newId)) openBreedingProject(newId);
+  }
+
+  async function deleteProject(){
+    if (!bpEditing || !bpCanWrite()) return;
+    var btn = document.getElementById('bpf-delete');
+    if (btn.getAttribute('data-armed') !== '1'){
+      btn.setAttribute('data-armed', '1');
+      btn.textContent = 'Tap again to delete';
+      setTimeout(function(){ btn.removeAttribute('data-armed'); btn.textContent = 'Delete project'; }, 4000);
+      return;
+    }
+    var id = bpEditing;
+    var res = await dbDeleteRow('breeding_projects', id);
+    if (res.error){ popToast('Could not delete that project'); return; }
+    btn.removeAttribute('data-armed'); btn.textContent = 'Delete project';
+    closeLocked(document.getElementById('bp-modal'));
+    bpEditing = null; currentProject = null;
+    popToast('Breeding project deleted');
+    await loadBreedingProjects();
+    show('my-breeding');
+  }
+
+  // ----------------------------------------------------------- update modal --
+
+  function openUpdateModal(projectId){
+    var modal = document.getElementById('bu-modal');
+    var p = bpFind(projectId);
+    if (!modal || !p) return;
+    modal.setAttribute('data-project', projectId);
+    document.getElementById('buf-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('buf-stage').value = p.status;
+    document.getElementById('buf-notes').value = '';
+    document.getElementById('buf-photo').value = '';
+    document.getElementById('buf-file-text').textContent = 'Tap to add photos of this update';
+    document.getElementById('buf-file-label').classList.remove('has-file');
+    document.getElementById('buf-status').textContent = '';
+    document.getElementById('buf-advance').checked = true;
+    openLocked(modal);
+    softFocus(document.getElementById('buf-notes'), modal);
+  }
+
+  async function saveUpdate(){
+    var modal = document.getElementById('bu-modal');
+    var projectId = modal.getAttribute('data-project');
+    var p = bpFind(projectId);
+    if (!p || !bpCanWrite()) return;
+
+    var notes = document.getElementById('buf-notes').value.trim();
+    var stage = document.getElementById('buf-stage').value;
+    var loggedAt = document.getElementById('buf-date').value || new Date().toISOString().slice(0, 10);
+    var files = Array.prototype.slice.call(document.getElementById('buf-photo').files || []);
+    if (!notes && !files.length){ popToast('Add a note or a photo before saving'); return; }
+
+    var btn = document.getElementById('buf-save');
+    var statusEl = document.getElementById('buf-status');
+    btn.disabled = true; btn.textContent = 'Saving\u2026';
+
+    var res = await dbInsertRow('breeding_updates', {
+      project_id: projectId, member_id: window.currentMember.id,
+      stage: stage, notes: notes || null, logged_at: loggedAt
+    });
+    if (res.error){
+      btn.disabled = false; btn.textContent = 'Save update';
+      popToast('Could not save that update \u2014 try again');
+      return;
+    }
+    var updateId = res.data ? res.data.id : null;
+
+    // Photos are best-effort from here: the update is already saved and nothing
+    // below can undo it. Same contract as the award entry photo upload.
+    if (files.length && updateId){
+      btn.textContent = 'Uploading photos\u2026';
+      await bpUploadPhotos(p, files, updateId, statusEl);
+    }
+
+    // Advancing the project status is the common case after posting an update,
+    // so it's a ticked checkbox rather than a second trip to the edit form.
+    if (document.getElementById('buf-advance').checked && stage !== p.status){
+      await dbUpdateRow('breeding_projects', projectId, {
+        status: stage,
+        completed_on: BP_CLOSED[stage] ? loggedAt : null
+      });
+    }
+
+    btn.disabled = false; btn.textContent = 'Save update';
+    statusEl.textContent = '';
+    closeLocked(modal);
+    popToast('Update added to the journal');
+    bpNotifyFollowers(p, { stage: stage, notes: notes });
+    await loadBreedingProjects();
+    if (bpFind(projectId)) openBreedingProject(projectId);
+  }
+
+  // Same shape and limits as the tank photo uploader, pointed at another bucket.
+  async function bpUploadPhotos(p, files, updateId, statusEl){
+    var attached = 0;
+    for (var i = 0; i < files.length; i++){
+      var file = files[i];
+      if (!file.type || file.type.indexOf('image/') !== 0){ popToast(file.name + ' skipped \u2014 not an image'); continue; }
+      if (file.size > MAX_PHOTO_MB * 1024 * 1024){ popToast(file.name + ' skipped \u2014 over ' + MAX_PHOTO_MB + 'MB'); continue; }
+      if (statusEl) statusEl.textContent = 'Uploading photo ' + (i + 1) + ' of ' + files.length + '\u2026';
+      var safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      var path = window.currentMember.id + '/' + p.id + '/' + Date.now() + '-' + safeName;
+      try {
+        var up = await sb.storage.from(BP_BUCKET).upload(path, file);
+        if (up.error){ popToast('Could not upload ' + file.name); continue; }
+        var pub = sb.storage.from(BP_BUCKET).getPublicUrl(path);
+        var dbRes = await dbInsertRow('breeding_photos', {
+          project_id: p.id, update_id: updateId || null, path: path,
+          url: pub.data ? pub.data.publicUrl : '', uploaded_by: window.currentMember.id
+        });
+        if (!dbRes.error) attached++;
+      } catch (e){ popToast('Could not upload ' + file.name); }
+    }
+    if (statusEl) statusEl.textContent = '';
+    return attached;
+  }
+
+  // Fire-and-forget, exactly like every other pushNotification caller: a failed
+  // notification must never block the update that triggered it.
+  async function bpNotifyFollowers(p, update){
+    if (!sb || !window.currentMember) return;
+    try {
+      var res = await sb.from('breeding_follows').select('member_id').eq('project_id', p.id);
+      if (res.error || !res.data) return;
+      var title = p.owner + ' updated ' + bpTitle(p);
+      var body = (update.stage ? update.stage + ' \u2014 ' : '') + (update.notes || 'New progress posted');
+      res.data.forEach(function(r){
+        if (r.member_id === window.currentMember.id) return;
+        pushNotification('breeding', title, body, r.member_id);
+      });
+    } catch (e){ /* non-fatal */ }
+  }
+
+  function renderBreedingAll(){
+    renderMyBreeding();
+    renderBreedingGrid();
+    if (currentProject) renderBreedingProject();
+    if (currentSpecies) renderSpeciesHub();
+  }
+
+  // ----------------------------------------------------------------- wiring --
+
+  (function wireBreedingHub(){
+    // My Breeding is its own page now, so a signed-out visitor gets an
+    // explanation pointing at the Hub rather than an empty screen.
+    var mineWrap = document.getElementById('bp-mine-panel');
+    var mineNote = document.getElementById('bp-mine-signedout');
+    if (!bpCanWrite()){
+      if (mineWrap) mineWrap.style.display = 'none';
+      if (mineNote) mineNote.style.display = 'block';
+    }
+
+    var newBtn = document.getElementById('bp-new-btn');
+    if (newBtn) newBtn.addEventListener('click', function(){ openProjectModal(null); });
+
+    var search = document.getElementById('bp-search');
+    if (search) search.addEventListener('input', function(){ bpQuery = this.value; renderBreedingGrid(); });
+
+    document.querySelectorAll('[data-bpf]').forEach(function(b){
+      b.addEventListener('click', function(){
+        document.querySelectorAll('[data-bpf]').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active');
+        bpFilter = b.getAttribute('data-bpf');
+        renderBreedingGrid();
+      });
+    });
+
+    // One delegated handler for everything the rendered HTML emits, so no
+    // listener is ever left dangling on a re-render.
+    document.addEventListener('click', function(e){
+      var t = e.target;
+
+      var heart = t.closest && t.closest('[data-bp-heart]');
+      if (heart){ toggleBreedingLike(heart.getAttribute('data-bp-heart')); return; }
+
+      var follow = t.closest && t.closest('[data-bp-follow]');
+      if (follow){ toggleBreedingFollow(follow.getAttribute('data-bp-follow')); return; }
+
+      var open = t.closest && t.closest('[data-bp-open]');
+      if (open){ openBreedingProject(open.getAttribute('data-bp-open')); return; }
+
+      var sp = t.closest && t.closest('[data-bp-species]');
+      if (sp){ openSpecies(sp.getAttribute('data-bp-species')); return; }
+
+      var addU = t.closest && t.closest('[data-bp-add-update]');
+      if (addU){ openUpdateModal(addU.getAttribute('data-bp-add-update')); return; }
+
+      var ed = t.closest && t.closest('[data-bp-edit]');
+      if (ed){ openProjectModal(ed.getAttribute('data-bp-edit')); return; }
+
+      var du = t.closest && t.closest('[data-bp-del-update]');
+      if (du){ deleteBreedingUpdate(du.getAttribute('data-bp-del-update')); return; }
+
+      var ph = t.closest && t.closest('[data-bp-photo]');
+      if (ph){ openLightbox(ph.getAttribute('data-bp-photo')); return; }
+    });
+
+    // Keyboard parity for the card and row roles above.
+    document.addEventListener('keydown', function(e){
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var el = e.target.closest && e.target.closest('[data-bp-open]');
+      if (!el) return;
+      e.preventDefault();
+      openBreedingProject(el.getAttribute('data-bp-open'));
+    });
+
+    var modal = document.getElementById('bp-modal');
+    if (modal){
+      document.getElementById('bp-modal-close').addEventListener('click', function(){ closeLocked(modal); });
+      document.getElementById('bpf-cancel').addEventListener('click', function(){ closeLocked(modal); });
+      document.getElementById('bpf-save').addEventListener('click', saveProject);
+      document.getElementById('bpf-delete').addEventListener('click', deleteProject);
+      document.getElementById('bpf-status').addEventListener('change', bpSyncLessons);
+    }
+
+    var uModal = document.getElementById('bu-modal');
+    if (uModal){
+      document.getElementById('bu-modal-close').addEventListener('click', function(){ closeLocked(uModal); });
+      document.getElementById('buf-cancel').addEventListener('click', function(){ closeLocked(uModal); });
+      document.getElementById('buf-save').addEventListener('click', saveUpdate);
+      document.getElementById('buf-photo').addEventListener('change', function(){
+        var n = this.files.length;
+        document.getElementById('buf-file-text').textContent = n
+          ? (n + ' photo' + (n === 1 ? '' : 's') + ' selected')
+          : 'Tap to add photos of this update';
+        document.getElementById('buf-file-label').classList.toggle('has-file', n > 0);
+      });
+    }
+
+    // Deep links: #/breeding/<projectId> and #/species/<speciesKey>.
+    DETAIL_ROUTES['breeding-project'] = {
+      slug: 'breeding', fallback: 'breeding-hub',
+      key: function(){ return currentProject; },
+      open: function(k){
+        if (bpFind(k)) return openBreedingProject(k);
+        return (IS_LIVE && bpLoading) ? 'pending' : false;
+      }
+    };
+    DETAIL_ROUTES['species'] = {
+      slug: 'species', fallback: 'breeding-hub',
+      key: function(){ return currentSpecies; },
+      open: function(k){ return openSpecies(k); }
+    };
+
+    // Paint once up front. In demo mode this is the only render that ever runs
+    // unprompted (there are no loaders); in live mode it puts the loading state
+    // on screen before the fetch resolves.
+    renderBreedingAll();
+  })();
+
+  async function deleteBreedingUpdate(updateId){
+    if (!bpCanWrite() || !currentProject) return;
+    var res = await dbDeleteRow('breeding_updates', updateId);
+    if (res.error){ popToast('Could not remove that update'); return; }
+    popToast('Update removed');
+    var keep = currentProject;
+    await loadBreedingProjects();
+    if (bpFind(keep)) openBreedingProject(keep);
+  }
+
+  window.loadBreedingProjects = loadBreedingProjects;
+  window.renderBreedingAll = renderBreedingAll;
+
+  if (window.currentMember) { loadLiveMembers(); loadNews(); loadDocuments(); loadTanksFromDB(); loadOtherMemberTanks(); loadTankLikes(); loadMyEntries(); loadAdminAwardQueue(); loadEvents(); loadMyAuctionLots(); loadAdminAuctionList(); loadNotifPrefs(); loadNotifications(); loadBreederListings(); loadBreedingProjects(); loadBreedingSocial(); }
 
   applyLiveMember();
 
@@ -6408,6 +7421,6 @@ window.initPortal = function(){
     var p = parseHash();
     if (!window.location.hash) { replaceRoute('dashboard'); return; }
     var shown = applyRoute(p.view, p.tank);
-    if (!pendingTankKey) replaceRoute(shown);
+    if (!pendingTankKey && !pendingDetail) replaceRoute(shown);
   })();
 };

@@ -81,6 +81,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg>
       My Aquariums
     </button>
+    <button class="side-link" data-view="my-breeding">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/><path d="M6 9c1.5 1 1.5 5 0 6"/></svg>
+      My Breeding
+    </button>
     <button class="side-link" data-view="awards">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/></svg>
       Awards Program
@@ -102,6 +106,10 @@
     <button class="side-link" data-view="member-aquariums">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M3 11h18M12 3v3"/></svg>
       Member Aquariums
+    </button>
+    <button class="side-link" data-view="breeding-hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M3 11h18"/><path d="M8 15c1.2.8 1.2 3 0 3.8"/><path d="M12 3v3"/></svg>
+      Breeding Hub
     </button>
     <button class="side-link" data-view="breeders">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/><path d="M6 9c1.5 1 1.5 5 0 6"/></svg>
@@ -1006,6 +1014,174 @@
   </div>
 </section>
 
+<!-- ============ MY BREEDING ============ -->
+<section class="view" id="view-my-breeding">
+  <div class="view-head">
+    <div>
+      <span class="kicker">My Breeding</span>
+      <h2>What I'm breeding right now</h2>
+      <p>Your own breeding projects — everything on the go, everything you've successfully raised, and the journals behind them.</p>
+    </div>
+  </div>
+
+  <div class="reg-empty" id="bp-mine-signedout" style="display:none;margin-top:24px">
+    Breeding projects are kept per member, so this page needs a signed-in account. You can still browse everyone else's work in the Breeding Hub.
+  </div>
+
+  <div id="bp-mine-panel">
+    <div class="grid g3 stat-grid" id="bp-my-stats"></div>
+    <div class="grid g2 bp-mine-cols">
+      <div>
+        <h4 class="bp-sub">Active projects</h4>
+        <div class="rows bp-rows" id="bp-my-active"></div>
+      </div>
+      <div>
+        <h4 class="bp-sub">Completed</h4>
+        <div class="rows bp-rows" id="bp-my-done"></div>
+      </div>
+    </div>
+    <div style="margin-top:22px"><button class="btn btn-primary" id="bp-new-btn">+ New breeding project</button></div>
+  </div>
+</section>
+
+<!-- ============ BREEDING HUB ============ -->
+<section class="view" id="view-breeding-hub">
+  <div class="view-head">
+    <div>
+      <span class="kicker">Breeding Hub</span>
+      <h2>Follow what the club is raising</h2>
+      <p>Every documented breeding project, most recently updated first. Open one to read the full journal, or heart and follow it to get progress updates.</p>
+    </div>
+    <span class="status-chip" style="display:inline-flex" id="bp-count-chip">0 projects</span>
+  </div>
+
+  <div class="dir-controls">
+    <div class="dir-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" id="bp-search" placeholder="Search species or breeder…" aria-label="Search breeding projects">
+    </div>
+    <button class="chip-btn active" data-bpf="All">All projects</button>
+    <button class="chip-btn" data-bpf="Active">Active</button>
+    <button class="chip-btn" data-bpf="Completed">Completed</button>
+    <button class="chip-btn" data-bpf="Mine">Mine</button>
+  </div>
+
+  <div class="tank-grid" id="bp-grid"></div>
+  <div class="reg-empty" id="bp-empty" style="display:none">No breeding projects match that search.</div>
+</section>
+
+<!-- ============ BREEDING PROJECT (detail) ============ -->
+<!-- Rendered entirely by renderBreedingProject(); deep-linked at #/breeding/<id> -->
+<section class="view" id="view-breeding-project">
+  <div id="bp-detail"></div>
+</section>
+
+<!-- ============ SPECIES HUB ============ -->
+<!-- Derived at render time from breeding projects + the register. #/species/<key> -->
+<section class="view" id="view-species">
+  <div id="bp-species-body"></div>
+</section>
+
+<!-- Breeding project modal (new / edit) -->
+<div class="card-modal" id="bp-modal" role="dialog" aria-modal="true" aria-labelledby="bp-modal-title">
+  <div class="card-modal-inner preview-modal-inner">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <h3 id="bp-modal-title" style="margin:0">New breeding project</h3>
+        <button class="card-modal-close" id="bp-modal-close" aria-label="Close" style="border-color:var(--sand-line);background:var(--sand);color:var(--deep)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="field"><label for="bpf-species">Species *</label><input id="bpf-species" placeholder="e.g. Corydoras sterbai"></div>
+        <div class="grid g2">
+          <div class="field"><label for="bpf-strain">Strain / morph</label><input id="bpf-strain" placeholder="Optional — e.g. Blue Dream"></div>
+          <div class="field"><label for="bpf-category">Category</label>
+            <select id="bpf-category"><option>Fish</option><option>Invertebrate</option><option>Plant</option><option>Live Food</option></select>
+          </div>
+        </div>
+        <div class="grid g2">
+          <div class="field"><label for="bpf-status">Current status</label>
+            <select id="bpf-status">
+              <option>Conditioning</option><option>Spawned</option><option>Eggs</option><option>Hatched</option>
+              <option>Fry</option><option>Growing Out</option><option>Completed</option><option>Failed</option>
+            </select>
+          </div>
+          <div class="field"><label for="bpf-started">Start date</label><input type="date" id="bpf-started"></div>
+        </div>
+        <div class="field"><label for="bpf-tank">Aquarium</label>
+          <select id="bpf-tank"><option value="">No specific aquarium</option></select>
+        </div>
+        <div class="field"><label for="bpf-notes">About this attempt</label>
+          <textarea id="bpf-notes" rows="3" placeholder="Setup, group size, conditioning — anything worth remembering later."></textarea>
+        </div>
+      </div>
+
+      <div id="bpf-lessons" style="display:none;margin-top:8px">
+        <h4 class="bp-sub">Lessons learned</h4>
+        <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 12px">The most useful thing you can leave the next member who tries this species.</p>
+        <div class="form-grid" style="grid-template-columns:1fr">
+          <div class="field"><label for="bpf-worked">What worked</label><textarea id="bpf-worked" rows="2"></textarea></div>
+          <div class="field"><label for="bpf-change">What I'd change</label><textarea id="bpf-change" rows="2"></textarea></div>
+          <div class="field"><label for="bpf-advice">Advice for other members</label><textarea id="bpf-advice" rows="2"></textarea></div>
+        </div>
+      </div>
+
+      <p id="bpf-error" style="display:none;font-size:12.5px;font-weight:700;color:var(--coral-dark);margin:12px 0 0">Enter the species before saving.</p>
+      <div class="bp-modal-foot">
+        <button class="btn btn-primary" id="bpf-save">Save project</button>
+        <button class="btn btn-outline" id="bpf-cancel">Cancel</button>
+        <button class="btn btn-outline bp-danger" id="bpf-delete" style="display:none">Delete project</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add timeline update modal -->
+<div class="card-modal" id="bu-modal" role="dialog" aria-modal="true" aria-label="Add a breeding update">
+  <div class="card-modal-inner preview-modal-inner">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <h3 style="margin:0">Add an update</h3>
+        <button class="card-modal-close" id="bu-modal-close" aria-label="Close" style="border-color:var(--sand-line);background:var(--sand);color:var(--deep)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="grid g2">
+          <div class="field"><label for="buf-date">Date</label><input type="date" id="buf-date"></div>
+          <div class="field"><label for="buf-stage">Stage</label>
+            <select id="buf-stage">
+              <option>Conditioning</option><option>Spawned</option><option>Eggs</option><option>Hatched</option>
+              <option>Fry</option><option>Growing Out</option><option>Completed</option><option>Failed</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label for="buf-notes">Notes</label>
+          <textarea id="buf-notes" rows="3" placeholder="e.g. Started baby brine shrimp today. Roughly 60 fry still healthy."></textarea>
+        </div>
+        <div class="field">
+          <label>Photos</label>
+          <label class="file-field" id="buf-file-label" for="buf-photo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M7 9l5-5 5 5"/><path d="M12 4v13"/></svg>
+            <p id="buf-file-text">Tap to add photos of this update</p>
+            <input type="file" id="buf-photo" accept="image/*" multiple>
+          </label>
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600">
+          <input type="checkbox" id="buf-advance" checked style="width:17px;height:17px;accent-color:var(--leaf)">
+          Move the project to this stage
+        </label>
+      </div>
+      <p id="buf-status" style="font-size:12.5px;color:var(--ink-soft);margin:12px 0 0"></p>
+      <div class="bp-modal-foot">
+        <button class="btn btn-primary" id="buf-save">Save update</button>
+        <button class="btn btn-outline" id="buf-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ RESOURCES ============ -->
 <section class="view" id="view-resources">
   <div class="view-head">
@@ -1329,6 +1505,7 @@
         <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" id="np-news" checked style="width:17px;height:17px;accent-color:var(--leaf)"> Committee announcements</label>
         <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" id="np-resource" style="width:17px;height:17px;accent-color:var(--leaf)"> New resource alerts</label>
         <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" id="np-renewal" checked style="width:17px;height:17px;accent-color:var(--leaf)"> Membership renewal reminders</label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600"><input type="checkbox" id="np-breeding" checked style="width:17px;height:17px;accent-color:var(--leaf)"> Breeding projects I follow</label>
       </div>
       <p style="font-size:12px;color:var(--ink-soft);margin:12px 0 0">Unticking a category hides those notifications from your feed.</p>
       <button class="btn btn-primary btn-sm" id="np-save" style="margin-top:16px">Save preferences</button>
