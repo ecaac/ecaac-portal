@@ -1145,6 +1145,14 @@ select:disabled{opacity:.55;cursor:not-allowed;background-color:var(--sand)}
 .bp-row:focus-visible{outline:2px solid var(--leaf);outline-offset:-2px}
 
 /* ----- project detail ----- */
+/* .panel carries no margin of its own — every static view in the portal spaces
+   panels with an inline margin-top. These pages are rendered as one HTML string,
+   so consecutive panels arrive as adjacent siblings with nothing between them
+   and their rounded corners collide. Space them here rather than sprinkling
+   inline styles through the render functions. */
+#bp-detail > .panel + .panel,
+#bp-species-body > .panel + .panel{margin-top:20px}
+
 .bp-detail-head{margin-bottom:6px}
 .bp-hero{height:240px;border-radius:18px;background-size:cover;background-position:center;
   box-shadow:0 10px 30px -18px rgba(13,16,38,.55)}
@@ -1152,16 +1160,16 @@ select:disabled{opacity:.55;cursor:not-allowed;background-color:var(--sand)}
 .bp-notes p{font-size:14px;line-height:1.6;color:var(--ink-soft);margin:8px 0 0}
 
 /* ----- timeline: the spine of the whole feature ----- */
-.bp-timeline{list-style:none;margin:14px 0 0;padding:0;position:relative}
+.bp-timeline{list-style:none;margin:18px 0 0;padding:0;position:relative}
 .bp-timeline:before{content:'';position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:var(--sand-line)}
-.bp-tl-item{position:relative;padding:0 0 22px 30px}
+.bp-tl-item{position:relative;padding:0 0 26px 30px}
 .bp-tl-item:last-child{padding-bottom:0}
-.bp-tl-dot{position:absolute;left:0;top:5px;width:14px;height:14px;border-radius:50%;
+.bp-tl-dot{position:absolute;left:0;top:2px;width:14px;height:14px;border-radius:50%;
   background:var(--leaf);border:3px solid var(--paper);box-shadow:0 0 0 2px var(--leaf-light)}
-.bp-tl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bp-tl-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;row-gap:6px}
 .bp-tl-head b{font-size:14px;color:var(--deep)}
 .bp-tl-body p{font-size:13.5px;line-height:1.55;color:var(--ink-soft);margin:6px 0 0}
-.bp-tl-photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.bp-tl-photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .bp-tl-photo{width:96px;height:96px;object-fit:cover;border-radius:10px;cursor:pointer;
   border:1px solid var(--sand-line)}
 .bp-tl-del{margin-left:auto;border:none;background:none;color:var(--ink-soft);font-size:19px;
@@ -1181,6 +1189,8 @@ select:disabled{opacity:.55;cursor:not-allowed;background-color:var(--sand)}
 .bp-danger{color:var(--coral-dark);border-color:var(--coral)}
 
 @media (max-width:900px){
+  #bp-detail > .panel + .panel,
+  #bp-species-body > .panel + .panel{margin-top:16px}
   .bp-hero{height:180px}
 }
 
