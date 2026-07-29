@@ -14,7 +14,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=2026-07-28-badges">
+<!-- Cache busting.
+     app.css and app.js were previously pinned to a hand-edited version string
+     (?v=2026-07-28-badges). That works, but only if the string is bumped on
+     every single deploy — miss it once and browsers keep serving the old file
+     while the new one sits on the server, which looks exactly like a broken
+     feature rather than a stale cache.
+     A per-load timestamp removes the discipline entirely: the URL is different
+     on every page load, so neither file can ever be served from cache.
+     document.write is used deliberately — it preserves the synchronous parse
+     order these tags rely on (app.js must finish before the bootstrap script at
+     the foot of the page runs). Appending via DOM insertion would not.
+     Trade-off: both files are re-downloaded on every load. Gzipped that is
+     roughly 100-150KB, which is a fraction of a second on a normal connection.
+     To go back to cached assets, replace Date.now() with a fixed version
+     string and bump it on each deploy. -->
+<script>
+  window.__V = Date.now();
+  document.write('<link rel="stylesheet" href="app.css?v=' + window.__V + '">');
+</script>
 </head>
 <body>
 
@@ -1949,7 +1967,7 @@
   // why the ordering matters.
 </script>
 
-<script src="app.js?v=2026-07-28-badges"></script>
+<script>document.write('<scr' + 'ipt src="app.js?v=' + window.__V + '"><\/scr' + 'ipt>');</script>
 
 <script>
   // Bootstrap, deliberately last.
