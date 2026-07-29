@@ -1101,10 +1101,10 @@
           </div>
         </div>
         <div class="grid g2">
-          <div class="field"><label for="bpf-status">Current status</label>
+          <div class="field"><label for="bpf-status">Current stage</label>
             <select id="bpf-status">
-              <option>Conditioning</option><option>Spawned</option><option>Eggs</option><option>Hatched</option>
-              <option>Fry</option><option>Growing Out</option><option>Completed</option><option>Failed</option>
+              <option>Conditioning</option><option>Spawned</option><option>Eggs</option><option>Wrigglers</option>
+              <option>Fry</option><option>Juvenile</option><option>Adult</option><option>Completed</option>
             </select>
           </div>
           <div class="field"><label for="bpf-started">Start date</label><input type="date" id="bpf-started"></div>
@@ -1137,46 +1137,32 @@
   </div>
 </div>
 
-<!-- Add timeline update modal -->
-<div class="card-modal" id="bu-modal" role="dialog" aria-modal="true" aria-label="Add a breeding update">
+<!-- Log event modal: a type picker, then a form built for that type only.
+     One shell rather than five modals, so a new event type is a config entry
+     in BP_EVENTS rather than another block of markup. -->
+<div class="card-modal" id="be-modal" role="dialog" aria-modal="true" aria-labelledby="be-modal-title">
   <div class="card-modal-inner preview-modal-inner">
     <div class="panel">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
-        <h3 style="margin:0">Add an update</h3>
-        <button class="card-modal-close" id="bu-modal-close" aria-label="Close" style="border-color:var(--sand-line);background:var(--sand);color:var(--deep)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn btn-outline btn-sm" id="be-back" style="display:none" aria-label="Back to event types">&lsaquo;</button>
+          <h3 id="be-modal-title" style="margin:0">Log an event</h3>
+        </div>
+        <button class="card-modal-close" id="be-close" aria-label="Close" style="border-color:var(--sand-line);background:var(--sand);color:var(--deep)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
-      <div class="form-grid" style="grid-template-columns:1fr">
-        <div class="grid g2">
-          <div class="field"><label for="buf-date">Date</label><input type="date" id="buf-date"></div>
-          <div class="field"><label for="buf-stage">Stage</label>
-            <select id="buf-stage">
-              <option>Conditioning</option><option>Spawned</option><option>Eggs</option><option>Hatched</option>
-              <option>Fry</option><option>Growing Out</option><option>Completed</option><option>Failed</option>
-            </select>
-          </div>
+
+      <div id="be-picker"></div>
+
+      <div id="be-form" style="display:none">
+        <div class="form-grid" style="grid-template-columns:1fr" id="be-fields"></div>
+        <p id="be-error" style="display:none;font-size:12.5px;font-weight:700;color:var(--coral-dark);margin:12px 0 0"></p>
+        <p id="be-status" style="font-size:12.5px;color:var(--ink-soft);margin:12px 0 0"></p>
+        <div class="bp-modal-foot">
+          <button class="btn btn-primary" id="be-save">Save event</button>
+          <button class="btn btn-outline" id="be-cancel">Cancel</button>
         </div>
-        <div class="field"><label for="buf-notes">Notes</label>
-          <textarea id="buf-notes" rows="3" placeholder="e.g. Started baby brine shrimp today. Roughly 60 fry still healthy."></textarea>
-        </div>
-        <div class="field">
-          <label>Photos</label>
-          <label class="file-field" id="buf-file-label" for="buf-photo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M7 9l5-5 5 5"/><path d="M12 4v13"/></svg>
-            <p id="buf-file-text">Tap to add photos of this update</p>
-            <input type="file" id="buf-photo" accept="image/*" multiple>
-          </label>
-        </div>
-        <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600">
-          <input type="checkbox" id="buf-advance" checked style="width:17px;height:17px;accent-color:var(--leaf)">
-          Move the project to this stage
-        </label>
-      </div>
-      <p id="buf-status" style="font-size:12.5px;color:var(--ink-soft);margin:12px 0 0"></p>
-      <div class="bp-modal-foot">
-        <button class="btn btn-primary" id="buf-save">Save update</button>
-        <button class="btn btn-outline" id="buf-cancel">Cancel</button>
       </div>
     </div>
   </div>

@@ -6352,46 +6352,94 @@ window.initPortal = function(){
   // the fixtures below so the public demo still shows a working hub; writes and
   // social controls are hidden there rather than faked.
 
-  var BP_STATUSES = ['Conditioning','Spawned','Eggs','Hatched','Fry','Growing Out','Completed','Failed'];
+  var BP_STATUSES = ['Conditioning','Spawned','Eggs','Wrigglers','Fry','Juvenile','Adult','Completed'];
+  // 'Failed' is no longer a stage - it is an outcome of the Complete event. It
+  // stays here so projects created before event logging still read as closed.
   var BP_CLOSED   = { 'Completed':1, 'Failed':1 };
+  var BP_OUTCOMES = ['Successful','Failed','Cancelled'];
+
+  // Every event type is one entry. `fields` drives the form, so adding a sixth
+  // type means adding an object here and a line in bpEventSummary - not new
+  // modals, handlers or save logic.
+  var BP_EVENTS = {
+    breeding: {
+      icon: '\ud83e\udd5a', label: 'Breeding Event',
+      blurb: 'Spawns, eggs and hatches',
+      fields: ['date','subtype','count','notes','photos'],
+      subtypes: ['Spawn','Eggs Laid','Eggs Collected','Hatch','Live Birth'],
+      countLabel: 'Egg / fry count', countHint: 'Optional \u2014 an estimate is fine'
+    },
+    stage: {
+      icon: '\ud83d\udd04', label: 'Stage Change',
+      blurb: 'Move the project forward',
+      fields: ['date','stage','notes','photos']
+    },
+    count: {
+      icon: '\ud83d\udcca', label: 'Count Update',
+      blurb: 'Record how many you have',
+      fields: ['date','count','reason','notes','photos'],
+      countLabel: 'Current count', countRequired: true,
+      reasons: ['Count','Culling','Losses','Sold','Moved','Other']
+    },
+    note: {
+      icon: '\ud83d\udcf7', label: 'Photo / Note',
+      blurb: 'Observations and pictures',
+      fields: ['date','notes','photos']
+    },
+    complete: {
+      icon: '\u2705', label: 'Complete Project',
+      blurb: 'Close the project off',
+      fields: ['date','outcome','count','notes','photos'],
+      countLabel: 'Final count', countHint: 'Optional'
+    }
+  };
+  var BP_EVENT_ORDER = ['breeding','stage','count','note','complete'];
   var BP_BUCKET   = 'breeding-photos';
 
   var BPROJ = IS_LIVE ? [] : [
     { id:'d1', memberId:'d-me', owner:'You', mine:true, tankId:null,
       species:'Corydoras sterbai', strain:'', category:'Fish', status:'Fry',
-      startedOn:'2026-07-10', completedOn:null,
+      startedOn:'2026-07-10', completedOn:null, outcome:'',
       notes:'Group of six adults, heavy live food conditioning then a large cool water change.',
       whatWorked:'', whatChange:'', advice:'',
       updates:[
-        { id:'d1u3', stage:'Fry', loggedAt:'2026-07-28', notes:'Started baby brine shrimp. Roughly 60 fry still going strong.', photos:[] },
-        { id:'d1u2', stage:'Hatched', loggedAt:'2026-07-26', notes:'Eggs hatched overnight — wrigglers on the glass.', photos:[] },
-        { id:'d1u1', stage:'Spawned', loggedAt:'2026-07-10', notes:'Spawn observed after a 4 degree cool water change.', photos:[] }
+        { id:'d1u4', eventType:'count', loggedAt:'2026-07-28', countValue:58, countReason:'Losses',
+          notes:'Lost a few overnight, the rest are feeding well.', stage:'', eventSubtype:'', fromStage:'', toStage:'', outcome:'', photos:[] },
+        { id:'d1u3', eventType:'stage', loggedAt:'2026-07-26', fromStage:'Eggs', toStage:'Fry',
+          notes:'Good hatch, minimal fungus.', stage:'Fry', eventSubtype:'', countValue:null, countReason:'', outcome:'', photos:[] },
+        { id:'d1u2', eventType:'breeding', eventSubtype:'Eggs Collected', loggedAt:'2026-07-12', countValue:42,
+          notes:'Collected off the glass and moved with methylene blue.', stage:'', fromStage:'', toStage:'', countReason:'', outcome:'', photos:[] },
+        { id:'d1u1', eventType:'breeding', eventSubtype:'Spawn', loggedAt:'2026-07-10', countValue:null,
+          notes:'Spawn observed after a 4 degree cool water change.', stage:'', fromStage:'', toStage:'', countReason:'', outcome:'', photos:[] }
       ], photos:[], coverPhotoId:null },
     { id:'d2', memberId:'d-pierre', owner:'Pierre Gerber', mine:false, tankId:null,
       species:'Corydoras sterbai', strain:'', category:'Fish', status:'Eggs',
-      startedOn:'2026-07-19', completedOn:null,
+      startedOn:'2026-07-19', completedOn:null, outcome:'',
       notes:'Second attempt with the same group, this time eggs moved to a hatching tub.',
       whatWorked:'', whatChange:'', advice:'',
       updates:[
-        { id:'d2u1', stage:'Eggs', loggedAt:'2026-07-21', notes:'About 40 eggs collected off the glass and moved with methylene blue.', photos:[] }
+        { id:'d2u1', eventType:'breeding', eventSubtype:'Eggs Laid', loggedAt:'2026-07-21', countValue:40,
+          notes:'About forty eggs on the tub wall.', stage:'', fromStage:'', toStage:'', countReason:'', outcome:'', photos:[] }
       ], photos:[], coverPhotoId:null },
     { id:'d3', memberId:'d-venesh', owner:'Venesh Pillay', mine:false, tankId:null,
-      species:'Neocaridina davidi', strain:'Blue Dream', category:'Invertebrate', status:'Growing Out',
-      startedOn:'2026-05-02', completedOn:null,
+      species:'Neocaridina davidi', strain:'Blue Dream', category:'Invertebrate', status:'Juvenile',
+      startedOn:'2026-05-02', completedOn:null, outcome:'',
       notes:'Colony started from ten graded females.',
       whatWorked:'', whatChange:'', advice:'',
       updates:[
-        { id:'d3u1', stage:'Growing Out', loggedAt:'2026-07-15', notes:'First generation colouring up nicely, culling the pale ones.', photos:[] }
+        { id:'d3u1', eventType:'count', loggedAt:'2026-07-15', countValue:120, countReason:'Culling',
+          notes:'First generation colouring up nicely, culling the pale ones.', stage:'', eventSubtype:'', fromStage:'', toStage:'', outcome:'', photos:[] }
       ], photos:[], coverPhotoId:null },
     { id:'d4', memberId:'d-jonathan', owner:'Jonathan Balmer', mine:false, tankId:null,
       species:'Fundulopanchax gardneri', strain:'Nsukka', category:'Fish', status:'Completed',
-      startedOn:'2026-02-14', completedOn:'2026-06-20',
+      startedOn:'2026-02-14', completedOn:'2026-06-20', outcome:'Successful',
       notes:'Mop spawning, eggs picked daily and water-incubated.',
-      whatWorked:'Picking mops every single day rather than every few days — far fewer fungused eggs.',
+      whatWorked:'Picking mops every single day rather than every few days \u2014 far fewer fungused eggs.',
       whatChange:'I would move the fry off microworms onto brine shrimp about a week sooner.',
       advice:'Do not let the mop dry out during peat storage. Damp, not wet, is the whole trick.',
       updates:[
-        { id:'d4u1', stage:'Completed', loggedAt:'2026-06-20', notes:'32 juveniles grown out and distributed at the June meeting.', photos:[] }
+        { id:'d4u1', eventType:'complete', loggedAt:'2026-06-20', outcome:'Successful', countValue:32,
+          notes:'Grown out and distributed at the June meeting.', stage:'', eventSubtype:'', fromStage:'', toStage:'', countReason:'', photos:[] }
       ], photos:[], coverPhotoId:null }
   ];
 
@@ -6418,6 +6466,22 @@ window.initPortal = function(){
     return null;
   }
   function bpIsActive(p){ return !BP_CLOSED[p.status]; }
+  // A closed project only counts as a species bred if it actually worked.
+  // Projects closed before outcomes existed are treated as successful.
+  function bpIsSuccess(p){
+    if (bpIsActive(p)) return false;
+    if (p.status === 'Failed') return false;
+    return !p.outcome || p.outcome === 'Successful';
+  }
+  // The most recent recorded headcount, whatever event carried it.
+  function bpCurrentCount(p){
+    var best = null;
+    (p.updates || []).forEach(function(u){
+      if (u.countValue === null || u.countValue === undefined) return;
+      if (!best || u.loggedAt > best.loggedAt) best = u;
+    });
+    return best ? best.countValue : null;
+  }
   function bpTitle(p){ return p.species + (p.strain ? ' \u2014 ' + p.strain : ''); }
 
   // Day count is the number members actually quote to each other ("day 18, still
@@ -6480,6 +6544,15 @@ window.initPortal = function(){
     var cls = BP_CLOSED[status] ? (status === 'Failed' ? 'bp-pill-fail' : 'bp-pill-done') : 'bp-pill-live';
     return '<span class="bp-pill ' + cls + '">' + escT(status) + '</span>';
   }
+  // A project pill shows the outcome once there is one, because "Completed"
+  // alone would read as a success on a project that failed.
+  function bpProjectPill(p){
+    if (BP_CLOSED[p.status] && p.outcome){
+      var cls = p.outcome === 'Successful' ? 'bp-pill-done' : 'bp-pill-fail';
+      return '<span class="bp-pill ' + cls + '">' + escT(p.outcome) + '</span>';
+    }
+    return bpStatusPill(p.status);
+  }
   function bpCanWrite(){ return !!(sb && window.currentMember); }
 
   // ---------------------------------------------------------------- loaders --
@@ -6510,6 +6583,10 @@ window.initPortal = function(){
       }).map(function(u){
         return {
           id: u.id, stage: u.stage || '', notes: u.notes || '', loggedAt: u.logged_at,
+          eventType: u.event_type || '', eventSubtype: u.event_subtype || '',
+          countValue: (u.count_value === null || u.count_value === undefined) ? null : u.count_value,
+          countReason: u.count_reason || '', fromStage: u.from_stage || '',
+          toStage: u.to_stage || '', outcome: u.outcome || '',
           photos: allPhotos.filter(function(ph){ return ph.updateId === u.id; })
         };
       });
@@ -6522,7 +6599,7 @@ window.initPortal = function(){
         strain: row.strain || '', category: row.category || 'Fish',
         status: row.status || 'Conditioning',
         startedOn: row.started_on || null, completedOn: row.completed_on || null,
-        notes: row.notes || '',
+        outcome: row.outcome || '', notes: row.notes || '',
         whatWorked: row.what_worked || '', whatChange: row.what_id_change || '', advice: row.advice || '',
         coverPhotoId: row.cover_photo_id || null,
         photos: allPhotos.filter(function(ph){ return !ph.updateId; }),
@@ -6587,9 +6664,9 @@ window.initPortal = function(){
 
     var mine = BPROJ.filter(function(p){ return p.mine; });
     var active = mine.filter(bpIsActive);
-    var done = mine.filter(function(p){ return p.status === 'Completed'; });
+    var done = mine.filter(function(p){ return !bpIsActive(p); });
     var speciesBred = {};
-    done.forEach(function(p){ speciesBred[bpKeyOf(p)] = true; });
+    mine.filter(bpIsSuccess).forEach(function(p){ speciesBred[bpKeyOf(p)] = true; });
 
     statsEl.innerHTML =
       bpStatCard(active.length, 'Active project' + (active.length === 1 ? '' : 's'), 't-leaf') +
@@ -6617,7 +6694,7 @@ window.initPortal = function(){
     if (latest) meta.push('last update ' + bpDate(latest.loggedAt));
     return '<div class="row bp-row" data-bp-open="' + escA(p.id) + '" role="button" tabindex="0">' +
       '<div class="row-body"><b>' + escT(bpTitle(p)) + '</b><span>' + escT(meta.filter(Boolean).join(' \u00b7 ')) + '</span></div>' +
-      '<div class="row-actions">' + bpStatusPill(p.status) + '</div>' +
+      '<div class="row-actions">' + bpProjectPill(p) + '</div>' +
     '</div>';
   }
 
@@ -6648,12 +6725,12 @@ window.initPortal = function(){
     var cover = bpCover(p);
     var latest = bpLatest(p);
     var line = latest
-      ? (bpDate(latest.loggedAt) + ' \u2014 ' + (latest.notes || latest.stage || 'Update posted'))
-      : (p.notes || 'No updates yet.');
+      ? (bpDate(latest.loggedAt) + ' \u2014 ' + bpEventSummary(latest))
+      : (p.notes || 'No events logged yet.');
     return '<article class="tank-card bp-card" data-bp-open="' + escA(p.id) + '" role="button" tabindex="0">' +
       '<div class="bp-card-cover' + (cover ? '' : ' bp-card-cover-empty') + '"' +
         (cover ? ' style="background-image:url(\'' + escA(cover) + '\')"' : '') + '>' +
-        bpStatusPill(p.status) +
+        bpProjectPill(p) +
       '</div>' +
       '<div class="bp-card-body">' +
         '<h4>' + escT(bpTitle(p)) + '</h4>' +
@@ -6805,7 +6882,7 @@ window.initPortal = function(){
       '<span class="kicker">Breeding project</span>' +
       '<h2>' + escT(bpTitle(p)) + '</h2>' +
       '<p>' + escT(p.owner) + (meta.length ? ' \u00b7 ' + escT(meta.join(' \u00b7 ')) : '') + '</p>' +
-    '</div>' + bpStatusPill(p.status) + '</div>';
+    '</div>' + bpProjectPill(p) + '</div>';
 
     // Species Hub cross-link — the reason the hub exists is to get from one
     // project to everyone else attempting the same fish.
@@ -6815,7 +6892,7 @@ window.initPortal = function(){
       (tank ? '<button class="btn btn-outline btn-sm" data-bp-tank="' + escA(tank.id) +
         '">\ud83d\udca7 ' + escT(tank.name) + '</button>' : '') +
       '<button class="btn btn-outline btn-sm" data-bp-species="' + escA(bpKeyOf(p)) + '">See everyone breeding this</button>' +
-      (p.mine && bpCanWrite() ? '<button class="btn btn-primary btn-sm" data-bp-add-update="' + escA(p.id) + '">+ Add update</button>' : '') +
+      (p.mine && bpCanWrite() ? '<button class="btn btn-primary btn-sm" data-bp-log="' + escA(p.id) + '">+ Log event</button>' : '') +
       (p.mine && bpCanWrite() ? '<button class="btn btn-outline btn-sm" data-bp-edit="' + escA(p.id) + '">Edit project</button>' : '') +
     '</div>';
 
@@ -6828,27 +6905,14 @@ window.initPortal = function(){
         (p.mine ? ' \u2014 add the first one to start the journal.' : '.') + '</div>';
     } else {
       html += '<ol class="bp-timeline">' + p.updates.map(function(u){
-        var photos = (u.photos || []).map(function(ph){
-          return '<img src="' + escA(ph.url) + '" alt="" class="bp-tl-photo" data-bp-photo="' + escA(ph.url) + '">';
-        }).join('');
-        return '<li class="bp-tl-item">' +
-          '<div class="bp-tl-dot"></div>' +
-          '<div class="bp-tl-body">' +
-            '<div class="bp-tl-head"><b>' + escT(bpDate(u.loggedAt)) + '</b>' +
-              (u.stage ? bpStatusPill(u.stage) : '') +
-              (p.mine && bpCanWrite() ? '<button class="bp-tl-del" data-bp-del-update="' + escA(u.id) + '" aria-label="Delete this update">\u00d7</button>' : '') +
-            '</div>' +
-            (u.notes ? '<p>' + escT(u.notes) + '</p>' : '') +
-            (photos ? '<div class="bp-tl-photos">' + photos + '</div>' : '') +
-          '</div>' +
-        '</li>';
+        return bpTimelineItem(u, p);
       }).join('') + '</ol>';
     }
     html += '</div>';
 
     // ---- lessons learned
     var hasLessons = p.whatWorked || p.whatChange || p.advice;
-    if (hasLessons || (p.mine && BP_CLOSED[p.status])){
+    if (hasLessons || (p.mine && !bpIsActive(p))){
       html += '<div class="panel bp-lessons"><h3>Lessons learned</h3>';
       if (hasLessons){
         if (p.whatWorked) html += '<h4>What worked</h4><p>' + escT(p.whatWorked) + '</p>';
@@ -6863,6 +6927,82 @@ window.initPortal = function(){
     }
 
     wrap.innerHTML = html;
+  }
+
+  // Each timeline entry is: icon + title, an optional structured line, then the
+  // member's own words. The structured line is what makes future statistics
+  // possible - counts and stage moves are columns, not prose.
+  function bpTimelineItem(u, p){
+    var e = BP_EVENTS[u.eventType];
+    var photos = (u.photos || []).map(function(ph){
+      return '<img src="' + escA(ph.url) + '" alt="" class="bp-tl-photo" data-bp-photo="' + escA(ph.url) + '">';
+    }).join('');
+    var n = (u.photos || []).length;
+
+    var title, stat = '';
+    if (e){
+      title = e.icon + ' ' + (u.eventType === 'breeding' && u.eventSubtype ? u.eventSubtype
+            : u.eventType === 'stage' ? 'Stage Changed'
+            : u.eventType === 'complete' ? 'Project Completed'
+            : e.label);
+      stat = bpEventStat(u);
+    } else {
+      // Pre-event-logging entry: render as it always was.
+      title = u.stage ? u.stage : 'Update';
+    }
+
+    return '<li class="bp-tl-item">' +
+      '<div class="bp-tl-dot' + (u.eventType === 'complete' ? ' bp-tl-dot-done' : '') + '"></div>' +
+      '<div class="bp-tl-body">' +
+        '<div class="bp-tl-head">' +
+          '<b>' + escT(bpDate(u.loggedAt)) + '</b>' +
+          '<span class="bp-ev-title">' + escT(title) + '</span>' +
+          (!e && u.stage ? bpStatusPill(u.stage) : '') +
+          (p.mine && bpCanWrite() ? '<button class="bp-tl-del" data-bp-del-update="' + escA(u.id) + '" aria-label="Delete this entry">\u00d7</button>' : '') +
+        '</div>' +
+        (stat ? '<div class="bp-ev-stat">' + stat + '</div>' : '') +
+        (u.notes ? '<p>' + escT(u.notes) + '</p>' : '') +
+        (photos ? '<div class="bp-tl-photos">' + photos + '</div>' : '') +
+        (n ? '<div class="bp-ev-photocount">\ud83d\udcf7 ' + n + ' photo' + (n === 1 ? '' : 's') + '</div>' : '') +
+      '</div>' +
+    '</li>';
+  }
+
+  // The one structured line per event type.
+  function bpEventStat(u){
+    var c = (u.countValue === null || u.countValue === undefined) ? null : u.countValue;
+    if (u.eventType === 'stage'){
+      if (!u.toStage) return '';
+      return u.fromStage
+        ? '<b>' + escT(u.fromStage) + '</b> \u2192 <b>' + escT(u.toStage) + '</b>'
+        : '<b>' + escT(u.toStage) + '</b>';
+    }
+    if (u.eventType === 'count'){
+      var bits = [];
+      if (c !== null) bits.push('Current count: <b>' + c + '</b>');
+      if (u.countReason && u.countReason !== 'Count') bits.push('<span class="bp-ev-tag">' + escT(u.countReason) + '</span>');
+      return bits.join(' \u00b7 ');
+    }
+    if (u.eventType === 'complete'){
+      var out = [];
+      if (u.outcome) out.push('<b>' + escT(u.outcome) + '</b>');
+      if (c !== null) out.push('Final count: <b>' + c + '</b>');
+      return out.join(' \u00b7 ');
+    }
+    if (u.eventType === 'breeding' && c !== null) return 'Count: <b>' + c + '</b>';
+    return '';
+  }
+
+  // One-line summary used on the project cards.
+  function bpEventSummary(u){
+    if (!u) return '';
+    var e = BP_EVENTS[u.eventType];
+    if (!e) return u.notes || u.stage || 'Update posted';
+    if (u.eventType === 'stage' && u.toStage) return e.icon + ' Stage \u2192 ' + u.toStage;
+    if (u.eventType === 'count' && u.countValue !== null) return e.icon + ' Count: ' + u.countValue;
+    if (u.eventType === 'complete') return e.icon + ' Completed' + (u.outcome ? ' \u2014 ' + u.outcome : '');
+    if (u.eventType === 'breeding' && u.eventSubtype) return e.icon + ' ' + u.eventSubtype;
+    return e.icon + ' ' + (u.notes || e.label);
   }
 
   // ------------------------------------------------------------ Species Hub --
@@ -6886,7 +7026,7 @@ window.initPortal = function(){
     var name = list.length ? list[0].species : currentSpecies.replace(/-/g, ' ');
 
     var active = list.filter(bpIsActive);
-    var done = list.filter(function(p){ return p.status === 'Completed'; });
+    var done = list.filter(function(p){ return !bpIsActive(p); });
 
     // Anyone with an active project, plus anyone with a register listing for the
     // same species who hasn't started a journal yet.
@@ -6931,7 +7071,7 @@ window.initPortal = function(){
     html += '<div class="panel"><h3>Recent updates</h3>' + (recent.length
       ? '<div class="rows bp-rows">' + recent.map(function(r){
           return '<div class="row bp-row" data-bp-open="' + escA(r.p.id) + '" role="button" tabindex="0">' +
-            '<div class="row-body"><b>' + escT(r.p.owner) + '</b><span>' + escT(bpDate(r.u.loggedAt) + ' \u2014 ' + (r.u.notes || r.u.stage || 'Update posted')) + '</span></div>' +
+            '<div class="row-body"><b>' + escT(r.p.owner) + '</b><span>' + escT(bpDate(r.u.loggedAt) + ' \u2014 ' + bpEventSummary(r.u)) + '</span></div>' +
           '</div>';
         }).join('') + '</div>'
       : '<div class="reg-empty" style="padding:18px">No journal updates recorded for this species yet.</div>') + '</div>';
@@ -7077,73 +7217,191 @@ window.initPortal = function(){
 
   // ----------------------------------------------------------- update modal --
 
-  function openUpdateModal(projectId){
-    var modal = document.getElementById('bu-modal');
+  // ----------------------------------------------------------- event modal --
+  //
+  // Two screens in one shell: pick a type, then fill a form built only from
+  // that type's `fields` list. Everything below is generic over BP_EVENTS.
+
+  var beKind = null, beProject = null;
+
+  function openEventPicker(projectId){
     var p = bpFind(projectId);
-    if (!modal || !p) return;
-    modal.setAttribute('data-project', projectId);
-    document.getElementById('buf-date').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('buf-stage').value = p.status;
-    document.getElementById('buf-notes').value = '';
-    document.getElementById('buf-photo').value = '';
-    document.getElementById('buf-file-text').textContent = 'Tap to add photos of this update';
-    document.getElementById('buf-file-label').classList.remove('has-file');
-    document.getElementById('buf-status').textContent = '';
-    document.getElementById('buf-advance').checked = true;
+    var modal = document.getElementById('be-modal');
+    if (!p || !modal || !bpCanWrite()) return;
+    beProject = projectId; beKind = null;
+    document.getElementById('be-modal-title').textContent = 'Log an event';
+    document.getElementById('be-back').style.display = 'none';
+    document.getElementById('be-form').style.display = 'none';
+    var picker = document.getElementById('be-picker');
+    picker.style.display = '';
+    picker.innerHTML = BP_EVENT_ORDER.filter(function(k){
+      // Nothing to complete on a project that is already closed.
+      return !(k === 'complete' && !bpIsActive(p));
+    }).map(function(k){
+      var e = BP_EVENTS[k];
+      return '<button type="button" class="bp-ev-pick" data-be-kind="' + k + '">' +
+        '<span class="bp-ev-pick-icon">' + e.icon + '</span>' +
+        '<span class="bp-ev-pick-text"><b>' + escT(e.label) + '</b><span>' + escT(e.blurb) + '</span></span>' +
+        '<span class="bp-ev-pick-go">\u203a</span>' +
+      '</button>';
+    }).join('');
     openLocked(modal);
-    softFocus(document.getElementById('buf-notes'), modal);
   }
 
-  async function saveUpdate(){
-    var modal = document.getElementById('bu-modal');
-    var projectId = modal.getAttribute('data-project');
-    var p = bpFind(projectId);
-    if (!p || !bpCanWrite()) return;
+  function openEventForm(kind){
+    var e = BP_EVENTS[kind], p = bpFind(beProject);
+    if (!e || !p) return;
+    beKind = kind;
+    document.getElementById('be-modal-title').textContent = e.icon + ' ' + e.label;
+    document.getElementById('be-back').style.display = '';
+    document.getElementById('be-picker').style.display = 'none';
+    document.getElementById('be-form').style.display = '';
+    document.getElementById('be-error').style.display = 'none';
+    document.getElementById('be-status').textContent = '';
+    document.getElementById('be-fields').innerHTML = bpEventFieldsHtml(e, p);
+    var f = document.getElementById('be-photo');
+    if (f) f.addEventListener('change', function(){
+      var n = this.files.length;
+      document.getElementById('be-file-text').textContent = n
+        ? (n + ' photo' + (n === 1 ? '' : 's') + ' selected')
+        : 'Tap to add photos';
+    });
+    softFocus(document.getElementById('be-notes'), document.getElementById('be-modal'));
+  }
 
-    var notes = document.getElementById('buf-notes').value.trim();
-    var stage = document.getElementById('buf-stage').value;
-    var loggedAt = document.getElementById('buf-date').value || new Date().toISOString().slice(0, 10);
-    var files = Array.prototype.slice.call(document.getElementById('buf-photo').files || []);
-    if (!notes && !files.length){ popToast('Add a note or a photo before saving'); return; }
+  function bpSelectHtml(id, label, opts, chosen){
+    return '<div class="field"><label for="' + id + '">' + escT(label) + '</label><select id="' + id + '">' +
+      opts.map(function(o){
+        return '<option' + (o === chosen ? ' selected' : '') + '>' + escT(o) + '</option>';
+      }).join('') + '</select></div>';
+  }
 
-    var btn = document.getElementById('buf-save');
-    var statusEl = document.getElementById('buf-status');
+  function bpEventFieldsHtml(e, p){
+    var h = '';
+    e.fields.forEach(function(f){
+      if (f === 'date'){
+        h += '<div class="field"><label for="be-date">Date</label>' +
+             '<input type="date" id="be-date" value="' + new Date().toISOString().slice(0, 10) + '"></div>';
+      } else if (f === 'subtype'){
+        h += bpSelectHtml('be-subtype', 'Event', e.subtypes, e.subtypes[0]);
+      } else if (f === 'stage'){
+        // Default to the next stage along, since that is nearly always the move.
+        var i = BP_STATUSES.indexOf(p.status);
+        var next = BP_STATUSES[i >= 0 && i < BP_STATUSES.length - 1 ? i + 1 : (i < 0 ? 0 : i)];
+        h += bpSelectHtml('be-stage', 'New stage', BP_STATUSES, next) +
+             '<p class="bp-field-hint">Currently <b>' + escT(p.status) + '</b>. Saving updates the project badge.</p>';
+      } else if (f === 'outcome'){
+        h += bpSelectHtml('be-outcome', 'Outcome', BP_OUTCOMES, BP_OUTCOMES[0]);
+      } else if (f === 'count'){
+        h += '<div class="field"><label for="be-count">' + escT(e.countLabel) + '</label>' +
+             '<input type="number" id="be-count" min="0" step="1" inputmode="numeric" placeholder="e.g. 42"></div>' +
+             (e.countHint ? '<p class="bp-field-hint">' + escT(e.countHint) + '</p>' : '');
+      } else if (f === 'reason'){
+        h += bpSelectHtml('be-reason', 'Reason', e.reasons, e.reasons[0]);
+      } else if (f === 'notes'){
+        h += '<div class="field"><label for="be-notes">Notes</label>' +
+             '<textarea id="be-notes" rows="3" placeholder="What did you see?"></textarea></div>';
+      } else if (f === 'photos'){
+        h += '<div class="field"><label>Photos</label>' +
+             '<label class="file-field" id="be-file-label" for="be-photo">' +
+             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M7 9l5-5 5 5"/><path d="M12 4v13"/></svg>' +
+             '<p id="be-file-text">Tap to add photos</p>' +
+             '<input type="file" id="be-photo" accept="image/*" multiple>' +
+             '</label></div>';
+      }
+    });
+    return h;
+  }
+
+  function beVal(id){
+    var el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+
+  function beError(msg){
+    var el = document.getElementById('be-error');
+    el.textContent = msg; el.style.display = 'block';
+  }
+
+  async function saveEvent(){
+    var e = BP_EVENTS[beKind], p = bpFind(beProject);
+    if (!e || !p || !bpCanWrite()) return;
+
+    var loggedAt = beVal('be-date') || new Date().toISOString().slice(0, 10);
+    var notes = beVal('be-notes');
+    var files = Array.prototype.slice.call((document.getElementById('be-photo') || {}).files || []);
+    var countRaw = beVal('be-count');
+    var count = countRaw === '' ? null : parseInt(countRaw, 10);
+
+    if (count !== null && (isNaN(count) || count < 0)) return beError('Enter a whole number, or leave the count blank.');
+    if (e.countRequired && count === null) return beError('A count is required for this event.');
+    if (beKind === 'note' && !notes && !files.length) return beError('Add a note or a photo before saving.');
+
+    var row = {
+      project_id: beProject, member_id: window.currentMember.id,
+      event_type: beKind, logged_at: loggedAt,
+      notes: notes || null, count_value: count
+    };
+    if (beKind === 'breeding') row.event_subtype = beVal('be-subtype');
+    if (beKind === 'count')    row.count_reason  = beVal('be-reason');
+    if (beKind === 'complete') row.outcome       = beVal('be-outcome');
+    if (beKind === 'stage'){
+      row.from_stage = p.status;
+      row.to_stage   = beVal('be-stage');
+      row.stage      = row.to_stage;   // legacy column mirrors the new one
+    }
+
+    var btn = document.getElementById('be-save');
+    var statusEl = document.getElementById('be-status');
     btn.disabled = true; btn.textContent = 'Saving\u2026';
 
-    var res = await dbInsertRow('breeding_updates', {
-      project_id: projectId, member_id: window.currentMember.id,
-      stage: stage, notes: notes || null, logged_at: loggedAt
-    });
+    var res = await dbInsertRow('breeding_updates', row);
     if (res.error){
-      btn.disabled = false; btn.textContent = 'Save update';
-      popToast('Could not save that update \u2014 try again');
+      btn.disabled = false; btn.textContent = 'Save event';
+      popToast('Could not save that event \u2014 try again');
       return;
     }
     var updateId = res.data ? res.data.id : null;
 
-    // Photos are best-effort from here: the update is already saved and nothing
-    // below can undo it. Same contract as the award entry photo upload.
+    // Photos are best-effort: the event is already saved and nothing below can
+    // undo it. Same contract as the award entry upload.
     if (files.length && updateId){
       btn.textContent = 'Uploading photos\u2026';
       await bpUploadPhotos(p, files, updateId, statusEl);
     }
 
-    // Advancing the project status is the common case after posting an update,
-    // so it's a ticked checkbox rather than a second trip to the edit form.
-    if (document.getElementById('buf-advance').checked && stage !== p.status){
-      await dbUpdateRow('breeding_projects', projectId, {
-        status: stage,
-        completed_on: BP_CLOSED[stage] ? loggedAt : null
+    // Only two event types move the project itself.
+    if (beKind === 'stage' && row.to_stage !== p.status){
+      await dbUpdateRow('breeding_projects', beProject, {
+        status: row.to_stage,
+        completed_on: BP_CLOSED[row.to_stage] ? loggedAt : null
+      });
+    } else if (beKind === 'complete'){
+      await dbUpdateRow('breeding_projects', beProject, {
+        status: 'Completed', outcome: row.outcome, completed_on: loggedAt
       });
     }
 
-    btn.disabled = false; btn.textContent = 'Save update';
+    btn.disabled = false; btn.textContent = 'Save event';
     statusEl.textContent = '';
-    closeLocked(modal);
-    popToast('Update added to the journal');
-    bpNotifyFollowers(p, { stage: stage, notes: notes });
+    closeLocked(document.getElementById('be-modal'));
+    popToast(beKind === 'complete' ? 'Project completed \u2014 nice work' : 'Event added to the journal');
+    bpNotifyFollowers(p, {
+      stage: beKind === 'stage' ? row.to_stage : (e.label),
+      notes: notes || bpEventStatPlain(row)
+    });
+    var keep = beProject;
     await loadBreedingProjects();
-    if (bpFind(projectId)) openBreedingProject(projectId);
+    if (bpFind(keep)) openBreedingProject(keep);
+  }
+
+  // Plain-text version of the structured line, for notification bodies.
+  function bpEventStatPlain(row){
+    if (row.event_type === 'stage') return row.from_stage + ' \u2192 ' + row.to_stage;
+    if (row.event_type === 'count' && row.count_value !== null) return 'Count: ' + row.count_value;
+    if (row.event_type === 'complete') return row.outcome || 'Completed';
+    if (row.event_type === 'breeding') return row.event_subtype || 'Breeding event';
+    return 'New progress posted';
   }
 
   // Same shape and limits as the tank photo uploader, pointed at another bucket.
@@ -7246,8 +7504,11 @@ window.initPortal = function(){
       var sp = t.closest && t.closest('[data-bp-species]');
       if (sp){ openSpecies(sp.getAttribute('data-bp-species')); return; }
 
-      var addU = t.closest && t.closest('[data-bp-add-update]');
-      if (addU){ openUpdateModal(addU.getAttribute('data-bp-add-update')); return; }
+      var logE = t.closest && t.closest('[data-bp-log]');
+      if (logE){ openEventPicker(logE.getAttribute('data-bp-log')); return; }
+
+      var pick = t.closest && t.closest('[data-be-kind]');
+      if (pick){ openEventForm(pick.getAttribute('data-be-kind')); return; }
 
       var ed = t.closest && t.closest('[data-bp-edit]');
       if (ed){ openProjectModal(ed.getAttribute('data-bp-edit')); return; }
@@ -7277,18 +7538,14 @@ window.initPortal = function(){
       document.getElementById('bpf-status').addEventListener('change', bpSyncLessons);
     }
 
-    var uModal = document.getElementById('bu-modal');
-    if (uModal){
-      document.getElementById('bu-modal-close').addEventListener('click', function(){ closeLocked(uModal); });
-      document.getElementById('buf-cancel').addEventListener('click', function(){ closeLocked(uModal); });
-      document.getElementById('buf-save').addEventListener('click', saveUpdate);
-      document.getElementById('buf-photo').addEventListener('change', function(){
-        var n = this.files.length;
-        document.getElementById('buf-file-text').textContent = n
-          ? (n + ' photo' + (n === 1 ? '' : 's') + ' selected')
-          : 'Tap to add photos of this update';
-        document.getElementById('buf-file-label').classList.toggle('has-file', n > 0);
-      });
+    var eModal = document.getElementById('be-modal');
+    if (eModal){
+      document.getElementById('be-close').addEventListener('click', function(){ closeLocked(eModal); });
+      document.getElementById('be-cancel').addEventListener('click', function(){ closeLocked(eModal); });
+      document.getElementById('be-save').addEventListener('click', saveEvent);
+      // Back returns to the type picker rather than closing, so a mis-tap
+      // costs one press instead of restarting the whole flow.
+      document.getElementById('be-back').addEventListener('click', function(){ openEventPicker(beProject); });
     }
 
     // Deep links: #/breeding/<projectId> and #/species/<speciesKey>.
