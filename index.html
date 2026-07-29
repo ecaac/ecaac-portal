@@ -999,8 +999,8 @@
   <p class="reg-count" id="reg-updated">Contact a breeder through the committee to arrange a swap or collection.</p>
 
   <div class="grid admin-split" id="my-listings-wrap" style="margin-top:26px;display:none">
-    <div class="panel">
-      <h3>Add a listing</h3>
+    <div class="panel" id="bl-form-panel">
+      <h3 id="bl-form-title">Add a listing</h3>
       <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px">List what you're breeding or growing so other members can find you for a swap.</p>
       <div class="form-grid" style="grid-template-columns:1fr">
         <div class="field"><label for="bl-species">Species / item *</label><input id="bl-species" placeholder="e.g. Crystal Red Caridina"></div>
@@ -1022,7 +1022,10 @@
         </div>
       </div>
       <p id="bl-error" style="display:none;font-size:12.5px;font-weight:700;color:var(--coral-dark);margin:12px 0 0">Enter the species or item before saving.</p>
-      <div style="margin-top:16px"><button class="btn btn-primary" id="bl-add-btn">Add listing</button></div>
+      <div style="margin-top:16px;display:flex;gap:10px">
+        <button class="btn btn-primary" id="bl-add-btn">Add listing</button>
+        <button class="btn btn-outline" id="bl-cancel-btn" style="display:none">Cancel</button>
+      </div>
     </div>
     <div class="panel">
       <h3>My listings</h3>

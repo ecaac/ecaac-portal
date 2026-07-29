@@ -1847,14 +1847,21 @@ window.initPortal = function(){
       return '<div class="row"><div class="row-body"><b>' + esc(d.species) + '</b>' +
         '<span>' + esc(d.category) + ' \u00B7 ' + (d.shipping === 'Yes' ? 'can ship' : 'collection only') +
         ' \u00B7 ' + esc(d.pref) + '</span></div>' + badge +
+        '<button class="rm-btn" data-bl-edit="' + escA(d.id) + '" aria-label="Edit ' + escA(d.species) + '" title="Edit">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>' +
         '<button class="rm-btn" data-bl-id="' + escA(d.id) + '" aria-label="Remove ' + escA(d.species) + '">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>';
     }).join('');
+    list.querySelectorAll('[data-bl-edit]').forEach(function(b){
+      b.addEventListener('click', function(){ startEditListing(b.getAttribute('data-bl-edit')); });
+    });
     list.querySelectorAll('[data-bl-id]').forEach(function(b){
       b.addEventListener('click', async function(){
         b.disabled = true;
-        var res = await blRemoveListing(b.getAttribute('data-bl-id'));
+        var id = b.getAttribute('data-bl-id');
+        var res = await blRemoveListing(id);
         if (res && res.error){ b.disabled = false; popToast('Could not remove that listing'); return; }
+        if (editingListingId === id) cancelEditListing();
         popToast('Listing removed');
         loadBreederListings();
       });
@@ -1896,6 +1903,46 @@ window.initPortal = function(){
   });
 
   var addingListing = false;
+  // The id of the listing currently loaded into the Add-a-listing form, or null
+  // when the form is in its normal add mode. One form serves both jobs rather
+  // than a second modal, so a member editing a listing sees exactly the same
+  // fields they used to create it.
+  var editingListingId = null;
+
+  function startEditListing(id){
+    var d = BREG.filter(function(r){ return r.id === id; })[0];
+    if (!d) return;
+    editingListingId = id;
+    document.getElementById('bl-species').value = d.species;
+    document.getElementById('bl-category').value = d.category;
+    document.getElementById('bl-status').value = d.status;
+    document.getElementById('bl-pref').value = d.pref;
+    document.getElementById('bl-shipping').value = d.shipping;
+    document.getElementById('bl-error').style.display = 'none';
+    document.getElementById('bl-form-title').textContent = 'Edit listing';
+    document.getElementById('bl-add-btn').textContent = 'Save changes';
+    document.getElementById('bl-cancel-btn').style.display = '';
+    var panel = document.getElementById('bl-form-panel');
+    if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior:'smooth', block:'center' });
+    softFocus(document.getElementById('bl-species'), panel);
+  }
+
+  function cancelEditListing(){
+    editingListingId = null;
+    document.getElementById('bl-species').value = '';
+    document.getElementById('bl-category').value = 'Fish';
+    document.getElementById('bl-status').value = 'Available';
+    document.getElementById('bl-pref').value = 'Unknown';
+    document.getElementById('bl-shipping').value = 'No';
+    document.getElementById('bl-error').style.display = 'none';
+    document.getElementById('bl-form-title').textContent = 'Add a listing';
+    document.getElementById('bl-add-btn').textContent = 'Add listing';
+    document.getElementById('bl-cancel-btn').style.display = 'none';
+  }
+
+  var blCancelBtn = document.getElementById('bl-cancel-btn');
+  if (blCancelBtn) blCancelBtn.addEventListener('click', cancelEditListing);
+
   var blAddBtn = document.getElementById('bl-add-btn');
   if (blAddBtn) blAddBtn.addEventListener('click', async function(){
     if (addingListing) return;
@@ -1905,19 +1952,27 @@ window.initPortal = function(){
     if (!species){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
     addingListing = true;
-    blAddBtn.disabled = true; blAddBtn.textContent = 'Adding\u2026';
-    var res = await dbInsertRow('breeder_listings', {
-      member_id: window.currentMember.id,
+    var editingId = editingListingId;
+    blAddBtn.disabled = true; blAddBtn.textContent = editingId ? 'Saving\u2026' : 'Adding\u2026';
+    var payload = {
       species: species,
       category: document.getElementById('bl-category').value,
       status: document.getElementById('bl-status').value,
       pref: document.getElementById('bl-pref').value,
       shipping: document.getElementById('bl-shipping').value === 'Yes'
-    });
-    blAddBtn.disabled = false; blAddBtn.textContent = 'Add listing';
-    if (res.error){ popToast('Could not add that listing \u2014 try again'); addingListing = false; return; }
-    document.getElementById('bl-species').value = '';
-    popToast(species + ' added to the register');
+    };
+    var res = editingId
+      ? await dbUpdateRow('breeder_listings', editingId, payload)
+      : await dbInsertRow('breeder_listings', Object.assign({ member_id: window.currentMember.id }, payload));
+    blAddBtn.disabled = false;
+    if (res.error){
+      popToast(editingId ? 'Could not save that listing \u2014 try again' : 'Could not add that listing \u2014 try again');
+      blAddBtn.textContent = editingId ? 'Save changes' : 'Add listing';
+      addingListing = false;
+      return;
+    }
+    popToast(editingId ? species + ' updated' : species + ' added to the register');
+    cancelEditListing();
     loadBreederListings();
     addingListing = false;
   });

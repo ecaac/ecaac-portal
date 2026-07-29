@@ -573,6 +573,9 @@ a.link-arrow:hover svg,button.link-arrow:hover svg,.card:hover .link-arrow svg{t
 .rm-btn{flex:none;width:28px;height:28px;border-radius:8px;border:1px solid var(--sand-line);background:var(--paper);color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .15s,color .15s,border-color .15s}
 .rm-btn:hover{color:var(--coral-dark);border-color:var(--coral)}
 .rm-btn svg{width:13px;height:13px}
+/* Edit uses the same 28px square as remove, but a neutral hover — coral reads
+   as destructive, which is wrong for an action that only opens the form. */
+.rm-btn[data-bl-edit]:hover{color:var(--leaf-dark);border-color:var(--leaf)}
 .row .rm-btn{opacity:0}
 .row:hover .rm-btn{opacity:1}
 .row .rm-btn:focus-visible{opacity:1}
