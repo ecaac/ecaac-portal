@@ -634,7 +634,14 @@ window.initPortal = function(){
     });
   }
 
+  // Was a plain in-memory flag — true only until the next reload or login, so
+  // the badge always looked freshly un-earned even though the member had
+  // already downloaded their card. Persisted the same way the time-of-day fun
+  // badges are, keyed per member so one account's download doesn't mark it for
+  // another signed-in member on the same device.
+  var cardBadgeKey = 'ecaac-card-downloaded-' + (window.currentMember ? window.currentMember.id : 'demo');
   var cardDownloaded = false;
+  try { cardDownloaded = localStorage.getItem(cardBadgeKey) === '1'; } catch (e) { cardDownloaded = false; }
   function downloadCard(){
     // wait for the display fonts (and try the real logo) so the card renders accurately
     var render = function(logoImg){
@@ -654,6 +661,7 @@ window.initPortal = function(){
       }
       document.body.appendChild(a); a.click(); a.remove();
       cardDownloaded = true;
+      try { localStorage.setItem(cardBadgeKey, '1'); } catch (e) { /* storage unavailable, non-fatal */ }
       popToast('Membership card downloaded (' + a.download + ')');
       if (window.checkBadgeChanges) window.checkBadgeChanges();
     };
