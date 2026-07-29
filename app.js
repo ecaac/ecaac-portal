@@ -6455,6 +6455,27 @@ window.initPortal = function(){
     }
     return null;
   }
+  // The aquarium a project runs in, resolved across the whole club rather than
+  // just the signed-in member's own tanks. Archived tanks drop out of
+  // getAllMemberTanks(), so an old link simply stops offering a preview.
+  function bpTankFor(p){
+    if (!p || !p.tankId || typeof getAllMemberTanks !== 'function') return null;
+    var all = getAllMemberTanks();
+    for (var i = 0; i < all.length; i++) if (all[i].id === p.tankId) return all[i];
+    return null;
+  }
+
+  // Reuses the Member Aquariums preview rather than building a second one, so
+  // a tank looks identical wherever it's opened from.
+  function openProjectTank(tankId){
+    if (typeof getAllMemberTanks !== 'function' || typeof openMaPreview !== 'function') return;
+    var all = getAllMemberTanks();
+    for (var i = 0; i < all.length; i++){
+      if (all[i].id === tankId){ openMaPreview(all[i]); return; }
+    }
+    popToast('That aquarium is no longer available');
+  }
+
   function bpStatusPill(status){
     var cls = BP_CLOSED[status] ? (status === 'Failed' ? 'bp-pill-fail' : 'bp-pill-done') : 'bp-pill-live';
     return '<span class="bp-pill ' + cls + '">' + escT(status) + '</span>';
@@ -6766,17 +6787,16 @@ window.initPortal = function(){
     if (!p){ wrap.innerHTML = '<div class="reg-empty" style="padding:24px">That project is no longer available.</div>'; return; }
 
     var cover = bpCover(p);
-    var tank = p.tankId ? tanks.filter(function(t){ return t.id === p.tankId; })[0] : null;
+    var tank = bpTankFor(p);
     var meta = [];
     if (p.category) meta.push(p.category);
-    if (tank) meta.push(tank.name);
     if (p.startedOn) meta.push('started ' + bpDate(p.startedOn));
     if (bpDayText(p)) meta.push(bpDayText(p));
 
     var html = '';
 
     html += '<div class="bp-detail-head">' +
-      '<button class="btn btn-outline btn-sm" data-view-jump="breeding-hub">\u2039 Back to Breeding Hub</button>' +
+      '<button class="btn btn-outline btn-sm" data-bp-jump="breeding-hub">\u2039 Back to Breeding Hub</button>' +
     '</div>';
 
     if (cover) html += '<div class="bp-hero" style="background-image:url(\'' + escA(cover) + '\')"></div>';
@@ -6792,6 +6812,8 @@ window.initPortal = function(){
     html += '<div class="bp-actions">' +
       bpHeartHtml(p, true) +
       bpFollowBtnHtml(p) +
+      (tank ? '<button class="btn btn-outline btn-sm" data-bp-tank="' + escA(tank.id) +
+        '">\ud83d\udca7 ' + escT(tank.name) + '</button>' : '') +
       '<button class="btn btn-outline btn-sm" data-bp-species="' + escA(bpKeyOf(p)) + '">See everyone breeding this</button>' +
       (p.mine && bpCanWrite() ? '<button class="btn btn-primary btn-sm" data-bp-add-update="' + escA(p.id) + '">+ Add update</button>' : '') +
       (p.mine && bpCanWrite() ? '<button class="btn btn-outline btn-sm" data-bp-edit="' + escA(p.id) + '">Edit project</button>' : '') +
@@ -6885,7 +6907,7 @@ window.initPortal = function(){
     recent = recent.slice(0, 8);
 
     var html = '';
-    html += '<div class="bp-detail-head"><button class="btn btn-outline btn-sm" data-view-jump="breeding-hub">\u2039 Back to Breeding Hub</button></div>';
+    html += '<div class="bp-detail-head"><button class="btn btn-outline btn-sm" data-bp-jump="breeding-hub">\u2039 Back to Breeding Hub</button></div>';
     html += '<div class="view-head" style="margin-top:18px"><div>' +
       '<span class="kicker">Species Hub</span><h2>' + escT(name) + '</h2>' +
       '<p>Everything the club has recorded about breeding this species.</p>' +
@@ -7209,6 +7231,14 @@ window.initPortal = function(){
 
       var follow = t.closest && t.closest('[data-bp-follow]');
       if (follow){ toggleBreedingFollow(follow.getAttribute('data-bp-follow')); return; }
+
+      // Rendered markup can't rely on the [data-view-jump] listeners, which are
+      // bound once at init to elements that existed then. Delegated here instead.
+      var jump = t.closest && t.closest('[data-bp-jump]');
+      if (jump){ show(jump.getAttribute('data-bp-jump')); return; }
+
+      var tk = t.closest && t.closest('[data-bp-tank]');
+      if (tk){ openProjectTank(tk.getAttribute('data-bp-tank')); return; }
 
       var open = t.closest && t.closest('[data-bp-open]');
       if (open){ openBreedingProject(open.getAttribute('data-bp-open')); return; }
