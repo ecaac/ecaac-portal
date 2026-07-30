@@ -2159,7 +2159,7 @@ window.initPortal = function(){
   // Everything downstream (dosing, water changes, medication) leans on volume,
   // and the number printed on the box is almost never the number in the tank.
   // Gross is the glass; net subtracts substrate and hardscape displacement.
-  var SHAPE_LABEL = { rect:'Rectangular', cube:'Cube', bowfront:'Bowfront', cylinder:'Cylinder' };
+  var SHAPE_LABEL = { rect:'Rectangular', cube:'Cube', bowfront:'Bowfront', cylinder:'Cylinder', triangle:'Triangular' };
   function grossLitres(shape, l, w, h){
     if (shape === 'cylinder'){
       if (!l || !h) return 0;
@@ -2171,6 +2171,12 @@ window.initPortal = function(){
       return (l * l * l) / 1000;
     }
     if (!l || !w || !h) return 0;
+    // A triangular (corner) tank has a right-triangle footprint — the two
+    // perpendicular legs reuse the length/width fields — so it's half the
+    // volume of a rectangular tank with the same dimensions.
+    if (shape === 'triangle'){
+      return (l * w * h) / 2 / 1000;
+    }
     var v = (l * w * h) / 1000;
     // A bowfront isn't a box: the curve adds glass but the standard rule of
     // thumb is to take the max dimensions and knock off ~15%.
@@ -2941,6 +2947,9 @@ window.initPortal = function(){
     } else if (shape === 'cube'){
       lenL.textContent = 'Side'; widL.textContent = 'Unused'; heiL.textContent = 'Unused';
       wid.disabled = true; hei.disabled = true;
+    } else if (shape === 'triangle'){
+      lenL.textContent = 'Side A'; widL.textContent = 'Side B'; heiL.textContent = 'Height';
+      wid.disabled = false; hei.disabled = false;
     } else {
       lenL.textContent = 'Length'; widL.textContent = shape === 'bowfront' ? 'Max depth' : 'Width'; heiL.textContent = 'Height';
       wid.disabled = false; hei.disabled = false;
