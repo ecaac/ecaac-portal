@@ -2403,7 +2403,7 @@ window.initPortal = function(){
       var liveLabel = (t.type === 'Shrimp' || (/shrimp|caridina|neocaridina/i.test(t.livestock.map(function(l){return l[0];}).join(' ')) && t.type==='Freshwater')) ? 'Shrimp' : (t.type==='Terrarium' ? 'Fauna' : 'Fish');
       var cover = coverUrl(t);
       var thumbInner = cover
-        ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
+        ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
         : ICONS[st[2]];
       // A div, not a <button>: the heart control inside is itself a button, and
       // nested buttons are invalid HTML — the parser silently closes the outer
@@ -2461,7 +2461,7 @@ window.initPortal = function(){
           var st = TYPE_STYLE[t.type] || TYPE_STYLE['Freshwater'];
           var cover = coverUrl(t);
           var thumbInner = cover
-            ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
+            ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
             : ICONS[st[2]];
           var idx = tanks.indexOf(t);
           return '<div class="tank-card" role="button" tabindex="0" data-dash-tank="' + idx + '">' +
@@ -2828,6 +2828,62 @@ window.initPortal = function(){
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeLightbox(); });
   }
 
+  // ===== image downscaling =====
+  // Phone cameras hand us 4000px, ~4MB files. The tank cards render them at
+  // roughly 340px wide, so shipping the original means the browser downloads
+  // and decodes ~99% more pixels than it can ever show — that decode is what
+  // makes the tanks grid feel sluggish. Shrink once here, on upload, so every
+  // subsequent page load is cheap for every member forever.
+  // 1600px is deliberately generous: still sharp in the lightbox and on retina
+  // screens, but a fraction of the bytes.
+  var PHOTO_MAX_DIM = 1600;
+  var PHOTO_QUALITY = 0.82;
+  function downscaleImage(file, maxDim, quality){
+    return new Promise(function(resolve){
+      // GIFs lose their animation through a canvas and SVGs have no fixed
+      // pixel size to shrink, so both pass straight through.
+      if (!file.type || file.type === 'image/gif' || file.type === 'image/svg+xml'){ resolve(file); return; }
+      if (typeof document.createElement('canvas').toBlob !== 'function'){ resolve(file); return; }
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function(){
+        var w = img.naturalWidth, h = img.naturalHeight;
+        if (!w || !h){ URL.revokeObjectURL(url); resolve(file); return; }
+        var scale = Math.min(1, maxDim / Math.max(w, h));
+        // Already small in both dimensions and bytes — re-encoding would only
+        // cost quality for nothing.
+        if (scale === 1 && file.size <= 600 * 1024){ URL.revokeObjectURL(url); resolve(file); return; }
+        var cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+        var canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        var ctx = canvas.getContext('2d');
+        // JPEG has no alpha channel: without this a transparent PNG would come
+        // back with a black background instead of a white one.
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, cw, ch);
+        ctx.drawImage(img, 0, 0, cw, ch);
+        URL.revokeObjectURL(url);
+        try {
+          canvas.toBlob(function(blob){
+            if (!blob){ resolve(file); return; }
+            // Decode cost scales with pixel count, not file size — a flat 4000px
+            // graphic can be tiny on disk yet still stall the main thread. So if
+            // the image was genuinely oversized, keep the resized copy even on
+            // the rare occasion the re-encode weighs slightly more. Only when the
+            // dimensions were already fine (scale === 1) is byte size the whole
+            // argument, and there a bigger blob means the original was better.
+            if (scale < 1){ resolve(blob); return; }
+            resolve(blob.size < file.size ? blob : file);
+          }, 'image/jpeg', quality);
+        } catch (e){ resolve(file); }
+      };
+      // A file the browser can't decode is not worth failing the upload over —
+      // fall back to sending it untouched, exactly as before.
+      img.onerror = function(){ URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
   var MAX_PHOTO_MB = 8;
   var photoUploadInput = document.getElementById('photo-upload-input');
   if (photoUploadInput) photoUploadInput.addEventListener('change', async function(){
@@ -2858,9 +2914,22 @@ window.initPortal = function(){
       }
       statusEl.textContent = 'Uploading ' + (i + 1) + ' of ' + files.length + '…';
       var safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      // Shrink before it ever leaves the device — saves the member's upload
+      // data too, not just everyone else's download.
+      var body = await downscaleImage(file, PHOTO_MAX_DIM, PHOTO_QUALITY);
+      // The canvas always re-encodes to JPEG, so keep the stored filename
+      // honest rather than leaving a ".png" that is really a JPEG.
+      if (body !== file && body.type === 'image/jpeg'){
+        safeName = safeName.replace(/\.[^.]+$/, '') + '.jpg';
+      }
       var path = window.currentMember.id + '/' + t.id + '/' + Date.now() + '-' + safeName;
       try {
-        var upRes = await sb.storage.from('tank-photos').upload(path, file);
+        var upRes = await sb.storage.from('tank-photos').upload(path, body, {
+          contentType: body.type || file.type,
+          // Storage defaults to 1 hour; these files are immutable (a new upload
+          // gets a new timestamped path) so a returning member can cache them.
+          cacheControl: '31536000'
+        });
         if (upRes.error){ popToast('Could not upload ' + file.name); continue; }
         var pub = sb.storage.from('tank-photos').getPublicUrl(path);
         var publicUrl = pub.data ? pub.data.publicUrl : '';
@@ -4453,7 +4522,7 @@ window.initPortal = function(){
       var liveCount = t.livestock.reduce(function(a, l){ var n = parseInt(l[2],10); return a + (isNaN(n) ? (l[2] ? 1 : 0) : n); }, 0);
       var cover = coverUrl(t);
       var thumbInner = cover
-        ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
+        ? '<img src="' + escT(cover) + '" alt="' + escT(t.name) + '" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
         : ICONS[st[2]];
       return '<div class="tank-card" role="button" tabindex="0" data-ma="' + idx + '">' +
         '<div class="tank-thumb" style="background:linear-gradient(135deg,' + st[0] + ',' + st[1] + ')">' +
