@@ -480,6 +480,13 @@ button{font-family:inherit}
 .tier-silver{background:linear-gradient(135deg,#C7CEDC,#8892A6)}
 .tier-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dark))}
 .tier-platinum{background:linear-gradient(135deg,#8FE3E8,#2E7D8C)}
+.tier-amethyst{background:linear-gradient(135deg,#B79CED,#6E4FC9)}
+.tier-onyx{background:linear-gradient(135deg,#4A5578,#161A33)}
+/* Categories with more than 4 tiers (currently just Award Program Points, which
+   maps to the club's real 6-level BAP ladder) wrap to 3 columns instead of
+   squeezing 6 pips into one row. */
+.tier-ladder-wide{grid-template-columns:repeat(3,1fr)}
+@media (max-width:640px){.tier-ladder-wide{grid-template-columns:repeat(2,1fr)}}
 .milestone-badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:16px;margin-top:6px}
 .milestone-badges .aw-badge{width:auto}
 .milestone-badges .aw-badge .hint{font-size:9.5px;color:#9A9478;font-style:italic;line-height:1.3;margin-top:-2px}

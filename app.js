@@ -1533,18 +1533,20 @@ window.initPortal = function(){
       tankCount: stats.tankCount, tenureYears: tenure,
       awardEntries: stats.entryCount, auctionsSold: stats.auctionsSold, registerEver: stats.registerEver
     });
-    var highest = -1, earned = 0, badges = [];
+    var highestFrac = -1, highestName = null, earned = 0, badges = [];
     cats.forEach(function(cat){
       var prog = tierProgress(cat);
+      var names = tierNamesFor(cat);
       earned += prog.achieved;
-      if (prog.achieved - 1 > highest) highest = prog.achieved - 1;
       if (prog.achieved > 0){
         var idx = prog.achieved - 1;
-        badges.push('<span class="md-badge ' + TIER_CLASS[idx] + '">' + escT(TIER_NAMES[idx] + ' \u00B7 ' + cat.label) + '</span>');
+        var frac = prog.achieved / cat.tiers.length;
+        if (frac > highestFrac){ highestFrac = frac; highestName = names[idx]; }
+        badges.push('<span class="md-badge ' + TIER_CLASS[idx] + '">' + escT(names[idx] + ' \u00B7 ' + cat.label) + '</span>');
       }
     });
     var html = '<div class="md-sec"><h4>Current standing</h4>' +
-      '<div class="md-standing"><div><div class="md-standing-tier">' + (highest >= 0 ? TIER_NAMES[highest] : 'Unranked') + '</div>' +
+      '<div class="md-standing"><div><div class="md-standing-tier">' + (highestName || 'Unranked') + '</div>' +
       '<div class="md-standing-sub">' + earned + ' badge' + (earned === 1 ? '' : 's') + ' earned across ' + cats.length + ' categories</div></div></div></div>';
 
     html += '<div class="md-sec"><h4>Award programs</h4><div class="md-stats">' +
@@ -3637,8 +3639,23 @@ window.initPortal = function(){
   }
 
   // ===== Badges & Tiers =====
+  // Default tier names/colors for the common 4-tier categories. A category can
+  // override the names with its own `tierNames` (see the 'awards' category
+  // above) while still sharing these colors by tier position — earning tier
+  // index 0 always looks bronze-ish, index 5 always looks the same deep tone,
+  // regardless of what that tier is actually called.
   var TIER_NAMES = ['Bronze', 'Silver', 'Gold', 'Platinum'];
-  var TIER_CLASS = ['tier-bronze', 'tier-silver', 'tier-gold', 'tier-platinum'];
+  var TIER_CLASS = ['tier-bronze', 'tier-silver', 'tier-gold', 'tier-platinum', 'tier-amethyst', 'tier-onyx'];
+  // Single source of truth for tier colors, reused by the category ladder/icon,
+  // the showcase grid, the directory drawer, and the new-badge notification —
+  // previously duplicated as three separate 4-item literals that would have
+  // silently gone out of bounds for a 5th or 6th tier.
+  var TIER_GRADS = ['linear-gradient(135deg,#C98A4B,#8B5A2B)', 'linear-gradient(135deg,#C7CEDC,#8892A6)',
+    'linear-gradient(135deg,var(--gold),var(--gold-dark))', 'linear-gradient(135deg,#8FE3E8,#2E7D8C)',
+    'linear-gradient(135deg,#B79CED,#6E4FC9)', 'linear-gradient(135deg,#4A5578,#161A33)'];
+  // Resolves a category's tier names, falling back to the shared default for
+  // categories that don't override them.
+  function tierNamesFor(cat){ return cat.tierNames || TIER_NAMES; }
   var TIER_ICONS = {
     calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
     gavel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg>',
@@ -3661,8 +3678,14 @@ window.initPortal = function(){
         noun:'meetings', noun1:'meeting', tiers:[12, 24, 36, 48] },
       { id:'auctions', label:'Auction Trading', icon:'gavel', unit:'traded at auctions', value:stats.auctionValue, isMoney:true,
         noun:'in auction trade', tiers:[500, 1500, 2500, 5000] },
+      // Mirrors the club's actual BAP Lifetime Achievement ladder (six levels,
+      // not the generic Bronze/Silver/Gold/Platinum four) — see
+      // breeding-awards-program.html section V. tierNames overrides the global
+      // TIER_NAMES for this category only; every other category below is
+      // unaffected and keeps the default four.
       { id:'awards', label:'Award Program Points', icon:'trophy', unit:'points earned', unit1:'point earned', value:stats.awardPoints,
-        noun:'points', noun1:'point', tiers:[50, 100, 200, 400] },
+        noun:'points', noun1:'point', tiers:[25, 50, 100, 200, 400, 500],
+        tierNames:['Novice Breeder','Intermediate Breeder','Advanced Breeder','Senior Breeder','Master Breeder','Grand Master Breeder'] },
       // Points reward one strong result; this rewards turning up repeatedly. A
       // member with a dozen modest spawns and one with a single big haul used to
       // look identical.
@@ -3765,12 +3788,24 @@ window.initPortal = function(){
     var wrap = document.getElementById('badge-categories');
     var totalEarned = 0;
     var nearest = null;   // { away, cat, tierIdx } — the badge this member is closest to
-    var highestTierIdx = -1;
+    // "Highest standing" used to be a single global tier index (0-3), which only
+    // worked because every category had exactly 4 tiers named the same thing.
+    // Now categories can have their own tier count and names (the awards
+    // category has 6), so raw index isn't comparable across categories — index 3
+    // is "maxed" in a 4-tier category but only halfway in a 6-tier one. Instead
+    // rank by how far through its own ladder each category's achieved tier sits
+    // (achieved / total), and remember that tier's own name.
+    var highestFrac = -1;
+    var highestName = null;
 
     wrap.innerHTML = cats.map(function(cat){
       var prog = tierProgress(cat);
+      var names = tierNamesFor(cat);
       totalEarned += prog.achieved;
-      if (prog.achieved - 1 > highestTierIdx) highestTierIdx = prog.achieved - 1;
+      if (prog.achieved > 0){
+        var frac = prog.achieved / cat.tiers.length;
+        if (frac > highestFrac){ highestFrac = frac; highestName = names[prog.achieved - 1]; }
+      }
       // "Closest" means furthest through its current stretch, not the smallest
       // number: comparing rands to meetings picked whichever category happened to
       // use small units, and the card then printed a bare figure with no way to
@@ -3784,22 +3819,26 @@ window.initPortal = function(){
         var isNext = !earned && i === prog.achieved;
         return '<div class="tier-pip' + (earned ? ' earned' : '') + (isNext ? ' next' : '') + '">' +
           '<div class="dot' + (earned ? ' ' + TIER_CLASS[i] : '') + '">' + (earned ? TIER_ICONS.check : TIER_ICONS.lock) + '</div>' +
-          '<b>' + TIER_NAMES[i] + '</b><span>' + fmtVal(t, cat.isMoney) + '</span></div>';
+          '<b>' + names[i] + '</b><span>' + fmtVal(t, cat.isMoney) + '</span></div>';
       }).join('');
 
       var nextLine = prog.maxed
-        ? '<div class="badge-cat-next">🏆 <b>Platinum reached</b> — top tier in this category.</div>'
-        : '<div class="badge-cat-next"><b>' + fmtVal(prog.nextThreshold - cat.value, cat.isMoney) + '</b> more ' + unitFor(cat, prog.nextThreshold - cat.value) + ' to reach <b>' + TIER_NAMES[prog.achieved] + '</b>.</div>';
+        ? '<div class="badge-cat-next">🏆 <b>' + names[names.length - 1] + ' reached</b> — top tier in this category.</div>'
+        : '<div class="badge-cat-next"><b>' + fmtVal(prog.nextThreshold - cat.value, cat.isMoney) + '</b> more ' + unitFor(cat, prog.nextThreshold - cat.value) + ' to reach <b>' + names[prog.achieved] + '</b>.</div>';
+
+      // 4-tier ladders keep the existing single-row layout; a longer ladder
+      // (the awards category's 6) wraps to a 3-column grid instead of squeezing.
+      var ladderClass = cat.tiers.length === 4 ? 'tier-ladder' : 'tier-ladder tier-ladder-wide';
 
       return '<div class="badge-cat">' +
         '<div class="badge-cat-head">' +
           '<div class="badge-cat-icon ' + (prog.achieved ? TIER_CLASS[prog.achieved - 1] : '') + '" style="' + (prog.achieved ? '' : 'background:linear-gradient(135deg,var(--deep),var(--deep-2))') + '">' + TIER_ICONS[cat.icon] + '</div>' +
           '<div class="badge-cat-title"><h4>' + cat.label + '</h4><span>' + fmtVal(cat.value, cat.isMoney) + ' ' + unitFor(cat, cat.value) + '</span></div>' +
-          '<div class="badge-cat-current"><b>' + (prog.achieved ? TIER_NAMES[prog.achieved - 1] : 'Unranked') + '</b><span>Current tier</span></div>' +
+          '<div class="badge-cat-current"><b>' + (prog.achieved ? names[prog.achieved - 1] : 'Unranked') + '</b><span>Current tier</span></div>' +
         '</div>' +
         '<div class="progress"><i style="width:' + prog.pct + '%;' + (prog.achieved ? 'background:linear-gradient(90deg,var(--leaf),var(--leaf-dark))' : '') + '"></i></div>' +
         nextLine +
-        '<div class="tier-ladder">' + ladder + '</div>' +
+        '<div class="' + ladderClass + '">' + ladder + '</div>' +
       '</div>';
     }).join('');
 
@@ -3809,7 +3848,7 @@ window.initPortal = function(){
     if (sb && window.currentMember){
       document.querySelectorAll('[data-live="aw-badges"]').forEach(function(el){ el.textContent = totalEarned; });
     }
-    document.getElementById('badges-standing').textContent = highestTierIdx >= 0 ? TIER_NAMES[highestTierIdx] : 'Unranked';
+    document.getElementById('badges-standing').textContent = highestName || 'Unranked';
 
     var awayEl = document.getElementById('badges-next-away');
     var awayLabelEl = document.getElementById('badges-next-label');
@@ -3820,7 +3859,7 @@ window.initPortal = function(){
       awayEl.textContent = fmtVal(nearest.away, nearest.cat.isMoney);
       if (awayLabelEl){
         awayLabelEl.textContent = nounFor(nearest.cat, nearest.away) + ' to ' +
-          TIER_NAMES[nearest.tierIdx] + ' \u00B7 ' + nearest.cat.label;
+          tierNamesFor(nearest.cat)[nearest.tierIdx] + ' \u00B7 ' + nearest.cat.label;
       }
     }
 
@@ -3829,16 +3868,16 @@ window.initPortal = function(){
     var tiles = [];
     cats.forEach(function(cat){
       var prog = tierProgress(cat);
+      var names = tierNamesFor(cat);
       cat.tiers.forEach(function(t, i){
         var earned = cat.value >= t;
         tiles.push('<div class="aw-badge' + (earned ? '' : ' locked') + '">' +
           '<div class="ring' + (earned ? '' : '') + '" style="' + (earned ? 'background:var(--tier-bg-' + i + ')' : '') + '">' + TIER_ICONS[cat.icon] + '</div>' +
-          '<span>' + TIER_NAMES[i] + ' ' + cat.label + '</span></div>');
+          '<span>' + names[i] + ' ' + cat.label + '</span></div>');
       });
     });
     // inline tier gradients (ring bg can't use the .tier-* classes directly since .ring already sets background)
-    var tierGrads = ['linear-gradient(135deg,#C98A4B,#8B5A2B)','linear-gradient(135deg,#C7CEDC,#8892A6)','linear-gradient(135deg,var(--gold),var(--gold-dark))','linear-gradient(135deg,#8FE3E8,#2E7D8C)'];
-    showcase.innerHTML = tiles.join('').replace(/var\(--tier-bg-(\d)\)/g, function(_, i){ return tierGrads[+i]; });
+    showcase.innerHTML = tiles.join('').replace(/var\(--tier-bg-(\d)\)/g, function(_, i){ return TIER_GRADS[+i]; });
 
     renderMilestoneBadges();
     if (typeof renderAwardBadgeStrip === 'function') renderAwardBadgeStrip();
@@ -4153,17 +4192,16 @@ window.initPortal = function(){
   renderMemberTimeline();
 
   // ===== Detect newly-earned badges and raise the notification bar =====
-  var TIER_RING_GRADS = ['linear-gradient(135deg,#C98A4B,#8B5A2B)','linear-gradient(135deg,#C7CEDC,#8892A6)','linear-gradient(135deg,var(--gold),var(--gold-dark))','linear-gradient(135deg,#8FE3E8,#2E7D8C)'];
-
   function currentEarnedBadges(){
     var earned = {}; // key -> {title, icon, ringBg, kicker}
     getBadgeCategories().forEach(function(cat){
       var prog = tierProgress(cat);
+      var names = tierNamesFor(cat);
       for (var i = 0; i < prog.achieved; i++){
         earned['tier:' + cat.id + ':' + i] = {
-          title: TIER_NAMES[i] + ' — ' + cat.label,
+          title: names[i] + ' — ' + cat.label,
           icon: TIER_ICONS[cat.icon],
-          ringBg: TIER_RING_GRADS[i],
+          ringBg: TIER_GRADS[i],
           kicker: 'Tier reached'
         };
       }
@@ -4214,7 +4252,7 @@ window.initPortal = function(){
   // values — so it is identical on every call for a given build.
   function tierCatalogueSignature(){
     return badgeCatsFrom({}).map(function(c){
-      return c.id + ':' + c.label + ':' + c.tiers.join('/');
+      return c.id + ':' + c.label + ':' + c.tiers.join('/') + ':' + (c.tierNames || []).join('/');
     }).join('|');
   }
   // The leading number still has to be bumped by hand for changes to the `ms:`
