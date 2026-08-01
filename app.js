@@ -76,6 +76,7 @@ window.initPortal = function(){
     // computation, so it needs this too — it previously only ran on the Badges view,
     // leaving the Awards card stuck on its login placeholder.
     if ((id === 'badges' || id === 'awards') && typeof renderBadgeCategories === 'function') renderBadgeCategories();
+    if (id === 'awards' && typeof renderAwardProgramCards === 'function') renderAwardProgramCards();
     if (id === 'member-aquariums' && typeof renderMemberAquariums === 'function') renderMemberAquariums();
     if (id === 'admin' && typeof loadAdminAwardQueue === 'function') loadAdminAwardQueue();
     if (id === 'admin' && typeof loadEvents === 'function') loadEvents();
@@ -1533,20 +1534,18 @@ window.initPortal = function(){
       tankCount: stats.tankCount, tenureYears: tenure,
       awardEntries: stats.entryCount, auctionsSold: stats.auctionsSold, registerEver: stats.registerEver
     });
-    var highestFrac = -1, highestName = null, earned = 0, badges = [];
+    var highest = -1, earned = 0, badges = [];
     cats.forEach(function(cat){
       var prog = tierProgress(cat);
-      var names = tierNamesFor(cat);
       earned += prog.achieved;
+      if (prog.achieved - 1 > highest) highest = prog.achieved - 1;
       if (prog.achieved > 0){
         var idx = prog.achieved - 1;
-        var frac = prog.achieved / cat.tiers.length;
-        if (frac > highestFrac){ highestFrac = frac; highestName = names[idx]; }
-        badges.push('<span class="md-badge ' + TIER_CLASS[idx] + '">' + escT(names[idx] + ' \u00B7 ' + cat.label) + '</span>');
+        badges.push('<span class="md-badge ' + TIER_CLASS[idx] + '">' + escT(TIER_NAMES[idx] + ' \u00B7 ' + cat.label) + '</span>');
       }
     });
     var html = '<div class="md-sec"><h4>Current standing</h4>' +
-      '<div class="md-standing"><div><div class="md-standing-tier">' + (highestName || 'Unranked') + '</div>' +
+      '<div class="md-standing"><div><div class="md-standing-tier">' + (highest >= 0 ? TIER_NAMES[highest] : 'Unranked') + '</div>' +
       '<div class="md-standing-sub">' + earned + ' badge' + (earned === 1 ? '' : 's') + ' earned across ' + cats.length + ' categories</div></div></div></div>';
 
     html += '<div class="md-sec"><h4>Award programs</h4><div class="md-stats">' +
@@ -3639,23 +3638,8 @@ window.initPortal = function(){
   }
 
   // ===== Badges & Tiers =====
-  // Default tier names/colors for the common 4-tier categories. A category can
-  // override the names with its own `tierNames` (see the 'awards' category
-  // above) while still sharing these colors by tier position — earning tier
-  // index 0 always looks bronze-ish, index 5 always looks the same deep tone,
-  // regardless of what that tier is actually called.
   var TIER_NAMES = ['Bronze', 'Silver', 'Gold', 'Platinum'];
-  var TIER_CLASS = ['tier-bronze', 'tier-silver', 'tier-gold', 'tier-platinum', 'tier-amethyst', 'tier-onyx'];
-  // Single source of truth for tier colors, reused by the category ladder/icon,
-  // the showcase grid, the directory drawer, and the new-badge notification —
-  // previously duplicated as three separate 4-item literals that would have
-  // silently gone out of bounds for a 5th or 6th tier.
-  var TIER_GRADS = ['linear-gradient(135deg,#C98A4B,#8B5A2B)', 'linear-gradient(135deg,#C7CEDC,#8892A6)',
-    'linear-gradient(135deg,var(--gold),var(--gold-dark))', 'linear-gradient(135deg,#8FE3E8,#2E7D8C)',
-    'linear-gradient(135deg,#B79CED,#6E4FC9)', 'linear-gradient(135deg,#4A5578,#161A33)'];
-  // Resolves a category's tier names, falling back to the shared default for
-  // categories that don't override them.
-  function tierNamesFor(cat){ return cat.tierNames || TIER_NAMES; }
+  var TIER_CLASS = ['tier-bronze', 'tier-silver', 'tier-gold', 'tier-platinum'];
   var TIER_ICONS = {
     calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
     gavel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg>',
@@ -3678,14 +3662,8 @@ window.initPortal = function(){
         noun:'meetings', noun1:'meeting', tiers:[12, 24, 36, 48] },
       { id:'auctions', label:'Auction Trading', icon:'gavel', unit:'traded at auctions', value:stats.auctionValue, isMoney:true,
         noun:'in auction trade', tiers:[500, 1500, 2500, 5000] },
-      // Mirrors the club's actual BAP Lifetime Achievement ladder (six levels,
-      // not the generic Bronze/Silver/Gold/Platinum four) — see
-      // breeding-awards-program.html section V. tierNames overrides the global
-      // TIER_NAMES for this category only; every other category below is
-      // unaffected and keeps the default four.
       { id:'awards', label:'Award Program Points', icon:'trophy', unit:'points earned', unit1:'point earned', value:stats.awardPoints,
-        noun:'points', noun1:'point', tiers:[25, 50, 100, 200, 400, 500],
-        tierNames:['Novice Breeder','Intermediate Breeder','Advanced Breeder','Senior Breeder','Master Breeder','Grand Master Breeder'] },
+        noun:'points', noun1:'point', tiers:[50, 100, 200, 400] },
       // Points reward one strong result; this rewards turning up repeatedly. A
       // member with a dozen modest spawns and one with a single big haul used to
       // look identical.
@@ -3788,24 +3766,12 @@ window.initPortal = function(){
     var wrap = document.getElementById('badge-categories');
     var totalEarned = 0;
     var nearest = null;   // { away, cat, tierIdx } — the badge this member is closest to
-    // "Highest standing" used to be a single global tier index (0-3), which only
-    // worked because every category had exactly 4 tiers named the same thing.
-    // Now categories can have their own tier count and names (the awards
-    // category has 6), so raw index isn't comparable across categories — index 3
-    // is "maxed" in a 4-tier category but only halfway in a 6-tier one. Instead
-    // rank by how far through its own ladder each category's achieved tier sits
-    // (achieved / total), and remember that tier's own name.
-    var highestFrac = -1;
-    var highestName = null;
+    var highestTierIdx = -1;
 
     wrap.innerHTML = cats.map(function(cat){
       var prog = tierProgress(cat);
-      var names = tierNamesFor(cat);
       totalEarned += prog.achieved;
-      if (prog.achieved > 0){
-        var frac = prog.achieved / cat.tiers.length;
-        if (frac > highestFrac){ highestFrac = frac; highestName = names[prog.achieved - 1]; }
-      }
+      if (prog.achieved - 1 > highestTierIdx) highestTierIdx = prog.achieved - 1;
       // "Closest" means furthest through its current stretch, not the smallest
       // number: comparing rands to meetings picked whichever category happened to
       // use small units, and the card then printed a bare figure with no way to
@@ -3819,26 +3785,22 @@ window.initPortal = function(){
         var isNext = !earned && i === prog.achieved;
         return '<div class="tier-pip' + (earned ? ' earned' : '') + (isNext ? ' next' : '') + '">' +
           '<div class="dot' + (earned ? ' ' + TIER_CLASS[i] : '') + '">' + (earned ? TIER_ICONS.check : TIER_ICONS.lock) + '</div>' +
-          '<b>' + names[i] + '</b><span>' + fmtVal(t, cat.isMoney) + '</span></div>';
+          '<b>' + TIER_NAMES[i] + '</b><span>' + fmtVal(t, cat.isMoney) + '</span></div>';
       }).join('');
 
       var nextLine = prog.maxed
-        ? '<div class="badge-cat-next">🏆 <b>' + names[names.length - 1] + ' reached</b> — top tier in this category.</div>'
-        : '<div class="badge-cat-next"><b>' + fmtVal(prog.nextThreshold - cat.value, cat.isMoney) + '</b> more ' + unitFor(cat, prog.nextThreshold - cat.value) + ' to reach <b>' + names[prog.achieved] + '</b>.</div>';
-
-      // 4-tier ladders keep the existing single-row layout; a longer ladder
-      // (the awards category's 6) wraps to a 3-column grid instead of squeezing.
-      var ladderClass = cat.tiers.length === 4 ? 'tier-ladder' : 'tier-ladder tier-ladder-wide';
+        ? '<div class="badge-cat-next">🏆 <b>Platinum reached</b> — top tier in this category.</div>'
+        : '<div class="badge-cat-next"><b>' + fmtVal(prog.nextThreshold - cat.value, cat.isMoney) + '</b> more ' + unitFor(cat, prog.nextThreshold - cat.value) + ' to reach <b>' + TIER_NAMES[prog.achieved] + '</b>.</div>';
 
       return '<div class="badge-cat">' +
         '<div class="badge-cat-head">' +
           '<div class="badge-cat-icon ' + (prog.achieved ? TIER_CLASS[prog.achieved - 1] : '') + '" style="' + (prog.achieved ? '' : 'background:linear-gradient(135deg,var(--deep),var(--deep-2))') + '">' + TIER_ICONS[cat.icon] + '</div>' +
           '<div class="badge-cat-title"><h4>' + cat.label + '</h4><span>' + fmtVal(cat.value, cat.isMoney) + ' ' + unitFor(cat, cat.value) + '</span></div>' +
-          '<div class="badge-cat-current"><b>' + (prog.achieved ? names[prog.achieved - 1] : 'Unranked') + '</b><span>Current tier</span></div>' +
+          '<div class="badge-cat-current"><b>' + (prog.achieved ? TIER_NAMES[prog.achieved - 1] : 'Unranked') + '</b><span>Current tier</span></div>' +
         '</div>' +
         '<div class="progress"><i style="width:' + prog.pct + '%;' + (prog.achieved ? 'background:linear-gradient(90deg,var(--leaf),var(--leaf-dark))' : '') + '"></i></div>' +
         nextLine +
-        '<div class="' + ladderClass + '">' + ladder + '</div>' +
+        '<div class="tier-ladder">' + ladder + '</div>' +
       '</div>';
     }).join('');
 
@@ -3848,7 +3810,7 @@ window.initPortal = function(){
     if (sb && window.currentMember){
       document.querySelectorAll('[data-live="aw-badges"]').forEach(function(el){ el.textContent = totalEarned; });
     }
-    document.getElementById('badges-standing').textContent = highestName || 'Unranked';
+    document.getElementById('badges-standing').textContent = highestTierIdx >= 0 ? TIER_NAMES[highestTierIdx] : 'Unranked';
 
     var awayEl = document.getElementById('badges-next-away');
     var awayLabelEl = document.getElementById('badges-next-label');
@@ -3859,7 +3821,7 @@ window.initPortal = function(){
       awayEl.textContent = fmtVal(nearest.away, nearest.cat.isMoney);
       if (awayLabelEl){
         awayLabelEl.textContent = nounFor(nearest.cat, nearest.away) + ' to ' +
-          tierNamesFor(nearest.cat)[nearest.tierIdx] + ' \u00B7 ' + nearest.cat.label;
+          TIER_NAMES[nearest.tierIdx] + ' \u00B7 ' + nearest.cat.label;
       }
     }
 
@@ -3868,16 +3830,16 @@ window.initPortal = function(){
     var tiles = [];
     cats.forEach(function(cat){
       var prog = tierProgress(cat);
-      var names = tierNamesFor(cat);
       cat.tiers.forEach(function(t, i){
         var earned = cat.value >= t;
         tiles.push('<div class="aw-badge' + (earned ? '' : ' locked') + '">' +
           '<div class="ring' + (earned ? '' : '') + '" style="' + (earned ? 'background:var(--tier-bg-' + i + ')' : '') + '">' + TIER_ICONS[cat.icon] + '</div>' +
-          '<span>' + names[i] + ' ' + cat.label + '</span></div>');
+          '<span>' + TIER_NAMES[i] + ' ' + cat.label + '</span></div>');
       });
     });
     // inline tier gradients (ring bg can't use the .tier-* classes directly since .ring already sets background)
-    showcase.innerHTML = tiles.join('').replace(/var\(--tier-bg-(\d)\)/g, function(_, i){ return TIER_GRADS[+i]; });
+    var tierGrads = ['linear-gradient(135deg,#C98A4B,#8B5A2B)','linear-gradient(135deg,#C7CEDC,#8892A6)','linear-gradient(135deg,var(--gold),var(--gold-dark))','linear-gradient(135deg,#8FE3E8,#2E7D8C)'];
+    showcase.innerHTML = tiles.join('').replace(/var\(--tier-bg-(\d)\)/g, function(_, i){ return tierGrads[+i]; });
 
     renderMilestoneBadges();
     if (typeof renderAwardBadgeStrip === 'function') renderAwardBadgeStrip();
@@ -4192,16 +4154,17 @@ window.initPortal = function(){
   renderMemberTimeline();
 
   // ===== Detect newly-earned badges and raise the notification bar =====
+  var TIER_RING_GRADS = ['linear-gradient(135deg,#C98A4B,#8B5A2B)','linear-gradient(135deg,#C7CEDC,#8892A6)','linear-gradient(135deg,var(--gold),var(--gold-dark))','linear-gradient(135deg,#8FE3E8,#2E7D8C)'];
+
   function currentEarnedBadges(){
     var earned = {}; // key -> {title, icon, ringBg, kicker}
     getBadgeCategories().forEach(function(cat){
       var prog = tierProgress(cat);
-      var names = tierNamesFor(cat);
       for (var i = 0; i < prog.achieved; i++){
         earned['tier:' + cat.id + ':' + i] = {
-          title: names[i] + ' — ' + cat.label,
+          title: TIER_NAMES[i] + ' — ' + cat.label,
           icon: TIER_ICONS[cat.icon],
-          ringBg: TIER_GRADS[i],
+          ringBg: TIER_RING_GRADS[i],
           kicker: 'Tier reached'
         };
       }
@@ -4252,7 +4215,7 @@ window.initPortal = function(){
   // values — so it is identical on every call for a given build.
   function tierCatalogueSignature(){
     return badgeCatsFrom({}).map(function(c){
-      return c.id + ':' + c.label + ':' + c.tiers.join('/') + ':' + (c.tierNames || []).join('/');
+      return c.id + ':' + c.label + ':' + c.tiers.join('/');
     }).join('|');
   }
   // The leading number still has to be bumped by hand for changes to the `ms:`
@@ -5928,14 +5891,37 @@ window.initPortal = function(){
   }
 
 
-  // Per-program tiers. NOTE: these thresholds are placeholders modelled on what
-  // the demo markup implied — swap them for the club's published rules.
+  // Per-program award ladders — the single source of truth for both the
+  // "Program progress" bars and the per-program tier cards on the Awards page.
+  //
+  // BAP is the club's published Lifetime Achievement ladder (breeding-awards-
+  // program.html, section V) — six named levels, confirmed.
+  //
+  // HAP and AAP thresholds below are STILL PLACEHOLDERS modelled on what the
+  // demo markup implied. Swap them for the club's published rules when
+  // available; nothing else needs to change when you do.
+  //
+  // `unit`/`unit1` are the noun for the value being counted, so a program can be
+  // measured in something other than points (SBP counts species).
   var PROGRAM_TIERS = {
-    BAP: { label:'Breeding Awards (BAP)',    tiers:[[50,'Breeder'],[100,'Senior Breeder'],[200,'Advanced Breeder'],[400,'Master Breeder']] },
-    HAP: { label:'Horticulture Awards (HAP)',tiers:[[25,'Aquatic Gardener'],[100,'Senior Gardener'],[200,'Advanced Gardener'],[400,'Master Gardener']] },
-    AAP: { label:'Aquascaping Awards (AAP)', tiers:[[30,'Showcase Entrant'],[60,'Showcase Finalist'],[120,'Showcase Master']] }
+    BAP: { label:'Breeding Awards (BAP)', icon:'fish', unit:'points earned', unit1:'point earned', noun:'points', noun1:'point',
+           tiers:[[25,'Novice Breeder'],[50,'Intermediate Breeder'],[100,'Advanced Breeder'],[200,'Senior Breeder'],[400,'Master Breeder'],[500,'Grand Master Breeder']] },
+    HAP: { label:'Horticulture Awards (HAP)', icon:'plant', unit:'points earned', unit1:'point earned', noun:'points', noun1:'point',
+           tiers:[[25,'Aquatic Gardener'],[100,'Senior Gardener'],[200,'Advanced Gardener'],[400,'Master Gardener']] },
+    AAP: { label:'Aquascaping Awards (AAP)', icon:'scape', unit:'points earned', unit1:'point earned', noun:'points', noun1:'point',
+           tiers:[[30,'Showcase Entrant'],[60,'Showcase Finalist'],[120,'Showcase Master']] }
   };
+  // The Specialist Breeder Program is counted in distinct approved species, not
+  // points, so it sits outside PROGRAM_TIERS (whose consumers all assume points)
+  // and carries its own config. The club rules describe a single achievement at
+  // six species in one family rather than a ladder — SBP_SPECIES_TARGET is the
+  // existing 5 and should be confirmed against the published rules.
   var SBP_SPECIES_TARGET = 5;
+  var SBP_PROGRAM = {
+    label:'Specialist Breeder (SBP)', icon:'rosette', unit:'species approved', unit1:'species approved',
+    noun:'species', noun1:'species',
+    tiers:[[SBP_SPECIES_TARGET, 'Specialist Breeder']]
+  };
 
   // Attach each tank's own entries to its "Award entries from this tank" panel.
   // Split out of loadMyEntries so loadTanksFromDB can call it after it rebuilds
@@ -5965,6 +5951,7 @@ window.initPortal = function(){
         ? 'Award points'
         : 'Award points' + (pendingCount ? ' · ' + pendingCount + ' entr' + (pendingCount === 1 ? 'y' : 'ies') + ' pending review' : '');
     });
+    if (typeof renderAwardProgramCards === 'function') renderAwardProgramCards();
   }
 
   async function loadMyEntries(){
@@ -6070,6 +6057,94 @@ window.initPortal = function(){
 
     wrap.innerHTML = blocks.join('');
   }
+
+  // ===== Awards page: per-program tier cards =====
+  // One card per award program (BAP, HAP, AAP, SBP), each showing that program's
+  // own named ladder. Deliberately separate from the My Badges page: the
+  // "Award Program Points" category there is the COMBINED total across all four
+  // programs on the generic Bronze/Silver/Gold/Platinum scale, and stays that
+  // way. These cards break that same total down per program.
+  var PROGRAM_ICONS = {
+    fish: TIER_ICONS.fish,
+    rosette: TIER_ICONS.rosette,
+    plant: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7Z"/><path d="M12 15c0-4-3-6-7-6 0 4 3 6 7 6Z"/></svg>',
+    scape: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 4 5-7 4 5"/><path d="M3 20h18"/></svg>'
+  };
+  // Tier colours by position. Longer ladders (BAP's six) simply use more of the
+  // list; shorter ones (AAP's three) use the first few.
+  var PROGRAM_TIER_GRADS = ['linear-gradient(135deg,#C98A4B,#8B5A2B)', 'linear-gradient(135deg,#C7CEDC,#8892A6)',
+    'linear-gradient(135deg,var(--gold),var(--gold-dark))', 'linear-gradient(135deg,#8FE3E8,#2E7D8C)',
+    'linear-gradient(135deg,#B79CED,#6E4FC9)', 'linear-gradient(135deg,#4A5578,#161A33)'];
+
+  // Demo figures for the signed-out view, matching the authored markup elsewhere
+  // on this page so the two never disagree.
+  var PROGRAM_DEMO_VALUES = { BAP:145, HAP:70, AAP:30, SBP:3 };
+
+  function programCardHtml(cfg, value){
+    var tiers = cfg.tiers;
+    var achieved = 0;
+    tiers.forEach(function(t){ if (value >= t[0]) achieved++; });
+    var maxed = achieved >= tiers.length;
+    var nextThreshold = maxed ? null : tiers[achieved][0];
+    var finalThreshold = tiers[tiers.length - 1][0];
+    var pct = Math.max(0, Math.min(100, finalThreshold > 0 ? Math.round((value / finalThreshold) * 100) : 0));
+    var unitLabel = (value === 1 && cfg.unit1) ? cfg.unit1 : cfg.unit;
+
+    var ladder = tiers.map(function(t, i){
+      var earned = value >= t[0];
+      var isNext = !earned && i === achieved;
+      return '<div class="tier-pip' + (earned ? ' earned' : '') + (isNext ? ' next' : '') + '">' +
+        '<div class="dot" style="' + (earned ? 'background:' + PROGRAM_TIER_GRADS[i % PROGRAM_TIER_GRADS.length] : '') + '">' +
+          (earned ? TIER_ICONS.check : TIER_ICONS.lock) +
+        '</div>' +
+        '<b>' + escT(t[1]) + '</b><span>' + t[0] + '</span></div>';
+    }).join('');
+
+    var away = maxed ? 0 : (nextThreshold - value);
+    var awayNoun = (away === 1 && cfg.noun1) ? cfg.noun1 : cfg.noun;
+    var nextLine = maxed
+      ? '<div class="badge-cat-next">🏆 <b>' + escT(tiers[tiers.length - 1][1]) + ' reached</b> — top level of this program.</div>'
+      : '<div class="badge-cat-next"><b>' + away + '</b> more ' + awayNoun + ' to reach <b>' + escT(tiers[achieved][1]) + '</b>.</div>';
+
+    // 4+ tiers wrap to a 3-column grid; shorter ladders keep one row.
+    var ladderClass = tiers.length > 4 ? 'tier-ladder tier-ladder-wide' : 'tier-ladder';
+    if (tiers.length < 4) ladderClass = 'tier-ladder tier-ladder-short';
+
+    return '<div class="badge-cat">' +
+      '<div class="badge-cat-head">' +
+        '<div class="badge-cat-icon" style="background:' + (achieved ? PROGRAM_TIER_GRADS[(achieved - 1) % PROGRAM_TIER_GRADS.length] : 'linear-gradient(135deg,var(--deep),var(--deep-2))') + '">' +
+          (PROGRAM_ICONS[cfg.icon] || TIER_ICONS.trophy) + '</div>' +
+        '<div class="badge-cat-title"><h4>' + escT(cfg.label) + '</h4><span>' + value + ' ' + unitLabel + '</span></div>' +
+        '<div class="badge-cat-current"><b>' + (achieved ? escT(tiers[achieved - 1][1]) : 'Unranked') + '</b><span>Current tier</span></div>' +
+      '</div>' +
+      '<div class="progress"><i style="width:' + pct + '%;' + (achieved ? 'background:linear-gradient(90deg,var(--leaf),var(--leaf-dark))' : '') + '"></i></div>' +
+      nextLine +
+      '<div class="' + ladderClass + '">' + ladder + '</div>' +
+    '</div>';
+  }
+
+  function renderAwardProgramCards(){
+    var wrap = document.getElementById('award-program-cards');
+    if (!wrap) return;
+    var live = !!(sb && window.currentMember);
+    if (live && entriesLoading){
+      wrap.innerHTML = '<div class="badge-cat"><p style="font-size:12.5px;color:var(--ink-soft);margin:0">Loading your program levels…</p></div>';
+      return;
+    }
+    if (live && entriesError){
+      wrap.innerHTML = '<div class="badge-cat"><p style="font-size:12.5px;color:var(--ink-soft);margin:0">Program levels unavailable — your entries couldn\u2019t be loaded.</p></div>';
+      return;
+    }
+
+    var html = Object.keys(PROGRAM_TIERS).map(function(key){
+      var value = live ? (myProgramPoints[key] || 0) : (PROGRAM_DEMO_VALUES[key] || 0);
+      return programCardHtml(PROGRAM_TIERS[key], value);
+    });
+    // SBP counts distinct approved species rather than points.
+    html.push(programCardHtml(SBP_PROGRAM, live ? mySbpSpecies : PROGRAM_DEMO_VALUES.SBP));
+    wrap.innerHTML = html.join('');
+  }
+  window.renderAwardProgramCards = renderAwardProgramCards;
 
   // ===== Awards page: badge strip =====
   // Hardcoded novelty badges in the markup; in live mode show the member's real

@@ -486,7 +486,11 @@ button{font-family:inherit}
    maps to the club's real 6-level BAP ladder) wrap to 3 columns instead of
    squeezing 6 pips into one row. */
 .tier-ladder-wide{grid-template-columns:repeat(3,1fr)}
-@media (max-width:640px){.tier-ladder-wide{grid-template-columns:repeat(2,1fr)}}
+/* Ladders with fewer than 4 tiers (AAP has 3, SBP has 1): sizing to content and
+   left-aligning keeps a lone pip from stretching across the whole card. */
+.tier-ladder-short{grid-template-columns:repeat(auto-fit,minmax(0,140px));justify-content:start}
+@media (max-width:640px){.tier-ladder-wide{grid-template-columns:repeat(2,1fr)}
+  .tier-ladder-short{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}}
 .milestone-badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:16px;margin-top:6px}
 .milestone-badges .aw-badge{width:auto}
 .milestone-badges .aw-badge .hint{font-size:9.5px;color:#9A9478;font-style:italic;line-height:1.3;margin-top:-2px}
