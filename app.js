@@ -2117,7 +2117,8 @@ window.initPortal = function(){
         archived: !!row.archived,
         tags: (row.tank_tags || []).map(function(t){ return t.label; }),
         params: params, livestock: livestock, plants: plants, log: log, awards: [], photos: photos,
-        cover_photo_id: row.cover_photo_id || null
+        cover_photo_id: row.cover_photo_id || null,
+        created_at: row.created_at || null
       });
     });
     // Tanks and award entries load in parallel and this rebuild resets every
@@ -4324,6 +4325,7 @@ window.initPortal = function(){
         livestock: (row.tank_livestock || []).map(function(l){ return [l.name, l.note || '', l.qty || '']; }),
         plants: (row.tank_plants || []).map(function(p){ return [p.name, p.note || '', p.qty || '']; }),
         photos: photos, cover_photo_id: row.cover_photo_id || null,
+        created_at: row.created_at || null,
         mine: false
       };
     });
@@ -4505,6 +4507,16 @@ window.initPortal = function(){
   }, true);
 
   var maFilter = 'All';
+  // 'newest' is the default: a club-wide directory reads most naturally with
+  // whatever was just added at the top. Falls back gracefully wherever
+  // created_at is missing (older rows saved before this field was tracked,
+  // and demo mode's static array) by treating those as oldest rather than
+  // throwing off the whole sort.
+  var maSort = 'newest';
+  function maCreatedMs(t){
+    var ms = t.created_at ? new Date(t.created_at).getTime() : NaN;
+    return isNaN(ms) ? 0 : ms;
+  }
   function renderMemberAquariums(){
     var all = getAllMemberTanks();
     var q = (document.getElementById('ma-search').value || '').toLowerCase().trim();
@@ -4513,6 +4525,10 @@ window.initPortal = function(){
       if (q && (t.name + ' ' + t.owner + ' ' + t.type).toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
+    if (maSort === 'newest') filtered.sort(function(a,b){ return maCreatedMs(b) - maCreatedMs(a); });
+    else if (maSort === 'oldest') filtered.sort(function(a,b){ return maCreatedMs(a) - maCreatedMs(b); });
+    else if (maSort === 'volume') filtered.sort(function(a,b){ return (b.volume||0) - (a.volume||0); });
+    else if (maSort === 'popular') filtered.sort(function(a,b){ return (likeCounts[b.id]||0) - (likeCounts[a.id]||0); });
     document.getElementById('ma-count-chip').textContent = all.length + ' aquarium' + (all.length===1?'':'s');
     var grid = document.getElementById('ma-grid');
     grid.innerHTML = filtered.map(function(t, idx){
@@ -4543,6 +4559,11 @@ window.initPortal = function(){
   }
 
   document.getElementById('ma-search').addEventListener('input', renderMemberAquariums);
+  var maSortSel = document.getElementById('ma-sort');
+  if (maSortSel) maSortSel.addEventListener('change', function(){
+    maSort = maSortSel.value;
+    renderMemberAquariums();
+  });
   document.querySelectorAll('[data-maf]').forEach(function(b){
     b.addEventListener('click', function(){
       document.querySelectorAll('[data-maf]').forEach(function(x){ x.classList.remove('active'); });

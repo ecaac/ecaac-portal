@@ -1016,6 +1016,28 @@ select:disabled{opacity:.55;cursor:not-allowed;background-color:var(--sand)}
 .tank-toolbar select:hover{border-color:var(--leaf);color:var(--ink)}
 .tank-toolbar select:focus{box-shadow:0 0 0 3px rgba(143,217,161,0.28)}
 
+/* Member Aquariums' sort select sits in .dir-controls among .chip-btn filters
+   rather than .tank-toolbar, which had no select styling of its own before —
+   mirrors the .tank-toolbar select treatment above rather than editing it, so
+   that existing rule (and anything else relying on it) is untouched. */
+.dir-controls select{
+  border:1px solid var(--sand-line);
+  background-color:var(--paper);
+  font:inherit;
+  font-size:12px;
+  font-weight:700;
+  color:var(--ink-soft);
+  border-radius:20px;
+  padding:9px 13px;
+  background-image:var(--select-chevron);
+  background-repeat:no-repeat;
+  padding-right:32px;
+  background-position:right 11px center;
+  background-size:12px;
+}
+.dir-controls select:hover{border-color:var(--leaf);color:var(--ink)}
+.dir-controls select:focus{box-shadow:0 0 0 3px rgba(143,217,161,0.28)}
+
 /* ===== Aquarium preview gallery =====
    16/9 everywhere, matching .tank-thumb on the cards, so a tank keeps the same
    shape whether it's being scanned in the grid or looked at in the preview. */
