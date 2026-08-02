@@ -3823,7 +3823,8 @@ window.initPortal = function(){
         'Breeding racks can be added under My Aquariums as a single entry. Add a line for each tank size on the rack, plus an optional sump, and the total volume works itself out.',
         'The "Blackwater" aquarium type is now "Biotope". Existing blackwater tanks are unchanged.',
         'Member Aquariums has a "More types" filter covering Terrarium, Vivarium, Paludarium, Biotope, Brackish and Breeding rack.',
-        'Added this page, so you can see what has changed.'
+        'Tank previews in Member Aquariums now show the owner\u2019s notes, so you can read how a tank is actually run without opening it.',
+        'Added this page, so you can see what has changed. A marker appears next to "What\u2019s New" in the menu whenever something is added here.'
       ]
     }
   ];
@@ -3841,6 +3842,43 @@ window.initPortal = function(){
       ' ' + d.getFullYear();
   }
 
+  // --- unseen-entry indicator on the sidebar ---
+  // Stores only the newest date the member has seen, not a per-entry set: the
+  // list is append-only and read top-down, so one watermark answers "what's new
+  // since last time" without growing forever. Same per-member key convention as
+  // the seen-badges state.
+  var seenChangelogKey = 'ecaac-seen-changelog-' + (window.currentMember ? window.currentMember.id : 'demo');
+
+  function lastSeenChangelog(){
+    try { return localStorage.getItem(seenChangelogKey) || ''; }
+    catch (e) { return ''; }   // storage unavailable — treat everything as seen
+  }
+  function newestChangelogDate(){
+    return CHANGELOG.reduce(function(max, e){
+      return String(e.date) > max ? String(e.date) : max;
+    }, '');
+  }
+  function unseenChangelogCount(){
+    var seen = lastSeenChangelog();
+    // No watermark yet means a member who has never opened the page. Showing
+    // every entry as new is right the first time the page ships, and self-clears
+    // the moment they look at it.
+    return CHANGELOG.filter(function(e){ return String(e.date) > seen; }).length;
+  }
+  function refreshChangelogPill(){
+    var pill = document.getElementById('cl-pill');
+    if (!pill) return;
+    var n = unseenChangelogCount();
+    pill.textContent = n;
+    pill.style.display = n ? '' : 'none';
+  }
+  function markChangelogSeen(){
+    try { localStorage.setItem(seenChangelogKey, newestChangelogDate()); }
+    catch (e) { /* storage unavailable, non-fatal */ }
+    refreshChangelogPill();
+  }
+  window.refreshChangelogPill = refreshChangelogPill;
+
   function renderChangelog(){
     var wrap = document.getElementById('changelog-list');
     if (!wrap) return;
@@ -3854,22 +3892,30 @@ window.initPortal = function(){
 
     if (!entries.length){
       wrap.innerHTML = '<div class="reg-empty">Nothing here yet — changes to the portal will be listed on this page.</div>';
+      markChangelogSeen();
       return;
     }
+    // Captured before marking seen, so the entries that were new on arrival
+    // still get flagged in this render rather than clearing out under the
+    // member mid-read.
+    var seen = lastSeenChangelog();
     wrap.innerHTML = entries.map(function(e){
       var tag = CHANGELOG_TAGS[e.tag] || CHANGELOG_TAGS['new'];
+      var isNew = String(e.date) > seen;
       var items = (e.items || []).map(function(it){
         return '<li>' + escT(it) + '</li>';
       }).join('');
-      return '<div class="cl-entry">' +
+      return '<div class="cl-entry' + (isNew ? ' is-unseen' : '') + '">' +
         '<div class="cl-head">' +
           '<span class="cl-tag ' + tag.cls + '">' + tag.label + '</span>' +
           '<time datetime="' + escT(e.date) + '">' + escT(changelogDate(e.date)) + '</time>' +
+          (isNew ? '<span class="cl-unseen">Not seen yet</span>' : '') +
         '</div>' +
         '<h4>' + escT(e.title) + '</h4>' +
         (items ? '<ul class="cl-items">' + items + '</ul>' : '') +
       '</div>';
     }).join('');
+    markChangelogSeen();
   }
   window.renderChangelog = renderChangelog;
 
@@ -4662,6 +4708,10 @@ window.initPortal = function(){
         id: row.id,
         name: row.name, type: row.type, subtitle: row.subtitle || '',
         volume: row.volume || 0, dims: row.dims || '—', started: row.started || '',
+        // Never mapped before, so the preview had nothing to show. The tank
+        // detail page reads notes from `tanks` for own tanks; this is the same
+        // field for everyone else's.
+        notes: row.notes || '',
         owner: ownerName || 'ECAAC member',
         ownerId: row.owner_id,
         // Never mapped before, so archiving hid a tank from its owner's own grid
@@ -5062,6 +5112,16 @@ window.initPortal = function(){
     document.getElementById('ma-preview-name').textContent = t.name;
     document.getElementById('ma-preview-meta').textContent = (t.volume ? t.volume + ' ℓ · ' : '') + t.dims + ' cm · ' + t.type + (t.subtitle ? ' — ' + t.subtitle : '') + ' · started ' + t.started;
     document.getElementById('ma-preview-tags').innerHTML = t.tags.map(function(x){ return '<span class="tag" style="background:#EAF3DE;border:none;color:var(--leaf-dark)">' + escT(x) + '</span>'; }).join('');
+    // Notes are free text typed by the owner, so escT() and let CSS wrap it —
+    // the block collapses when empty so a tank without notes looks deliberate
+    // rather than broken.
+    var notesWrap = document.getElementById('ma-preview-notes-wrap');
+    var notesEl = document.getElementById('ma-preview-notes');
+    if (notesWrap && notesEl){
+      var notes = (t.notes || '').trim();
+      notesEl.textContent = notes;
+      notesWrap.style.display = notes ? '' : 'none';
+    }
     document.getElementById('ma-preview-params').innerHTML = t.params.map(function(p){ return '<div class="preview-param"><b>' + escT(p[0]) + '</b><span>' + escT(p[1]) + '</span></div>'; }).join('');
     document.getElementById('ma-preview-livestock').innerHTML = t.livestock.length ? t.livestock.map(function(l){
       return '<div class="row"><div class="row-icon">' + fishRowIcon + '</div><div class="row-body"><b>' + escT(l[0]) + '</b><span>' + escT(l[1]||'') + '</span></div>' + (l[2] ? '<div class="row-end"><b style="color:var(--deep)">' + escT(l[2]) + '</b></div>' : '') + '</div>';
@@ -5093,6 +5153,9 @@ window.initPortal = function(){
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeMaPreview(); });
 
   renderMemberAquariums();
+  // The pill has to be painted at startup, not just when the page is opened —
+  // its whole job is telling a member there's something to open.
+  refreshChangelogPill();
 
   // ===== Live member: patch all personal content for real logged-in users =====
   // Pulled out of applyLiveMember so the Cancel button can reuse it. Calling the

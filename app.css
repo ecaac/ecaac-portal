@@ -1360,3 +1360,18 @@ select:disabled{opacity:.55;cursor:not-allowed;background-color:var(--sand)}
   .cl-entry h4{font-size:15px}
   .cl-items li{font-size:13px}
 }
+
+/* Entries the member hasn't seen since their last visit to the page. Marked with
+   a left edge and a label rather than a colour change, so the New/Improved/Fixed
+   tag still reads as the entry's own category. */
+.cl-entry.is-unseen{border-color:var(--leaf-light);box-shadow:inset 3px 0 0 var(--leaf)}
+.cl-unseen{
+  font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--leaf-dark);background:#EAF3DE;border-radius:20px;padding:4px 10px;
+}
+
+/* Owner's notes in the Member Aquariums preview. Free text typed by the member,
+   so long words and pasted URLs have to wrap rather than widen the modal. */
+.ma-preview-notes{margin-top:14px;padding:14px 16px;background:var(--sand);border:1px solid var(--sand-line);border-radius:13px}
+.ma-preview-notes h4{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 7px}
+.ma-preview-notes p{margin:0;font-size:13.5px;line-height:1.65;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}

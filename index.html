@@ -107,6 +107,7 @@
     <button class="side-link" data-view="changelog">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><path d="M3.05 11a9 9 0 1 1 .5 4"/><path d="M3 21v-5h5"/></svg>
       What's New
+      <span class="pill" id="cl-pill" style="display:none">0</span>
     </button>
 
     <div class="side-label">The Hobby</div>
@@ -984,6 +985,12 @@
       <h3 id="ma-preview-name" style="font-size:22px;margin-bottom:6px"></h3>
       <p id="ma-preview-meta" style="font-size:13px;color:var(--ink-soft);margin:0"></p>
       <div id="ma-preview-tags" style="margin-top:12px"></div>
+      <!-- The owner's own description of the tank. Hidden entirely when there
+           are no notes, rather than showing an empty heading. -->
+      <div id="ma-preview-notes-wrap" class="ma-preview-notes" style="display:none">
+        <h4>Owner's notes</h4>
+        <p id="ma-preview-notes"></p>
+      </div>
       <div id="ma-preview-like" style="margin-top:14px"></div>
       <div id="ma-preview-gallery" class="ma-gallery"></div>
 
