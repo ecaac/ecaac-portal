@@ -1049,6 +1049,36 @@ select:disabled{opacity:.55;cursor:not-allowed;background-color:var(--sand)}
 .dir-controls select:hover{border-color:var(--leaf);color:var(--ink)}
 .dir-controls select:focus{box-shadow:0 0 0 3px rgba(143,217,161,0.28)}
 
+/* ===== Filter dropdown pill =====
+   A .chip-btn that opens a small menu, for filter values that don't each
+   warrant their own pill in the bar. Styled off .chip-btn rather than
+   duplicating it, so the two stay visually identical. */
+.chip-menu{position:relative;display:inline-block}
+.chip-menu-btn{display:inline-flex;align-items:center;gap:6px}
+.chip-menu-btn svg{width:12px;height:12px;flex:none;transition:transform .15s}
+.chip-menu.open .chip-menu-btn svg{transform:rotate(180deg)}
+.chip-menu.open .chip-menu-btn{border-color:var(--leaf)}
+.chip-menu-list{
+  position:absolute;top:calc(100% + 6px);left:0;z-index:40;min-width:170px;
+  background:var(--paper);border:1px solid var(--sand-line);border-radius:14px;
+  padding:6px;box-shadow:0 12px 28px rgba(10,20,30,.13);
+  display:none;
+}
+.chip-menu.open .chip-menu-list{display:block}
+/* Near the right edge of the viewport the menu flips to hang off the right of
+   the pill instead of overflowing the page. */
+.chip-menu.flip-right .chip-menu-list{left:auto;right:0}
+.chip-menu-item{
+  display:block;width:100%;text-align:left;border:0;background:none;
+  font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-soft);
+  padding:9px 12px;border-radius:10px;cursor:pointer;white-space:nowrap;
+  transition:background .12s,color .12s;
+}
+.chip-menu-item:hover{background:var(--sand);color:var(--ink)}
+.chip-menu-item.active{background:#EAF3DE;color:var(--leaf-dark)}
+.chip-menu-item:focus-visible{outline:2px solid var(--leaf-light);outline-offset:-2px}
+@media (max-width:640px){.chip-menu-list{min-width:150px}}
+
 /* ===== Aquarium preview gallery =====
    16/9 everywhere, matching .tank-thumb on the cards, so a tank keeps the same
    shape whether it's being scanned in the grid or looked at in the preview. */

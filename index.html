@@ -924,8 +924,23 @@
     <button class="chip-btn" data-maf="Marine">Marine</button>
     <button class="chip-btn" data-maf="Shrimp">Shrimp</button>
     <button class="chip-btn" data-maf="Aquascape">Aquascape</button>
-    <button class="chip-btn" data-maf="Paludarium">Paludarium</button>
-    <button class="chip-btn" data-maf="Terrarium">Terrarium</button>
+    <!-- The remaining types share one dropdown pill rather than each taking a
+         slot in the bar. Its items carry the same data-maf attribute as the
+         pills, so the existing filter handler picks them up unchanged. -->
+    <div class="chip-menu" id="ma-more">
+      <button class="chip-btn chip-menu-btn" id="ma-more-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ma-more-list">
+        <span id="ma-more-label">More types</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="chip-menu-list" id="ma-more-list" role="menu" aria-labelledby="ma-more-btn">
+        <button class="chip-menu-item" role="menuitem" data-maf="Terrarium">Terrarium</button>
+        <button class="chip-menu-item" role="menuitem" data-maf="Vivarium">Vivarium</button>
+        <button class="chip-menu-item" role="menuitem" data-maf="Paludarium">Paludarium</button>
+        <button class="chip-menu-item" role="menuitem" data-maf="Biotope">Biotope</button>
+        <button class="chip-menu-item" role="menuitem" data-maf="Brackish">Brackish</button>
+        <button class="chip-menu-item" role="menuitem" data-maf="Breeding rack">Breeding rack</button>
+      </div>
+    </div>
   </div>
 
   <div class="tank-grid" id="ma-grid"></div>

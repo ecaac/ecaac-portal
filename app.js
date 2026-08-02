@@ -4645,14 +4645,75 @@ window.initPortal = function(){
     maSort = maSortSel.value;
     renderMemberAquariums();
   });
+  // ===== "More types" filter dropdown =====
+  // Its items carry data-maf just like the pills, so the filter handler below
+  // treats them identically. All this adds is opening/closing the menu and
+  // reflecting the current choice on the pill itself, so a filter selected from
+  // inside the menu is still visible without opening it.
+  var maMore = document.getElementById('ma-more');
+  var maMoreBtn = document.getElementById('ma-more-btn');
+  var maMoreLabel = document.getElementById('ma-more-label');
+
+  function closeMaMore(){
+    if (!maMore) return;
+    maMore.classList.remove('open');
+    maMoreBtn.setAttribute('aria-expanded', 'false');
+  }
+  function openMaMore(){
+    if (!maMore) return;
+    maMore.classList.add('open');
+    maMoreBtn.setAttribute('aria-expanded', 'true');
+    // Flip the menu to the right edge if it would otherwise run off screen.
+    var list = document.getElementById('ma-more-list');
+    maMore.classList.remove('flip-right');
+    if (list && list.getBoundingClientRect().right > window.innerWidth - 8){
+      maMore.classList.add('flip-right');
+    }
+  }
+  // Reflects maFilter on the pill: shows the chosen type when it lives in this
+  // menu, and reverts to the neutral label when the filter is one of the
+  // standalone pills or All.
+  function syncMaMore(){
+    if (!maMore) return;
+    var items = maMore.querySelectorAll('[data-maf]');
+    var matched = null;
+    items.forEach(function(it){
+      var on = it.getAttribute('data-maf') === maFilter;
+      it.classList.toggle('active', on);
+      if (on) matched = it.getAttribute('data-maf');
+    });
+    maMoreLabel.textContent = matched || 'More types';
+    maMoreBtn.classList.toggle('active', !!matched);
+  }
+
+  if (maMoreBtn){
+    maMoreBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (maMore.classList.contains('open')) closeMaMore(); else openMaMore();
+    });
+    // Any click outside, or Escape, dismisses it.
+    document.addEventListener('click', function(e){
+      if (maMore.classList.contains('open') && !maMore.contains(e.target)) closeMaMore();
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && maMore.classList.contains('open')){
+        closeMaMore();
+        maMoreBtn.focus();
+      }
+    });
+  }
+
   document.querySelectorAll('[data-maf]').forEach(function(b){
     b.addEventListener('click', function(){
       document.querySelectorAll('[data-maf]').forEach(function(x){ x.classList.remove('active'); });
       b.classList.add('active');
       maFilter = b.getAttribute('data-maf');
+      syncMaMore();
+      closeMaMore();
       renderMemberAquariums();
     });
   });
+  syncMaMore();
 
   var maModal = document.getElementById('ma-preview-modal');
   var maCurrent = null;
