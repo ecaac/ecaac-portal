@@ -1994,16 +1994,23 @@ window.initPortal = function(){
     'Aquascape':    ['#0A1D0F','#0F2B15','plant'],
     'Marine':       ['#0B2C52','#051228','fish'],
     'Brackish':     ['#2B2A12','#121106','fish'],
-    'Blackwater':   ['#2A1052','#0D0620','fish'],
+    'Biotope':      ['#2A1052','#0D0620','fish'],
+    'Breeding rack':['#123033','#06181A','rack'],
     'Paludarium':   ['#16311B','#071409','plant'],
     'Vivarium':     ['#16311B','#071409','plant'],
-    'Terrarium':    ['#171B3D','#06070F','terra']
+    'Terrarium':    ['#171B3D','#06070F','terra'],
+    // Retired type, kept so tanks saved under it before the rename to Biotope
+    // still get their own colours instead of falling back to Freshwater. Not
+    // offered in the form — openTankModal() re-adds it as "(retired)" for any
+    // tank that still carries it.
+    'Blackwater':   ['#2A1052','#0D0620','fish']
   };
   var ICONS = {
     fish: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg>',
     plant: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21V9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7Z"/><path d="M12 15c0-4-3-6-7-6 0 4 3 6 7 6Z"/></svg>',
     shrimp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7c-4.5 0-8 1.6-9.8 4.3C7.6 13.5 5.4 15 3 15c0 2.8 2.4 5 5.4 5 4.6 0 8.3-3.1 9.6-7.3"/><path d="M19 7c-2 0-3.6 1.3-3.6 3M8.4 20c-.6-1.2-.6-2.6 0-3.9M12 15.5c-.8-.8-1.2-1.9-1.1-3"/><circle cx="20.4" cy="6.2" r=".7" fill="currentColor" stroke="none"/></svg>',
-    terra: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M4 8c4 2 12 2 16 0M4 16c4-2 12-2 16 0"/></svg>'
+    terra: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M4 8c4 2 12 2 16 0M4 16c4-2 12-2 16 0"/></svg>',
+    rack: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5.5" rx="1"/><rect x="3" y="9.25" width="18" height="5.5" rx="1"/><rect x="3" y="15.5" width="18" height="5.5" rx="1"/></svg>'
   };
   var fishRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg>';
   var plantRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7Z"/><path d="M12 15c0-4-3-6-7-6 0 4 3 6 7 6Z"/></svg>';
@@ -2035,9 +2042,9 @@ window.initPortal = function(){
       plants:[['Christmas moss','Breeding cover',''],['S\u00fcsswassertang','Floating cover','']],
       log:[['Topped up with RO, TDS rechecked','110 ppm after top-up','21 Jul'],['Fed bacter AE, culled two low-grades','Colony grading afternoon','12 Jul']],
       awards:[] },
-    { name:'Rio Negro Shadows', type:'Blackwater', subtitle:'Rio Negro', volume:240, dims:'120 × 40 × 50', started:'Oct 2022',
+    { name:'Rio Negro Shadows', type:'Biotope', subtitle:'Rio Negro', volume:240, dims:'120 × 40 × 50', started:'Oct 2022',
       notes:'Botanicals and leaf litter, tannin-stained water, dim lighting.',
-      tags:['Blackwater','Botanicals & leaf litter','Tannin-stained','Dim lighting'],
+      tags:['Biotope','Blackwater','Botanicals & leaf litter','Tannin-stained','Dim lighting'],
       params:[['5.4','pH'],['1°','KH'],['27 °C','Temp'],['0','Ammonia'],['5','Nitrate']],
       livestock:[['Cardinal tetras','Large shoal','25'],['Apistogramma agassizii','Pair — courting','2'],['Corydoras sterbai','Bottom crew','4']],
       plants:[['Mopani & driftwood tangle','Hardscape',''],['Amazon frogbit','Surface cover','']],
@@ -2114,6 +2121,10 @@ window.initPortal = function(){
         filter: row.filter || '', light: row.light || '',
         length_cm: row.length_cm || 0, width_cm: row.width_cm || 0, height_cm: row.height_cm || 0,
         displacement: (typeof row.displacement === 'number') ? row.displacement : 12,
+        // Null for every tank type except Breeding rack, and null on databases
+        // where the migration hasn't been applied — rackCountOf() treats both
+        // as 1, so nothing downstream has to special-case it.
+        rack_tanks: (row.rack_tanks != null) ? row.rack_tanks : null,
         substrate: row.substrate || '', co2: row.co2 || '', water_source: row.water_source || '',
         archived: !!row.archived,
         tags: (row.tank_tags || []).map(function(t){ return t.label; }),
@@ -2256,6 +2267,13 @@ window.initPortal = function(){
   // `range` is the general freshwater band; `byType` narrows it where the tank
   // type genuinely changes what "good" means. `critical` params are the ones
   // where any reading above zero means act today, not adjust gradually.
+  //
+  // Note on Biotope: the retired Blackwater type had tight soft/acidic bands
+  // (pH 4.5-6.5, KH 0-3) because blackwater is one specific habitat. Biotope is
+  // the general case and covers habitats with opposite chemistry — a Tanganyikan
+  // biotope sits near pH 9 — so narrowing it would flag correct readings as out
+  // of range. It deliberately has no byType entry and uses the general band.
+  // The Blackwater entries stay for tanks still saved under the old type.
   var PARAM_LIB = {
     PH:   { name:'pH',   unit:'',    range:[6.4,7.8], dp:1,
             byType:{ Marine:[8.0,8.4], Shrimp:[6.2,7.5], Blackwater:[4.5,6.5], Brackish:[7.6,8.4] } },
@@ -2290,10 +2308,16 @@ window.initPortal = function(){
     'Shrimp':     ['TEMP','GH','KH','TDS','PH','CU'],
     'Marine':     ['TEMP','SAL','ALK','CA','MG'],
     'Brackish':   ['TEMP','SAL','PH','NO3'],
-    'Blackwater': ['PH','TEMP','TDS','KH'],
+    // A biotope can be a soft acidic Rio Negro or a hard alkaline Rift Lake, so
+    // it starts on the general freshwater set and no narrowed safe band — see
+    // the note on PARAM_LIB above.
+    'Biotope':    ['PH','TEMP','KH','GH','NO3'],
+    // Racks are bare breeding boxes: water quality is the whole game.
+    'Breeding rack': ['TEMP','PH','NH3','NO2','NO3'],
     'Paludarium': ['TEMP','PH','HUM'],
     'Vivarium':   ['TEMP','HUM'],
-    'Terrarium':  ['TEMP','HUM']
+    'Terrarium':  ['TEMP','HUM'],
+    'Blackwater': ['PH','TEMP','TDS','KH']
   };
   function starterParams(type){ return (STARTER_PARAMS[type] || STARTER_PARAMS['Freshwater']).slice(); }
 
@@ -2416,7 +2440,7 @@ window.initPortal = function(){
           '<span class="cat-pill" style="z-index:1">' + escT(t.type) + (t.subtitle ? ' · ' + escT(t.subtitle) : '') + '</span>' +
           (t.archived ? '<span class="arch-pill">Archived</span>' : '') + thumbInner +
         '</div><div class="tank-body"><h4>' + escT(t.name) + '</h4>' +
-        '<div class="meta">' + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm · started ' + escT(t.started) + '</div>' +
+        '<div class="meta">' + (isRackType(t.type) ? rackCountOf(t) + ' tanks · ' : '') + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm · started ' + escT(t.started) + '</div>' +
         '<div class="tank-stats"><div><b>' + (live || '—') + '</b><span>' + liveLabel + '</span></div>' +
         '<div><b>' + t.plants.length + '</b><span>Plants</span></div>' +
         '<div><b>' + t.log.length + '</b><span>Logs</span></div>' +
@@ -2470,7 +2494,7 @@ window.initPortal = function(){
             '<div class="tank-thumb" style="background:linear-gradient(135deg,' + st[0] + ',' + st[1] + ')">' +
               '<span class="cat-pill" style="z-index:1">' + escT(t.type) + '</span>' + thumbInner +
             '</div><div class="tank-body"><h4>' + escT(t.name) + '</h4>' +
-            '<div class="meta">' + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm</div></div></div>';
+            '<div class="meta">' + (isRackType(t.type) ? rackCountOf(t) + ' tanks · ' : '') + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm</div></div></div>';
         }).join('');
         dashGrid.querySelectorAll('[data-dash-tank]').forEach(function(card){
           card.addEventListener('click', function(){
@@ -2541,9 +2565,14 @@ window.initPortal = function(){
     if (!el) return;
     var net = netLitres(t);
     var age = tankAge(t.started_on);
+    var isRack = isRackType(t.type);
+    var rackN = isRack ? rackCountOf(t) : 1;
     var rows = [
       ['Volume', t.volume ? t.volume + ' ℓ' : '', net && net !== t.volume ? '≈' + net + ' ℓ of water after ' + (t.displacement || 12) + '% displacement' : ''],
-      ['Dimensions', t.dims && t.dims !== '—' ? t.dims + ' cm' : '', SHAPE_LABEL[t.shape || 'rect'] || ''],
+      ['Rack size', isRack ? rackN + ' tank' + (rackN === 1 ? '' : 's') : '',
+        isRack && t.volume ? 'About ' + Math.round(t.volume / rackN) + ' ℓ per tank' : ''],
+      ['Dimensions', t.dims && t.dims !== '—' ? t.dims + ' cm' : '',
+        (isRack ? 'Per tank · ' : '') + (SHAPE_LABEL[t.shape || 'rect'] || '')],
       ['Set up', t.started || '', age],
       ['Filter', t.filter || '', ''],
       ['Lighting', t.light || '', ''],
@@ -3026,6 +3055,37 @@ window.initPortal = function(){
       wid.disabled = false; hei.disabled = false;
     }
   }
+  // ===== Breeding rack support =====
+  // A rack is one aquarium entry standing in for a row of identical breeding
+  // boxes. The dimensions the member types describe ONE tank; the stored volume
+  // is that figure multiplied by the number of tanks, so rack litres roll into
+  // the "total litres" line and the Aquariums badge tier the same way any other
+  // tank does.
+  var RACK_TYPE = 'Breeding rack';
+  function isRackType(type){ return type === RACK_TYPE; }
+  // Always at least 1, so a rack can never silently zero out its own volume.
+  function rackCountOf(t){
+    var n = t && t.rack_tanks != null ? parseInt(t.rack_tanks, 10) : 0;
+    return (isNaN(n) || n < 1) ? 1 : n;
+  }
+  function tfRackCount(){
+    var el = document.getElementById('tf-rack-count');
+    if (!el || !isRackType(document.getElementById('tf-type').value)) return 1;
+    var n = parseInt(el.value, 10);
+    return (isNaN(n) || n < 1) ? 1 : Math.min(200, n);
+  }
+  // Show/hide the count field and relabel the dimensions block, so it's obvious
+  // the numbers describe a single tank rather than the whole rack.
+  function syncRackField(){
+    var isRack = isRackType(document.getElementById('tf-type').value);
+    var field = document.getElementById('tf-rack-field');
+    if (field) field.style.display = isRack ? '' : 'none';
+    var dimsLabel = document.getElementById('tf-dims-label');
+    if (dimsLabel) dimsLabel.textContent = isRack ? 'Dimensions of one tank (cm)' : 'Dimensions (cm)';
+    var volLabel = document.querySelector('label[for="tf-volume"]');
+    if (volLabel) volLabel.textContent = isRack ? 'Total volume (litres)' : 'Volume (litres)';
+  }
+
   function updateCalc(){
     shapeLabels();
     var shape = document.getElementById('tf-shape').value;
@@ -3041,17 +3101,24 @@ window.initPortal = function(){
       calcApply.dataset.vol = '';
       return;
     }
-    var g = Math.round(gross);
-    var net = Math.round(gross * (1 - disp / 100));
+    var count = tfRackCount();
+    var g = Math.round(gross);              // one tank
+    var total = Math.round(gross * count);  // whole rack (same as g when count is 1)
+    var net = Math.round(gross * count * (1 - disp / 100));
     calcBox.classList.remove('is-empty');
-    calcText.innerHTML = g + ' ℓ full to the rim' +
-      '<small>About ' + net + ' ℓ of actual water once you allow ' + disp + '% for substrate and hardscape' +
+    calcText.innerHTML = (count > 1
+        ? total + ' ℓ full to the rim across ' + count + ' tanks'
+        : g + ' ℓ full to the rim') +
+      '<small>' + (count > 1 ? 'That\u2019s ' + g + ' ℓ per tank. ' : '') +
+      'About ' + net + ' ℓ of actual water once you allow ' + disp + '% for substrate and hardscape' +
       (shape === 'bowfront' ? ' — bowfront figures are an estimate' : '') + '.</small>';
     calcApply.style.display = 'inline-block';
-    calcApply.dataset.vol = String(g);
+    calcApply.dataset.vol = String(total);
   }
   dimEls.forEach(function(el){ if (el) el.addEventListener('input', updateCalc); });
   document.getElementById('tf-shape').addEventListener('change', updateCalc);
+  document.getElementById('tf-type').addEventListener('change', function(){ syncRackField(); updateCalc(); });
+  document.getElementById('tf-rack-count').addEventListener('input', updateCalc);
   calcApply.addEventListener('click', function(){
     if (calcApply.dataset.vol) document.getElementById('tf-volume').value = calcApply.dataset.vol;
   });
@@ -3062,9 +3129,9 @@ window.initPortal = function(){
     document.getElementById('tank-modal-title').textContent = t ? 'Edit ' + t.name : 'Add aquarium';
     document.getElementById('tf-name').value = t ? t.name : '';
     var typeSel = document.getElementById('tf-type');
-    // A tank saved under a type that's since been retired (Biotope) would
-    // otherwise fall through to the first option and get silently rewritten to
-    // Freshwater on the next save. Keep its own type available to it.
+    // A tank saved under a type that's since been retired (Biotope, Blackwater)
+    // would otherwise fall through to the first option and get silently
+    // rewritten to Freshwater on the next save. Keep its own type available.
     var legacyOpt = typeSel.querySelector('option[data-legacy]');
     if (legacyOpt) legacyOpt.remove();
     if (t && t.type && !Array.prototype.some.call(typeSel.options, function(o){ return o.value === t.type; })){
@@ -3074,6 +3141,8 @@ window.initPortal = function(){
       typeSel.appendChild(opt);
     }
     typeSel.value = t ? t.type : 'Freshwater';
+    document.getElementById('tf-rack-count').value = (t && isRackType(t.type)) ? rackCountOf(t) : '';
+    syncRackField();
     document.getElementById('tf-volume').value = t && t.volume ? t.volume : '';
     document.getElementById('tf-shape').value = (t && t.shape) || 'rect';
     // Fall back to digging the numbers out of the old free-text dims string.
@@ -3131,14 +3200,18 @@ window.initPortal = function(){
     var H = parseFloat(document.getElementById('tf-hei').value) || 0;
     if (shape === 'cube'){ W = L; H = L; }
     var typedVol = parseInt(document.getElementById('tf-volume').value, 10) || 0;
+    var rackType = isRackType(document.getElementById('tf-type').value);
+    var rackCount = rackType ? tfRackCount() : 1;
     var startedOnVal = document.getElementById('tf-started-on').value || null;
     var existingStarted = (editingIdx >= 0 && tanks[editingIdx]) ? tanks[editingIdx].started : '';
     var data = {
       name: name,
       type: document.getElementById('tf-type').value,
       // Nobody wants to fill in litres twice: if they gave dimensions and left
-      // the volume blank, take the calculated figure.
-      volume: typedVol || Math.round(grossLitres(shape, L, W, H)) || 0,
+      // the volume blank, take the calculated figure. For a rack the dimensions
+      // are one tank, so multiply up to the whole rack.
+      volume: typedVol || Math.round(grossLitres(shape, L, W, H) * rackCount) || 0,
+      rack_tanks: rackType ? rackCount : null,
       shape: shape,
       length_cm: L || null, width_cm: W || null, height_cm: H || null,
       displacement: Math.min(60, Math.max(0, parseInt(document.getElementById('tf-disp').value, 10) || 0)),
@@ -3168,6 +3241,13 @@ window.initPortal = function(){
       displacement: data.displacement, substrate: data.substrate, co2: data.co2, water_source: data.water_source,
       filter: data.filter, light: data.light
     };
+    // rack_tanks is a newer column. Only send it when it actually carries a
+    // value, so every non-rack save writes exactly the same field set it did
+    // before — and a portal running against a database where the migration
+    // hasn't been applied yet keeps working for all other tank types.
+    if (rackType || (editingIdx >= 0 && tanks[editingIdx] && tanks[editingIdx].rack_tanks != null)){
+      dbFields.rack_tanks = data.rack_tanks;
+    }
 
     if (editingIdx >= 0){
       var t = tanks[editingIdx];
@@ -4547,7 +4627,7 @@ window.initPortal = function(){
         '</div><div class="tank-body">' +
           '<div class="tank-owner"><div class="mini-avatar" style="background:' + MA_AVATAR_GRADS[gradIdx] + '">' + initials + '</div><span>' + escT(t.owner) + '</span>' + (t.mine ? '<span class="mine-pill">Yours</span>' : '') + '</div>' +
           '<h4>' + escT(t.name) + '</h4>' +
-          '<div class="meta">' + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm · started ' + escT(t.started) + '</div>' +
+          '<div class="meta">' + (isRackType(t.type) ? rackCountOf(t) + ' tanks · ' : '') + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm · started ' + escT(t.started) + '</div>' +
           '<div class="tank-stats"><div><b>' + (liveCount || '—') + '</b><span>Livestock</span></div><div><b>' + t.plants.length + '</b><span>Plants</span></div>' +
             (heartHtml(t, true) ? '<div class="tank-heart">' + heartHtml(t, true) + '</div>' : '') + '</div>' +
         '</div></div>';

@@ -1679,8 +1679,14 @@
         <div class="field"><label for="tf-type">Type *</label>
           <select id="tf-type">
             <option>Freshwater</option><option>Shrimp</option><option>Aquascape</option><option>Marine</option><option>Brackish</option>
-            <option>Blackwater</option><option>Paludarium</option><option>Vivarium</option><option>Terrarium</option>
+            <option>Biotope</option><option>Breeding rack</option><option>Paludarium</option><option>Vivarium</option><option>Terrarium</option>
           </select>
+        </div>
+        <!-- Only shown for Breeding rack: one entry standing in for a whole rack
+             of identical tanks. Toggled by syncRackField() in app.js. -->
+        <div class="field" id="tf-rack-field" style="display:none">
+          <label for="tf-rack-count">Tanks in this rack *</label>
+          <input id="tf-rack-count" type="number" min="1" max="200" step="1" placeholder="e.g. 12">
         </div>
         <div class="field"><label for="tf-volume">Volume (litres)</label><input id="tf-volume" type="number" min="1" placeholder="e.g. 120"></div>
         <div class="field"><label for="tf-shape">Tank shape</label>
