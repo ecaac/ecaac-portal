@@ -77,6 +77,7 @@ window.initPortal = function(){
     // leaving the Awards card stuck on its login placeholder.
     if ((id === 'badges' || id === 'awards') && typeof renderBadgeCategories === 'function') renderBadgeCategories();
     if (id === 'awards' && typeof renderAwardProgramCards === 'function') renderAwardProgramCards();
+    if (id === 'changelog' && typeof renderChangelog === 'function') renderChangelog();
     if (id === 'member-aquariums' && typeof renderMemberAquariums === 'function') renderMemberAquariums();
     if (id === 'admin' && typeof loadAdminAwardQueue === 'function') loadAdminAwardQueue();
     if (id === 'admin' && typeof loadEvents === 'function') loadEvents();
@@ -3806,10 +3807,77 @@ window.initPortal = function(){
     doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>',
     person: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>'
   };
+  // ===== Changelog =====
+  // Add new releases at the TOP of this array. Each entry is:
+  //   date  - ISO yyyy-mm-dd, used for ordering and display
+  //   title - short summary of the release
+  //   tag   - 'new' | 'improved' | 'fixed', drives the pill colour
+  //   items - bullet points, plain strings
+  var CHANGELOG = [
+    {
+      date: '2026-08-02',
+      title: 'Award levels, breeding racks and biotopes',
+      tag: 'new',
+      items: [
+        'The Awards Program page now shows your level in each program separately — BAP, HAP, AAP and the Specialist Breeder Program each have their own ladder.',
+        'Breeding racks can be added under My Aquariums as a single entry. Add a line for each tank size on the rack, plus an optional sump, and the total volume works itself out.',
+        'The "Blackwater" aquarium type is now "Biotope". Existing blackwater tanks are unchanged.',
+        'Member Aquariums has a "More types" filter covering Terrarium, Vivarium, Paludarium, Biotope, Brackish and Breeding rack.',
+        'Added this page, so you can see what has changed.'
+      ]
+    }
+  ];
+  var CHANGELOG_TAGS = {
+    'new':      { label: 'New',      cls: 'cl-new' },
+    'improved': { label: 'Improved', cls: 'cl-improved' },
+    'fixed':    { label: 'Fixed',    cls: 'cl-fixed' }
+  };
+
+  function changelogDate(iso){
+    var d = new Date(iso + 'T00:00:00');
+    if (isNaN(d.getTime())) return iso;
+    return d.getDate() + ' ' +
+      ['January','February','March','April','May','June','July','August','September','October','November','December'][d.getMonth()] +
+      ' ' + d.getFullYear();
+  }
+
+  function renderChangelog(){
+    var wrap = document.getElementById('changelog-list');
+    if (!wrap) return;
+    // Sorted here rather than trusting the array's order, so an entry added in
+    // the wrong place still lands in the right spot.
+    var entries = CHANGELOG.slice().sort(function(a, b){
+      return String(b.date).localeCompare(String(a.date));
+    });
+    var chip = document.getElementById('cl-count-chip');
+    if (chip) chip.textContent = entries.length + ' update' + (entries.length === 1 ? '' : 's');
+
+    if (!entries.length){
+      wrap.innerHTML = '<div class="reg-empty">Nothing here yet — changes to the portal will be listed on this page.</div>';
+      return;
+    }
+    wrap.innerHTML = entries.map(function(e){
+      var tag = CHANGELOG_TAGS[e.tag] || CHANGELOG_TAGS['new'];
+      var items = (e.items || []).map(function(it){
+        return '<li>' + escT(it) + '</li>';
+      }).join('');
+      return '<div class="cl-entry">' +
+        '<div class="cl-head">' +
+          '<span class="cl-tag ' + tag.cls + '">' + tag.label + '</span>' +
+          '<time datetime="' + escT(e.date) + '">' + escT(changelogDate(e.date)) + '</time>' +
+        '</div>' +
+        '<h4>' + escT(e.title) + '</h4>' +
+        (items ? '<ul class="cl-items">' + items + '</ul>' : '') +
+      '</div>';
+    }).join('');
+  }
+  window.renderChangelog = renderChangelog;
+
   var NAV_PAGES = [
     { label:'Dashboard', view:'dashboard', cat:'Page' },
     { label:'My Profile', view:'profile', cat:'Page' },
     { label:'My Membership', view:'membership', cat:'Page' },
+    { label:"What's New", view:'changelog', cat:'Page' },
     { label:'My Aquariums', view:'tanks', cat:'Page' },
     { label:'Awards Program', view:'awards', cat:'Page' },
     { label:'My Auctions', view:'auctions', cat:'Page' },

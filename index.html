@@ -104,6 +104,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
       My Membership
     </button>
+    <button class="side-link" data-view="changelog">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><path d="M3.05 11a9 9 0 1 1 .5 4"/><path d="M3 21v-5h5"/></svg>
+      What's New
+    </button>
 
     <div class="side-label">The Hobby</div>
     <button class="side-link" data-view="tanks">
@@ -551,6 +555,22 @@
 
   <div class="sec-title"><h3>Membership timeline</h3></div>
   <div class="rows" id="member-timeline"></div>
+</section>
+
+<!-- ============ CHANGELOG / WHAT'S NEW ============ -->
+<section class="view" id="view-changelog">
+  <div class="view-head">
+    <div>
+      <span class="kicker">What's New</span>
+      <h2>Changes to the members portal</h2>
+      <p>Every new feature and fix, newest first. Something not working as you'd expect? Let a committee member know.</p>
+    </div>
+    <span class="status-chip" style="display:inline-flex" id="cl-count-chip">0 updates</span>
+  </div>
+
+  <!-- Entries live in the CHANGELOG array in app.js — add new ones at the top
+       of that array; this list is rendered from it. -->
+  <div id="changelog-list"></div>
 </section>
 
 <!-- ============ MY AQUARIUMS ============ -->

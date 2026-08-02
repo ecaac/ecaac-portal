@@ -1333,3 +1333,30 @@ select:disabled{opacity:.55;cursor:not-allowed;background-color:var(--sand)}
 .bp-ev-photocount{font-size:11.5px;color:var(--ink-soft);margin-top:7px}
 .bp-tl-dot-done{background:var(--gold);box-shadow:0 0 0 2px rgba(217,164,65,.45)}
 .bp-field-hint{font-size:12px;color:var(--ink-soft);margin:-6px 0 4px}
+
+/* ===== Changelog / What's New =====
+   A vertical list of releases, newest first. Each entry is a panel-style card
+   with a coloured tag and a date, so the page can be skimmed for the last
+   change without reading every bullet. */
+.cl-entry{
+  background:var(--paper);border:1px solid var(--sand-line);border-radius:16px;
+  padding:20px 22px;margin-bottom:14px;
+}
+.cl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.cl-tag{
+  font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  padding:4px 10px;border-radius:20px;border:1px solid transparent;
+}
+.cl-tag.cl-new{background:#EAF3DE;color:var(--leaf-dark);border-color:var(--leaf-light)}
+.cl-tag.cl-improved{background:#FBF2DC;color:var(--gold-dark);border-color:var(--gold)}
+.cl-tag.cl-fixed{background:#FBE7E2;color:var(--coral-dark);border-color:var(--coral)}
+.cl-head time{font-size:11.5px;font-weight:700;color:var(--ink-soft)}
+.cl-entry h4{font-size:16px;margin:0 0 10px;color:var(--ink)}
+.cl-items{margin:0;padding-left:20px}
+.cl-items li{font-size:13.5px;color:var(--ink-soft);line-height:1.75;margin-bottom:6px}
+.cl-items li:last-child{margin-bottom:0}
+@media (max-width:640px){
+  .cl-entry{padding:16px 17px}
+  .cl-entry h4{font-size:15px}
+  .cl-items li{font-size:13px}
+}
