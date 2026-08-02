@@ -1697,14 +1697,28 @@
             <option>Biotope</option><option>Breeding rack</option><option>Paludarium</option><option>Vivarium</option><option>Terrarium</option>
           </select>
         </div>
-        <!-- Only shown for Breeding rack: one entry standing in for a whole rack
-             of identical tanks. Toggled by syncRackField() in app.js. -->
-        <div class="field" id="tf-rack-field" style="display:none">
-          <label for="tf-rack-count">Tanks in this rack *</label>
-          <input id="tf-rack-count" type="number" min="1" max="200" step="1" placeholder="e.g. 12">
+        <!-- Breeding rack only. A rack is one entry standing in for a row of
+             tanks, which are often NOT all the same size, so sizes are entered
+             as lines (qty + dimensions) rather than one count. Shown/hidden by
+             syncRackField() in app.js. -->
+        <div class="field full" id="tf-rack-field" style="display:none">
+          <label>Rack layout *</label>
+          <p class="rack-hint">Add a line for each tank size on the rack. Litres per tank fills in from the dimensions — type over it if you already know the figure.</p>
+          <div class="rack-rows" id="tf-rack-rows"></div>
+          <button type="button" class="rack-add" id="tf-rack-add">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Add tank size
+          </button>
+          <div class="rack-sump">
+            <label for="tf-rack-sump">Sump volume (litres)<small>Optional — counted in the rack total</small></label>
+            <input id="tf-rack-sump" type="number" min="0" step="1" placeholder="e.g. 80">
+          </div>
+          <div class="vol-calc is-empty" id="tf-rack-total">
+            <div class="vc-figure" id="tf-rack-total-text">Add a tank size to work out the rack volume.</div>
+          </div>
         </div>
-        <div class="field"><label for="tf-volume">Volume (litres)</label><input id="tf-volume" type="number" min="1" placeholder="e.g. 120"></div>
-        <div class="field"><label for="tf-shape">Tank shape</label>
+        <div class="field" id="tf-volume-field"><label for="tf-volume">Volume (litres)</label><input id="tf-volume" type="number" min="1" placeholder="e.g. 120"></div>
+        <div class="field" id="tf-shape-field"><label for="tf-shape">Tank shape</label>
           <select id="tf-shape">
             <option value="rect">Rectangular</option>
             <option value="cube">Cube</option>
@@ -1713,7 +1727,7 @@
             <option value="triangle">Triangular</option>
           </select>
         </div>
-        <div class="field full">
+        <div class="field full" id="tf-dims-field">
           <label id="tf-dims-label">Dimensions (cm)</label>
           <div class="dim-row">
             <div class="dim-cell"><label for="tf-len" id="tf-len-label">Length</label><input id="tf-len" type="number" min="1" step="0.1" placeholder="90"></div>

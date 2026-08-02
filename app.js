@@ -2012,9 +2012,22 @@ window.initPortal = function(){
     terra: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M4 8c4 2 12 2 16 0M4 16c4-2 12-2 16 0"/></svg>',
     rack: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5.5" rx="1"/><rect x="3" y="9.25" width="18" height="5.5" rx="1"/><rect x="3" y="15.5" width="18" height="5.5" rx="1"/></svg>'
   };
-  var fishRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg>';
-  var plantRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7Z"/><path d="M12 15c0-4-3-6-7-6 0 4 3 6 7 6Z"/></svg>';
+  var fishRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-6 12-6 8 6 8 6-2 6-8 6-12-6-12-6Z"/><circle cx="17" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg>';  var plantRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7Z"/><path d="M12 15c0-4-3-6-7-6 0 4 3 6 7 6Z"/></svg>';
   var checkRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>';
+
+  // The one-line summary under a tank card's title. Built from parts and joined,
+  // so an empty piece disappears instead of leaving a stray separator or a bare
+  // " cm" — which is what a rack with several tank sizes would otherwise show,
+  // since its sizes live in rack_rows rather than the free-text dims field.
+  function tankMetaLine(t, withStarted){
+    var parts = [];
+    if (isRackType(t.type)) parts.push(rackCountOf(t) + ' tanks');
+    if (t.volume) parts.push(t.volume + ' ℓ');
+    var size = isRackType(t.type) ? rackSizeLabel(t) : ((t.dims && t.dims !== '—') ? t.dims + ' cm' : '');
+    if (size) parts.push(size);
+    if (withStarted && t.started) parts.push('started ' + t.started);
+    return escT(parts.join(' · '));
+  }
   var trophyRowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/></svg>';
 
   var tanks = IS_LIVE ? [] : [
@@ -2125,6 +2138,8 @@ window.initPortal = function(){
         // where the migration hasn't been applied — rackCountOf() treats both
         // as 1, so nothing downstream has to special-case it.
         rack_tanks: (row.rack_tanks != null) ? row.rack_tanks : null,
+        rack_rows: Array.isArray(row.rack_rows) ? row.rack_rows : null,
+        rack_sump: (row.rack_sump != null) ? row.rack_sump : null,
         substrate: row.substrate || '', co2: row.co2 || '', water_source: row.water_source || '',
         archived: !!row.archived,
         tags: (row.tank_tags || []).map(function(t){ return t.label; }),
@@ -2440,7 +2455,7 @@ window.initPortal = function(){
           '<span class="cat-pill" style="z-index:1">' + escT(t.type) + (t.subtitle ? ' · ' + escT(t.subtitle) : '') + '</span>' +
           (t.archived ? '<span class="arch-pill">Archived</span>' : '') + thumbInner +
         '</div><div class="tank-body"><h4>' + escT(t.name) + '</h4>' +
-        '<div class="meta">' + (isRackType(t.type) ? rackCountOf(t) + ' tanks · ' : '') + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm · started ' + escT(t.started) + '</div>' +
+        '<div class="meta">' + tankMetaLine(t, true) + '</div>' +
         '<div class="tank-stats"><div><b>' + (live || '—') + '</b><span>' + liveLabel + '</span></div>' +
         '<div><b>' + t.plants.length + '</b><span>Plants</span></div>' +
         '<div><b>' + t.log.length + '</b><span>Logs</span></div>' +
@@ -2494,7 +2509,7 @@ window.initPortal = function(){
             '<div class="tank-thumb" style="background:linear-gradient(135deg,' + st[0] + ',' + st[1] + ')">' +
               '<span class="cat-pill" style="z-index:1">' + escT(t.type) + '</span>' + thumbInner +
             '</div><div class="tank-body"><h4>' + escT(t.name) + '</h4>' +
-            '<div class="meta">' + (isRackType(t.type) ? rackCountOf(t) + ' tanks · ' : '') + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm</div></div></div>';
+            '<div class="meta">' + tankMetaLine(t, false) + '</div></div></div>';
         }).join('');
         dashGrid.querySelectorAll('[data-dash-tank]').forEach(function(card){
           card.addEventListener('click', function(){
@@ -2566,13 +2581,22 @@ window.initPortal = function(){
     var net = netLitres(t);
     var age = tankAge(t.started_on);
     var isRack = isRackType(t.type);
+    var rackRows = isRack ? rackRowsOf(t) : [];
     var rackN = isRack ? rackCountOf(t) : 1;
+    var sump = isRack ? rackSumpOf(t) : 0;
+    // Each distinct size reads as its own line, e.g. "12 × 40 × 25 × 20 cm".
+    var rackBreakdown = rackRows.map(function(r){
+      var size = (r.l && r.w && r.h) ? (r.l + ' × ' + r.w + ' × ' + r.h + ' cm')
+                                     : (Math.round(rackRowLitres(r)) + ' ℓ');
+      return clampQty(r.qty) + ' × ' + size;
+    }).join(' · ');
     var rows = [
-      ['Volume', t.volume ? t.volume + ' ℓ' : '', net && net !== t.volume ? '≈' + net + ' ℓ of water after ' + (t.displacement || 12) + '% displacement' : ''],
-      ['Rack size', isRack ? rackN + ' tank' + (rackN === 1 ? '' : 's') : '',
-        isRack && t.volume ? 'About ' + Math.round(t.volume / rackN) + ' ℓ per tank' : ''],
-      ['Dimensions', t.dims && t.dims !== '—' ? t.dims + ' cm' : '',
-        (isRack ? 'Per tank · ' : '') + (SHAPE_LABEL[t.shape || 'rect'] || '')],
+      ['Volume', t.volume ? t.volume + ' ℓ' : '',
+        isRack && sump ? 'Includes ' + Math.round(sump) + ' ℓ of sump'
+                       : (net && net !== t.volume ? '≈' + net + ' ℓ of water after ' + (t.displacement || 12) + '% displacement' : '')],
+      ['Rack layout', isRack ? rackN + ' tank' + (rackN === 1 ? '' : 's') : '', rackBreakdown],
+      ['Sump', (isRack && sump) ? Math.round(sump) + ' ℓ' : '', ''],
+      ['Dimensions', !isRack && t.dims && t.dims !== '—' ? t.dims + ' cm' : '', !isRack ? (SHAPE_LABEL[t.shape || 'rect'] || '') : ''],
       ['Set up', t.started || '', age],
       ['Filter', t.filter || '', ''],
       ['Lighting', t.light || '', ''],
@@ -3056,34 +3080,188 @@ window.initPortal = function(){
     }
   }
   // ===== Breeding rack support =====
-  // A rack is one aquarium entry standing in for a row of identical breeding
-  // boxes. The dimensions the member types describe ONE tank; the stored volume
-  // is that figure multiplied by the number of tanks, so rack litres roll into
-  // the "total litres" line and the Aquariums badge tier the same way any other
-  // tank does.
+  // A rack is one aquarium entry standing in for a whole row of tanks. Members
+  // rarely run a rack of identical boxes — a typical rack is a few grow-out
+  // tanks on the bottom shelf and a dozen small pair boxes above — so the sizes
+  // are entered as LINES (quantity + dimensions) rather than a single count,
+  // and an optional shared sump is added on top.
+  //
+  // Stored as:
+  //   rack_rows  jsonb  [{qty, l, w, h, litres}, ...]   litres is PER TANK
+  //   rack_sump  numeric                                optional, litres
+  //   rack_tanks integer                                total qty, derived
+  //   volume     integer                                total litres, derived
+  //
+  // rack_tanks and volume stay derived rather than authoritative so that every
+  // existing consumer (tank cards, total-litres line, Aquariums badge tier)
+  // keeps working with no knowledge of racks at all.
   var RACK_TYPE = 'Breeding rack';
+  var RACK_MAX_ROWS = 12;
   function isRackType(type){ return type === RACK_TYPE; }
-  // Always at least 1, so a rack can never silently zero out its own volume.
-  function rackCountOf(t){
-    var n = t && t.rack_tanks != null ? parseInt(t.rack_tanks, 10) : 0;
-    return (isNaN(n) || n < 1) ? 1 : n;
-  }
-  function tfRackCount(){
-    var el = document.getElementById('tf-rack-count');
-    if (!el || !isRackType(document.getElementById('tf-type').value)) return 1;
-    var n = parseInt(el.value, 10);
+
+  function clampQty(n){
+    n = parseInt(n, 10);
     return (isNaN(n) || n < 1) ? 1 : Math.min(200, n);
   }
-  // Show/hide the count field and relabel the dimensions block, so it's obvious
-  // the numbers describe a single tank rather than the whole rack.
+  // Rack rows are always rectangular: breeding boxes and grow-out tanks are.
+  // Anything shaped goes in as its own normal tank entry.
+  function rackRowLitres(row){
+    var typed = parseFloat(row.litres);
+    if (!isNaN(typed) && typed > 0) return typed;
+    return grossLitres('rect', parseFloat(row.l) || 0, parseFloat(row.w) || 0, parseFloat(row.h) || 0);
+  }
+  // Normalises whatever is on a tank into a row list. Handles three cases:
+  // a modern rack (rack_rows), a rack saved before rack_rows existed (rack_tanks
+  // plus the tank's own dimensions), and anything else (empty).
+  function rackRowsOf(t){
+    if (!t) return [];
+    if (Array.isArray(t.rack_rows) && t.rack_rows.length){
+      return t.rack_rows.map(function(r){
+        return { qty: clampQty(r.qty), l: r.l || 0, w: r.w || 0, h: r.h || 0, litres: r.litres || 0 };
+      });
+    }
+    if (isRackType(t.type) && t.rack_tanks){
+      var n = clampQty(t.rack_tanks);
+      return [{ qty: n, l: t.length_cm || 0, w: t.width_cm || 0, h: t.height_cm || 0,
+                litres: t.volume ? (t.volume / n) : 0 }];
+    }
+    return [];
+  }
+  function rackSumpOf(t){
+    var n = t && t.rack_sump != null ? parseFloat(t.rack_sump) : 0;
+    return (isNaN(n) || n < 0) ? 0 : n;
+  }
+  // Total tank count across every line. Still "at least 1" so a rack can never
+  // report zero tanks.
+  function rackCountOf(t){
+    var rows = rackRowsOf(t);
+    if (!rows.length) return clampQty(t && t.rack_tanks);
+    var n = rows.reduce(function(a, r){ return a + clampQty(r.qty); }, 0);
+    return n < 1 ? 1 : n;
+  }
+  // Litres across every tank on the rack, plus the sump if there is one.
+  function rackVolumeOf(t){
+    var rows = rackRowsOf(t);
+    var total = rows.reduce(function(a, r){ return a + clampQty(r.qty) * rackRowLitres(r); }, 0);
+    return Math.round(total + rackSumpOf(t));
+  }
+  // How a rack's sizes read on a card: one size shows the size, several just
+  // say how many there are rather than listing them all in a meta line.
+  function rackSizeLabel(t){
+    var rows = rackRowsOf(t);
+    if (!rows.length) return '';
+    if (rows.length > 1) return rows.length + ' tank sizes';
+    var r = rows[0];
+    if (r.l && r.w && r.h) return r.l + ' × ' + r.w + ' × ' + r.h + ' cm each';
+    var lit = Math.round(rackRowLitres(r));
+    return lit ? lit + ' ℓ each' : '';
+  }
+
+  // --- rack layout editor (inside the tank modal) ---
+  // Working copy while the modal is open; only read on save.
+  var tfRackRows = [];
+  var rackRowsWrap = document.getElementById('tf-rack-rows');
+  var rackSumpEl = document.getElementById('tf-rack-sump');
+
+  function tfRackSump(){
+    var n = parseFloat(rackSumpEl && rackSumpEl.value);
+    return (isNaN(n) || n < 0) ? 0 : n;
+  }
+  function renderRackRows(){
+    if (!rackRowsWrap) return;
+    rackRowsWrap.innerHTML = tfRackRows.map(function(r, i){
+      var per = rackRowLitres(r);
+      return '<div class="rack-row" data-rack-row="' + i + '">' +
+        '<div class="rack-qty"><label>Qty</label><input type="number" min="1" max="200" step="1" data-rk="qty" value="' + clampQty(r.qty) + '" aria-label="Number of tanks this size"></div>' +
+        '<div><label>Length</label><input type="number" min="0" step="0.1" data-rk="l" value="' + (r.l || '') + '" placeholder="40" aria-label="Length in cm"></div>' +
+        '<div><label>Width</label><input type="number" min="0" step="0.1" data-rk="w" value="' + (r.w || '') + '" placeholder="25" aria-label="Width in cm"></div>' +
+        '<div><label>Height</label><input type="number" min="0" step="0.1" data-rk="h" value="' + (r.h || '') + '" placeholder="20" aria-label="Height in cm"></div>' +
+        '<div class="rack-litres"><label>Litres each</label><input type="number" min="0" step="0.1" data-rk="litres" value="' + (per ? Math.round(per * 10) / 10 : '') + '" placeholder="—" aria-label="Litres per tank"></div>' +
+        '<button type="button" class="rack-del" data-rack-del="' + i + '" aria-label="Remove this tank size"' + (tfRackRows.length === 1 ? ' disabled' : '') + '>' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>' +
+        '</button>' +
+      '</div>';
+    }).join('');
+    var addBtn = document.getElementById('tf-rack-add');
+    if (addBtn) addBtn.style.display = tfRackRows.length >= RACK_MAX_ROWS ? 'none' : '';
+    updateRackTotal();
+  }
+  function updateRackTotal(){
+    var box = document.getElementById('tf-rack-total');
+    var text = document.getElementById('tf-rack-total-text');
+    if (!box || !text) return;
+    var tanks = 0, litres = 0, sized = 0;
+    tfRackRows.forEach(function(r){
+      var q = clampQty(r.qty), per = rackRowLitres(r);
+      tanks += q;
+      litres += q * per;
+      if (per > 0) sized++;
+    });
+    var sump = tfRackSump();
+    if (!sized){
+      box.classList.add('is-empty');
+      text.textContent = 'Add a tank size to work out the rack volume.';
+      return;
+    }
+    box.classList.remove('is-empty');
+    text.innerHTML = Math.round(litres + sump) + ' ℓ across ' + tanks + ' tank' + (tanks === 1 ? '' : 's') +
+      '<small>' + Math.round(litres) + ' ℓ in the tanks' +
+      (sump ? ' plus ' + Math.round(sump) + ' ℓ in the sump' : '') +
+      (tfRackRows.length > 1 ? ' · ' + tfRackRows.length + ' different sizes' : '') + '.</small>';
+  }
+  function addRackRow(row){
+    if (tfRackRows.length >= RACK_MAX_ROWS) return;
+    tfRackRows.push(row || { qty: 1, l: '', w: '', h: '', litres: '' });
+    renderRackRows();
+  }
+  if (rackRowsWrap){
+    // Delegated so rows can be added and removed without rebinding.
+    rackRowsWrap.addEventListener('input', function(e){
+      var input = e.target.closest && e.target.closest('[data-rk]');
+      if (!input) return;
+      var rowEl = input.closest('[data-rack-row]');
+      var i = parseInt(rowEl.getAttribute('data-rack-row'), 10);
+      if (isNaN(i) || !tfRackRows[i]) return;
+      var key = input.getAttribute('data-rk');
+      tfRackRows[i][key] = input.value;
+      // Typing a dimension recomputes litres; typing litres directly wins until
+      // a dimension changes again. Deliberately not a full re-render — that
+      // would blow away focus and the caret mid-keystroke.
+      if (key === 'l' || key === 'w' || key === 'h'){
+        tfRackRows[i].litres = '';
+        var lit = rowEl.querySelector('[data-rk="litres"]');
+        var per = rackRowLitres(tfRackRows[i]);
+        if (lit) lit.value = per ? Math.round(per * 10) / 10 : '';
+      }
+      updateRackTotal();
+    });
+    rackRowsWrap.addEventListener('click', function(e){
+      var del = e.target.closest && e.target.closest('[data-rack-del]');
+      if (!del) return;
+      var i = parseInt(del.getAttribute('data-rack-del'), 10);
+      if (isNaN(i) || tfRackRows.length <= 1) return;
+      tfRackRows.splice(i, 1);
+      renderRackRows();
+    });
+  }
+  var rackAddBtn = document.getElementById('tf-rack-add');
+  if (rackAddBtn) rackAddBtn.addEventListener('click', function(){ addRackRow(); });
+  if (rackSumpEl) rackSumpEl.addEventListener('input', updateRackTotal);
+
+  // Racks size themselves from their own lines, so the single-tank shape,
+  // dimensions and volume inputs are hidden rather than left to contradict them.
   function syncRackField(){
     var isRack = isRackType(document.getElementById('tf-type').value);
-    var field = document.getElementById('tf-rack-field');
-    if (field) field.style.display = isRack ? '' : 'none';
-    var dimsLabel = document.getElementById('tf-dims-label');
-    if (dimsLabel) dimsLabel.textContent = isRack ? 'Dimensions of one tank (cm)' : 'Dimensions (cm)';
-    var volLabel = document.querySelector('label[for="tf-volume"]');
-    if (volLabel) volLabel.textContent = isRack ? 'Total volume (litres)' : 'Volume (litres)';
+    ['tf-rack-field'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.style.display = isRack ? '' : 'none';
+    });
+    ['tf-volume-field','tf-shape-field','tf-dims-field'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.style.display = isRack ? 'none' : '';
+    });
+    if (isRack && !tfRackRows.length) addRackRow();
+    if (isRack) renderRackRows();
   }
 
   function updateCalc(){
@@ -3101,24 +3279,18 @@ window.initPortal = function(){
       calcApply.dataset.vol = '';
       return;
     }
-    var count = tfRackCount();
-    var g = Math.round(gross);              // one tank
-    var total = Math.round(gross * count);  // whole rack (same as g when count is 1)
-    var net = Math.round(gross * count * (1 - disp / 100));
+    var g = Math.round(gross);
+    var net = Math.round(gross * (1 - disp / 100));
     calcBox.classList.remove('is-empty');
-    calcText.innerHTML = (count > 1
-        ? total + ' ℓ full to the rim across ' + count + ' tanks'
-        : g + ' ℓ full to the rim') +
-      '<small>' + (count > 1 ? 'That\u2019s ' + g + ' ℓ per tank. ' : '') +
-      'About ' + net + ' ℓ of actual water once you allow ' + disp + '% for substrate and hardscape' +
+    calcText.innerHTML = g + ' ℓ full to the rim' +
+      '<small>About ' + net + ' ℓ of actual water once you allow ' + disp + '% for substrate and hardscape' +
       (shape === 'bowfront' ? ' — bowfront figures are an estimate' : '') + '.</small>';
     calcApply.style.display = 'inline-block';
-    calcApply.dataset.vol = String(total);
+    calcApply.dataset.vol = String(g);
   }
   dimEls.forEach(function(el){ if (el) el.addEventListener('input', updateCalc); });
   document.getElementById('tf-shape').addEventListener('change', updateCalc);
   document.getElementById('tf-type').addEventListener('change', function(){ syncRackField(); updateCalc(); });
-  document.getElementById('tf-rack-count').addEventListener('input', updateCalc);
   calcApply.addEventListener('click', function(){
     if (calcApply.dataset.vol) document.getElementById('tf-volume').value = calcApply.dataset.vol;
   });
@@ -3141,7 +3313,10 @@ window.initPortal = function(){
       typeSel.appendChild(opt);
     }
     typeSel.value = t ? t.type : 'Freshwater';
-    document.getElementById('tf-rack-count').value = (t && isRackType(t.type)) ? rackCountOf(t) : '';
+    // Seed the rack editor from the tank being edited. rackRowsOf() also
+    // upgrades a rack saved before rack_rows existed into a single line.
+    tfRackRows = (t && isRackType(t.type)) ? rackRowsOf(t) : [];
+    if (rackSumpEl) rackSumpEl.value = (t && rackSumpOf(t)) ? rackSumpOf(t) : '';
     syncRackField();
     document.getElementById('tf-volume').value = t && t.volume ? t.volume : '';
     document.getElementById('tf-shape').value = (t && t.shape) || 'rect';
@@ -3201,21 +3376,44 @@ window.initPortal = function(){
     if (shape === 'cube'){ W = L; H = L; }
     var typedVol = parseInt(document.getElementById('tf-volume').value, 10) || 0;
     var rackType = isRackType(document.getElementById('tf-type').value);
-    var rackCount = rackType ? tfRackCount() : 1;
+    // Clean the editor's working rows into what gets stored: drop blank lines,
+    // pin down the per-tank litres so a saved rack doesn't depend on the
+    // dimension maths being identical next time it's read.
+    var rackRows = !rackType ? null : tfRackRows.map(function(r){
+      return {
+        qty: clampQty(r.qty),
+        l: parseFloat(r.l) || 0, w: parseFloat(r.w) || 0, h: parseFloat(r.h) || 0,
+        litres: Math.round(rackRowLitres(r) * 10) / 10
+      };
+    }).filter(function(r){ return r.litres > 0; });
+    var rackSump = rackType ? tfRackSump() : 0;
+    var rackDerived = rackType ? { rack_rows: rackRows, rack_sump: rackSump || null, type: RACK_TYPE } : null;
+    var rackCount = rackType ? rackCountOf(rackDerived) : 1;
+    var rackVolume = rackType ? rackVolumeOf(rackDerived) : 0;
+    // A rack with no usable line falls back to whatever the member typed in the
+    // volume box rather than saving as zero litres.
+    if (rackType && !rackRows.length) rackVolume = typedVol;
     var startedOnVal = document.getElementById('tf-started-on').value || null;
     var existingStarted = (editingIdx >= 0 && tanks[editingIdx]) ? tanks[editingIdx].started : '';
     var data = {
       name: name,
       type: document.getElementById('tf-type').value,
       // Nobody wants to fill in litres twice: if they gave dimensions and left
-      // the volume blank, take the calculated figure. For a rack the dimensions
-      // are one tank, so multiply up to the whole rack.
-      volume: typedVol || Math.round(grossLitres(shape, L, W, H) * rackCount) || 0,
+      // the volume blank, take the calculated figure. A rack ignores both and
+      // uses the total across its own lines plus the sump.
+      volume: rackType ? rackVolume : (typedVol || Math.round(grossLitres(shape, L, W, H)) || 0),
       rack_tanks: rackType ? rackCount : null,
+      rack_rows: rackType ? rackRows : null,
+      rack_sump: rackType ? (rackSump || null) : null,
       shape: shape,
       length_cm: L || null, width_cm: W || null, height_cm: H || null,
       displacement: Math.min(60, Math.max(0, parseInt(document.getElementById('tf-disp').value, 10) || 0)),
-      dims: dimsString(shape, L, W, H) || '—',
+      // Racks describe their sizes in rack_rows, so the free-text dims field is
+      // left as the single-size summary or a dash rather than a made-up figure.
+      dims: rackType ? (rackRows.length === 1 && rackRows[0].l
+              ? dimsString('rect', rackRows[0].l, rackRows[0].w, rackRows[0].h)
+              : '—')
+            : (dimsString(shape, L, W, H) || '—'),
       started_on: startedOnVal,
       started: startedOnVal ? monthYear(startedOnVal) : (existingStarted || (todayShort() + ' ' + new Date().getFullYear())),
       filter: document.getElementById('tf-filter').value.trim(),
@@ -3241,12 +3439,14 @@ window.initPortal = function(){
       displacement: data.displacement, substrate: data.substrate, co2: data.co2, water_source: data.water_source,
       filter: data.filter, light: data.light
     };
-    // rack_tanks is a newer column. Only send it when it actually carries a
-    // value, so every non-rack save writes exactly the same field set it did
-    // before — and a portal running against a database where the migration
-    // hasn't been applied yet keeps working for all other tank types.
+    // rack_tanks / rack_rows / rack_sump are newer columns. Only send them when
+    // they actually carry a value, so every non-rack save writes exactly the
+    // field set it did before — and a portal running against a database where
+    // the migration hasn't been applied keeps working for all other tank types.
     if (rackType || (editingIdx >= 0 && tanks[editingIdx] && tanks[editingIdx].rack_tanks != null)){
       dbFields.rack_tanks = data.rack_tanks;
+      dbFields.rack_rows = data.rack_rows;
+      dbFields.rack_sump = data.rack_sump;
     }
 
     if (editingIdx >= 0){
@@ -4627,7 +4827,7 @@ window.initPortal = function(){
         '</div><div class="tank-body">' +
           '<div class="tank-owner"><div class="mini-avatar" style="background:' + MA_AVATAR_GRADS[gradIdx] + '">' + initials + '</div><span>' + escT(t.owner) + '</span>' + (t.mine ? '<span class="mine-pill">Yours</span>' : '') + '</div>' +
           '<h4>' + escT(t.name) + '</h4>' +
-          '<div class="meta">' + (isRackType(t.type) ? rackCountOf(t) + ' tanks · ' : '') + (t.volume ? t.volume + ' ℓ · ' : '') + escT(t.dims) + ' cm · started ' + escT(t.started) + '</div>' +
+          '<div class="meta">' + tankMetaLine(t, true) + '</div>' +
           '<div class="tank-stats"><div><b>' + (liveCount || '—') + '</b><span>Livestock</span></div><div><b>' + t.plants.length + '</b><span>Plants</span></div>' +
             (heartHtml(t, true) ? '<div class="tank-heart">' + heartHtml(t, true) + '</div>' : '') + '</div>' +
         '</div></div>';
