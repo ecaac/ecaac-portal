@@ -170,14 +170,18 @@ window.initPortal = function(){
     return DETAIL_ROUTES[id] ? DETAIL_ROUTES[id].key() : null;
   }
 
+  function safeDecode(v){ try { return decodeURIComponent(v); } catch (e) { return null; } }
+
   function parseHash(){
     var h = String(window.location.hash || '').replace(/^#\/?/, '');
     if (!h) return { view: 'dashboard', tank: null };
     var parts = h.split('/');
-    if (parts[0] === 'tank' && parts[1]) return { view: 'tank-detail', tank: decodeURIComponent(parts[1]) };
+    var key = parts[1] ? safeDecode(parts[1]) : null;
+    if (parts[1] && key === null) return { view: 'dashboard', tank: null };
+    if (parts[0] === 'tank' && key) return { view: 'tank-detail', tank: key };
     for (var v in DETAIL_ROUTES) {
       if (DETAIL_ROUTES[v].slug === parts[0] && parts[1]) {
-        return { view: v, tank: decodeURIComponent(parts[1]) };
+        return { view: v, tank: key };
       }
     }
     return { view: ROUTABLE[parts[0]] ? parts[0] : 'dashboard', tank: null };
@@ -469,7 +473,7 @@ window.initPortal = function(){
   var member;
   if (window.currentMember) {
     var cm = window.currentMember;
-    var joined = cm.join_date ? new Date(cm.join_date) : new Date();
+    var joined = cm.join_date ? new Date(String(cm.join_date).slice(0,10) + 'T00:00:00') : new Date();
     member = {
       name: liveName(cm),
       role: memberRoleLine(cm.role === 'admin', cm.membership_type).toUpperCase(),
@@ -600,7 +604,7 @@ window.initPortal = function(){
     // QR panel
     var qs = 220*s, qx = W - qs - 56*s, qy = (H - qs)/2 - 20*s;
     ctx.fillStyle = '#FFFFFF'; roundRect(ctx, qx, qy, qs, qs, 20*s); ctx.fill();
-    var pad = 20*s, m = (qs - pad*2) / 21, ox = qx + pad, oy = qy + pad;
+    var qpad = 20*s, m = (qs - qpad*2) / 21, ox = qx + qpad, oy = qy + qpad;
     drawFinder(ctx, ox, oy, m);
     drawFinder(ctx, ox + m*14, oy, m);
     drawFinder(ctx, ox, oy + m*14, m);
@@ -713,6 +717,8 @@ window.initPortal = function(){
   }
 
   var IS_LIVE = !!window.currentMember;
+  // A meeting stays "upcoming" until it ends, not the minute it starts.
+  function meetingEnd(m){ return new Date(m.date.getTime() + (m.hours || 0) * 3600000); }
   var MEETINGS = IS_LIVE ? [] : [
     { uid:'ecaac-2026-08-01', title:'ECAAC Monthly Club Meeting', date:new Date(2026,7,1,14,0), hours:4,
       location:'The Italian Club, 17 Harold Road, Broadwood, Gqeberha',
@@ -784,7 +790,7 @@ window.initPortal = function(){
     var lblEl = document.getElementById('dash-next-label');
     if (!numEl || !lblEl) return;
     var now = new Date();
-    var next = MEETINGS.filter(function(m){ return m.date >= now; })
+    var next = MEETINGS.filter(function(m){ return meetingEnd(m) >= now; })
       .sort(function(a, b){ return a.date - b.date; })[0];
     if (!next){
       numEl.textContent = '—';
@@ -806,7 +812,7 @@ window.initPortal = function(){
     if (!dash) return;
     var now = new Date();
     var upcoming = MEETINGS
-      .filter(function(m){ return m.date >= now; })
+      .filter(function(m){ return meetingEnd(m) >= now; })
       .sort(function(a, b){ return a.date - b.date; })
       .slice(0, 3);
     if (!upcoming.length){
@@ -839,8 +845,8 @@ window.initPortal = function(){
     }
     var now = new Date();
     var withIdx = MEETINGS.map(function(m, i){ return { m: m, i: i }; });
-    var upcoming = withIdx.filter(function(x){ return x.m.date >= now; }).sort(function(a,b){ return a.m.date - b.m.date; });
-    var past = withIdx.filter(function(x){ return x.m.date < now; }).sort(function(a,b){ return b.m.date - a.m.date; });
+    var upcoming = withIdx.filter(function(x){ return meetingEnd(x.m) >= now; }).sort(function(a,b){ return a.m.date - b.m.date; });
+    var past = withIdx.filter(function(x){ return meetingEnd(x.m) < now; }).sort(function(a,b){ return b.m.date - a.m.date; });
 
     el.innerHTML = upcoming.length
       ? upcoming.map(function(x, ui){ return eventRowHtml(x.m, x.i, false, ui === 0); }).join('')
@@ -865,8 +871,8 @@ window.initPortal = function(){
   var icsAllBtn = document.getElementById('ics-all-btn');
   if (icsAllBtn) icsAllBtn.addEventListener('click', function(){
     var now = new Date();
-    var upcomingOnly = MEETINGS.filter(function(m){ return m.date >= now; });
-    downloadICSFile('ECAAC-meetings-2026.ics', upcomingOnly.map(meetingToEvent));
+    var upcomingOnly = MEETINGS.filter(function(m){ return meetingEnd(m) >= now; });
+    downloadICSFile('ECAAC-meetings-' + new Date().getFullYear() + '.ics', upcomingOnly.map(meetingToEvent));
     popToast('All ' + upcomingOnly.length + ' upcoming meetings added to your calendar file');
   });
 
@@ -1207,9 +1213,10 @@ window.initPortal = function(){
 
   function copyText(text, btn){
     var done = function(){ popToast('Copied: ' + text); };
+    var fail = function(){ popToast('Couldn\u2019t copy \u2014 select and copy it manually'); };
     if (navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(done).catch(done);
-    } else { done(); }
+      navigator.clipboard.writeText(text).then(done, fail);
+    } else { fail(); }
   }
   // ===== Club config into the UI =====
   // Fees render from MEMBER_TYPES and banking from CLUB.bank, so these facts are
@@ -2162,7 +2169,16 @@ window.initPortal = function(){
   }
 
 
-  function escT(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escT(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  // Today's date as YYYY-MM-DD in the member's own timezone. toISOString() is
+  // UTC, which in South Africa is still yesterday until 02:00.
+  function localISODate(d){
+    d = d || new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  // A URL made safe to sit inside a CSS url('...') in a style attribute.
+  // escA alone isn't enough: the browser decodes &#39; back to ' before the CSS parses.
+  function cssUrl(u){ return escA(String(u || '').replace(/['"()\\\s]/g, function(c){ return encodeURIComponent(c); })); }
   function numberWord(n){
     var w = ['No','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve'];
     return n < w.length ? w[n] : String(n);
@@ -2565,7 +2581,8 @@ window.initPortal = function(){
           var res = await dbDeleteRow(CHILD_TABLE[listKey], it._id);
           if (res.error){ popToast('Could not remove — try again'); b.disabled = false; return; }
         }
-        tanks[currentTank][listKey].splice(idx, 1);
+        var list = tanks[currentTank][listKey], pos = list.indexOf(it);
+        if (pos >= 0) list.splice(pos, 1);
         popToast('Removed ' + it[0]);
         renderDetail(); renderTanks();
       });
@@ -2627,7 +2644,7 @@ window.initPortal = function(){
     });
     if (!bad.length){ el.innerHTML = ''; return; }
     var names = bad.map(function(p){ return paramTitle(p[1]) + ' at ' + p[0]; });
-    var advice = bad.some(function(p){ return String(p[1]).toUpperCase() === 'CU'; })
+    var advice = bad.some(function(p){ return paramKey(p[1]) === 'CU'; })
       ? 'Copper is lethal to shrimp and other invertebrates even in trace amounts — find the source before anything else.'
       : 'Test again to confirm, then water change and hold off feeding. Livestock is at risk while this reads above zero.';
     el.innerHTML = '<div class="param-alert">' +
@@ -3616,7 +3633,7 @@ window.initPortal = function(){
   function wcLitres(){
     var t = tanks[currentTank];
     var base = netLitres(t) || t.volume || 0;
-    var pct = parseInt(document.getElementById('wc-pct').value, 10) || 0;
+    var pct = Math.min(100, Math.max(1, parseInt(document.getElementById('wc-pct').value, 10) || 0));
     return base ? Math.round(base * pct / 100) : 0;
   }
   function syncWc(){
@@ -4009,14 +4026,14 @@ window.initPortal = function(){
 
   if (gsInput){
     gsInput.addEventListener('focus', function(){
-      if (!gsIndex) gsIndex = buildSearchIndex();
+      gsIndex = buildSearchIndex();   // rebuilt each focus so added/renamed tanks show up
       if (gsInput.value.trim()) gsInput.dispatchEvent(new Event('input'));
     });
     gsInput.addEventListener('input', function(){
       if (!gsIndex) gsIndex = buildSearchIndex();
       var q = gsInput.value.toLowerCase().trim();
       if (!q){ gsClose(); return; }
-      var matches = gsIndex.filter(function(it){ return it.label.toLowerCase().indexOf(q) !== -1; }).slice(0, 8);
+      var matches = gsIndex.filter(function(it){ return String(it.label || '').toLowerCase().indexOf(q) !== -1; }).slice(0, 8);
       gsRender(matches);
     });
     gsInput.addEventListener('keydown', function(e){
@@ -4223,11 +4240,10 @@ window.initPortal = function(){
     var showcase = document.getElementById('badges-showcase');
     var tiles = [];
     cats.forEach(function(cat){
-      var prog = tierProgress(cat);
       cat.tiers.forEach(function(t, i){
         var earned = cat.value >= t;
         tiles.push('<div class="aw-badge' + (earned ? '' : ' locked') + '">' +
-          '<div class="ring' + (earned ? '' : '') + '" style="' + (earned ? 'background:var(--tier-bg-' + i + ')' : '') + '">' + TIER_ICONS[cat.icon] + '</div>' +
+          '<div class="ring" style="' + (earned ? 'background:var(--tier-bg-' + i + ')' : '') + '">' + TIER_ICONS[cat.icon] + '</div>' +
           '<span>' + TIER_NAMES[i] + ' ' + cat.label + '</span></div>');
       });
     });
@@ -4327,9 +4343,9 @@ window.initPortal = function(){
   }
 
   function getMilestoneBadges(){
-    var hasBAP = ENTRIES.some(function(e){ return /^BAP/.test(e.title); });
-    var hasHAP = ENTRIES.some(function(e){ return /^HAP/.test(e.title); });
-    var hasAAP = ENTRIES.some(function(e){ return /^AAP/.test(e.title); });
+    var hasBAP = ENTRIES.some(function(e){ return /^BAP/.test(e.title || ''); });
+    var hasHAP = ENTRIES.some(function(e){ return /^HAP/.test(e.title || ''); });
+    var hasAAP = ENTRIES.some(function(e){ return /^AAP/.test(e.title || ''); });
     var cm = window.currentMember;
     var isLiveUser = !!cm;
     var hasFullProfile = isLiveUser ? !!(cm.first_name && cm.bio) : true;
@@ -4765,7 +4781,6 @@ window.initPortal = function(){
   var likeCounts = {};      // tank id -> total hearts
   var myLikes = {};         // tank id -> true if I've hearted it
   var likeBusy = {};        // tank id -> true while a toggle is in flight
-  var likesLoaded = false;
 
   // One query for the whole feature. The club is small enough that fetching
   // every row and counting client-side is cheaper than a per-tank aggregate,
@@ -4779,7 +4794,6 @@ window.initPortal = function(){
       likeCounts[r.tank_id] = (likeCounts[r.tank_id] || 0) + 1;
       if (r.member_id === window.currentMember.id) myLikes[r.tank_id] = true;
     });
-    likesLoaded = true;
     renderMemberAquariums();
     renderTanks();
     // Four milestone badges read these counts, so this is a badge-changing event
@@ -4831,6 +4845,7 @@ window.initPortal = function(){
     paintHearts();
 
     var res;
+    try {
     if (wasMine){
       res = await sb.from('tank_likes').delete()
         .eq('tank_id', tankId).eq('member_id', window.currentMember.id);
@@ -4847,7 +4862,14 @@ window.initPortal = function(){
       paintHearts();
       popToast('Could not save that — try again');
     }
-    likeBusy[tankId] = false;
+    } catch (e) {
+      myLikes[tankId] = wasMine;
+      likeCounts[tankId] = before;
+      paintHearts();
+      popToast('Could not save that — try again');
+    } finally {
+      likeBusy[tankId] = false;
+    }
     // Hearting someone else's tank can earn Showing Love or Generous Heart
     // immediately — no reason to make the member reload to find out.
     if (window.checkBadgeChanges) window.checkBadgeChanges();
@@ -4943,7 +4965,7 @@ window.initPortal = function(){
         '<div class="tank-thumb" style="background:linear-gradient(135deg,' + st[0] + ',' + st[1] + ')">' +
           '<span class="cat-pill" style="z-index:1">' + escT(t.type) + (t.subtitle ? ' · ' + escT(t.subtitle) : '') + '</span>' + thumbInner +
         '</div><div class="tank-body">' +
-          '<div class="tank-owner"><div class="mini-avatar" style="background:' + MA_AVATAR_GRADS[gradIdx] + '">' + initials + '</div><span>' + escT(t.owner) + '</span>' + (t.mine ? '<span class="mine-pill">Yours</span>' : '') + '</div>' +
+          '<div class="tank-owner"><div class="mini-avatar" style="background:' + MA_AVATAR_GRADS[gradIdx] + '">' + escT(initials) + '</div><span>' + escT(t.owner) + '</span>' + (t.mine ? '<span class="mine-pill">Yours</span>' : '') + '</div>' +
           '<h4>' + escT(t.name) + '</h4>' +
           '<div class="meta">' + tankMetaLine(t, true) + '</div>' +
           '<div class="tank-stats"><div><b>' + (liveCount || '—') + '</b><span>Livestock</span></div><div><b>' + t.plants.length + '</b><span>Plants</span></div>' +
@@ -5195,7 +5217,6 @@ window.initPortal = function(){
     // keep the membership-card fields in sync too (they're built once at init)
     member.role = roleLine.toUpperCase();
     member.type = 'Annual · ' + memberTypeInfo(cm.membership_type).label;
-    var daysLeft = Math.max(0, Math.ceil((nextRenewalDate() - new Date()) / 86400000));
 
     var LIVE = {
       'fullname': name,
@@ -5318,7 +5339,8 @@ window.initPortal = function(){
       }).join('') : '<div class="reg-empty" style="padding:20px">Nothing posted yet.</div>';
       list.querySelectorAll('[data-news-id]').forEach(function(b){
         b.addEventListener('click', async function(){
-          await sb.from('news').delete().eq('id', b.getAttribute('data-news-id'));
+          var res = await sb.from('news').delete().eq('id', b.getAttribute('data-news-id')).select('id');
+          if (res.error || !res.data || !res.data.length){ popToast('Could not delete — try again'); return; }
           popToast('News item deleted');
           loadNews();
         });
@@ -5608,7 +5630,8 @@ window.initPortal = function(){
     }).join('');
     list.querySelectorAll('[data-event-id]').forEach(function(b){
       b.addEventListener('click', async function(){
-        await sb.from('events').delete().eq('id', b.getAttribute('data-event-id'));
+        var res = await sb.from('events').delete().eq('id', b.getAttribute('data-event-id')).select('id');
+        if (res.error || !res.data || !res.data.length){ popToast('Could not delete — try again'); return; }
         popToast('Event deleted');
         loadEvents();
       });
@@ -5686,7 +5709,7 @@ window.initPortal = function(){
     raw = (raw || '').trim();
     var m = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
     if (m) return m[1] + '-' + attPad(+m[2]) + '-' + attPad(+m[3]);
-    m = raw.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/); // DD/MM/YYYY
+    m = raw.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{4})$/); // DD/MM/YYYY
     if (m) return m[3] + '-' + attPad(+m[2]) + '-' + attPad(+m[1]);
     var d = new Date(raw);
     return isNaN(d.getTime()) ? null : attDateKey(d);
@@ -5873,7 +5896,9 @@ window.initPortal = function(){
                  : (roleRaw === 'bought' || roleRaw === 'buy' || roleRaw === 'buyer' || roleRaw === 'b') ? 'Bought'
                  : null;
         if (!role){ problems.push('Row ' + (r+1) + ': role must be Bought or Sold, got \u201C' + (rowArr[iRole] || '') + '\u201D'); continue; }
-        var amount = parseFloat(String(rowArr[iAmount] || '').replace(/[R\s,]/gi, ''));
+        var amtRaw = String(rowArr[iAmount] || '').replace(/[R\s]/gi, '');
+        if (/^\d+,\d{1,2}$/.test(amtRaw)) amtRaw = amtRaw.replace(',', '.'); // decimal comma, e.g. 250,50
+        var amount = parseFloat(amtRaw.replace(/,/g, ''));
         if (!isFinite(amount) || amount <= 0){ problems.push('Row ' + (r+1) + ': couldn\u2019t read amount \u201C' + (rowArr[iAmount] || '') + '\u201D'); continue; }
         amount = Math.round(amount * 100) / 100;
         datesInFile[dateKey] = true;
@@ -6216,9 +6241,9 @@ window.initPortal = function(){
     if (!memberId){ errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
     mtSaving = true; mtSaveBtn.disabled = true; mtSaveBtn.textContent = 'Saving…';
-    var res = await sb.from('members').update({ membership_type: newType }).eq('id', memberId);
+    var res = await sb.from('members').update({ membership_type: newType }).eq('id', memberId).select('id');
     mtSaving = false; mtSaveBtn.disabled = false; mtSaveBtn.textContent = 'Save type';
-    if (res.error){ popToast('Could not save — try again'); return; }
+    if (res.error || !res.data || !res.data.length){ popToast('Could not save — try again'); return; }
     popToast('Membership type set to ' + MEMBER_TYPES[newType].pill);
     pushNotification('renewal', 'Your membership type changed',
       'You are now recorded as a ' + MEMBER_TYPES[newType].pill + ' — ' +
@@ -6309,7 +6334,7 @@ window.initPortal = function(){
   // values — and judge comments legitimately contain double quotes, which would
   // break out of a value="..." and mangle the input. Anything interpolated into
   // an attribute below goes through escA().
-  function escA(s){ return escT(s == null ? '' : s).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  function escA(s){ return escT(s); }
 
   function awardThumbsHtml(photos){
     if (!photos || !photos.length) return '';
@@ -6880,11 +6905,16 @@ window.initPortal = function(){
     var parts = String(bday).slice(0,10).split('-');
     if (parts.length !== 3){ banner.hidden = true; return; }
     var now = new Date();
-    var isToday = (parseInt(parts[1],10) === now.getMonth() + 1) && (parseInt(parts[2],10) === now.getDate());
+    var bMonth = parseInt(parts[1],10), bDay = parseInt(parts[2],10);
+    var yr = now.getFullYear(), leap = (yr % 4 === 0 && yr % 100 !== 0) || yr % 400 === 0;
+    if (bMonth === 2 && bDay === 29 && !leap) bDay = 28;   // leap-day birthdays celebrate on 28 Feb
+    var isToday = (bMonth === now.getMonth() + 1) && (bDay === now.getDate());
     if (!isToday){ banner.hidden = true; return; }
     var todayKey = now.getFullYear() + '-' + (now.getMonth()+1) + '-' + now.getDate();
     var dismissKey = 'ecaac-bday-dismissed-' + (cm.id || 'demo') + '-' + todayKey;
-    if (localStorage.getItem(dismissKey)){ banner.hidden = true; return; }
+    var dismissed = false;
+    try { dismissed = !!localStorage.getItem(dismissKey); } catch (e) { /* storage blocked */ }
+    if (dismissed){ banner.hidden = true; return; }
     var fullName = [cm.first_name, cm.last_name].filter(Boolean).join(' ').trim() || (member.name || '').trim();
     var txt = document.getElementById('bday-text');
     if (txt) txt.textContent = 'Happy birthday' + (fullName ? ', ' + fullName : '') + '! The whole ECAAC club wishes you a wonderful day.';
@@ -7220,15 +7250,6 @@ window.initPortal = function(){
     if (p.status === 'Failed') return false;
     return !p.outcome || p.outcome === 'Successful';
   }
-  // The most recent recorded headcount, whatever event carried it.
-  function bpCurrentCount(p){
-    var best = null;
-    (p.updates || []).forEach(function(u){
-      if (u.countValue === null || u.countValue === undefined) return;
-      if (!best || u.loggedAt > best.loggedAt) best = u;
-    });
-    return best ? best.countValue : null;
-  }
   function bpTitle(p){ return p.species + (p.strain ? ' \u2014 ' + p.strain : ''); }
 
   // Day count is the number members actually quote to each other ("day 18, still
@@ -7304,7 +7325,7 @@ window.initPortal = function(){
 
   // ---------------------------------------------------------------- loaders --
 
-  async function loadBreedingProjects(){
+  async function loadBreedingProjects(force){
     if (!sb || !window.currentMember){ bpLoading = false; renderBreedingAll(); return; }
     var res = await sb.from('breeding_projects')
       .select('*, members!member_id(first_name,last_name), breeding_updates(*), breeding_photos(*)')
@@ -7314,7 +7335,7 @@ window.initPortal = function(){
     if (res.error || !res.data){ renderBreedingAll(); return; }
     // Same guard as loadTanksFromDB: never let a suspicious empty response wipe
     // a list that is already correct on screen.
-    if (res.data.length === 0 && BPROJ.length > 0){ return; }
+    if (!force && res.data.length === 0 && BPROJ.length > 0){ renderBreedingAll(); return; }
 
     BPROJ.length = 0;
     res.data.forEach(function(row){
@@ -7476,7 +7497,7 @@ window.initPortal = function(){
       : (p.notes || 'No events logged yet.');
     return '<article class="tank-card bp-card" data-bp-open="' + escA(p.id) + '" role="button" tabindex="0">' +
       '<div class="bp-card-cover' + (cover ? '' : ' bp-card-cover-empty') + '"' +
-        (cover ? ' style="background-image:url(\'' + escA(cover) + '\')"' : '') + '>' +
+        (cover ? ' style="background-image:url(\'' + cssUrl(cover) + '\')"' : '') + '>' +
         bpProjectPill(p) +
       '</div>' +
       '<div class="bp-card-body">' +
@@ -7623,7 +7644,7 @@ window.initPortal = function(){
       '<button class="btn btn-outline btn-sm" data-bp-jump="breeding-hub">\u2039 Back to Breeding Hub</button>' +
     '</div>';
 
-    if (cover) html += '<div class="bp-hero" style="background-image:url(\'' + escA(cover) + '\')"></div>';
+    if (cover) html += '<div class="bp-hero" style="background-image:url(\'' + cssUrl(cover) + '\')"></div>';
 
     html += '<div class="view-head" style="margin-top:18px"><div>' +
       '<span class="kicker">Breeding project</span>' +
@@ -7860,13 +7881,15 @@ window.initPortal = function(){
     if (!modal) return;
     bpEditing = id || null;
     var p = id ? bpFind(id) : null;
+    var delBtn = document.getElementById('bpf-delete');
+    if (delBtn){ delBtn.removeAttribute('data-armed'); delBtn.textContent = 'Delete project'; }
 
     document.getElementById('bp-modal-title').textContent = p ? 'Edit breeding project' : 'New breeding project';
     document.getElementById('bpf-species').value  = p ? p.species : '';
     document.getElementById('bpf-strain').value   = p ? p.strain : '';
     document.getElementById('bpf-category').value = p ? p.category : 'Fish';
     document.getElementById('bpf-status').value   = p ? p.status : 'Conditioning';
-    document.getElementById('bpf-started').value  = p && p.startedOn ? p.startedOn : new Date().toISOString().slice(0, 10);
+    document.getElementById('bpf-started').value  = p && p.startedOn ? p.startedOn : localISODate();
     document.getElementById('bpf-notes').value    = p ? p.notes : '';
     document.getElementById('bpf-worked').value   = p ? p.whatWorked : '';
     document.getElementById('bpf-change').value   = p ? p.whatChange : '';
@@ -7899,8 +7922,8 @@ window.initPortal = function(){
       strain: document.getElementById('bpf-strain').value.trim() || null,
       category: document.getElementById('bpf-category').value,
       status: status,
-      started_on: document.getElementById('bpf-started').value || new Date().toISOString().slice(0, 10),
-      completed_on: BP_CLOSED[status] ? (new Date().toISOString().slice(0, 10)) : null,
+      started_on: document.getElementById('bpf-started').value || localISODate(),
+      completed_on: BP_CLOSED[status] ? (localISODate()) : null,
       tank_id: document.getElementById('bpf-tank').value || null,
       notes: document.getElementById('bpf-notes').value.trim() || null,
       what_worked: document.getElementById('bpf-worked').value.trim() || null,
@@ -7953,12 +7976,12 @@ window.initPortal = function(){
     }
     var id = bpEditing;
     var res = await dbDeleteRow('breeding_projects', id);
-    if (res.error){ popToast('Could not delete that project'); return; }
     btn.removeAttribute('data-armed'); btn.textContent = 'Delete project';
+    if (res.error){ popToast('Could not delete that project'); return; }
     closeLocked(document.getElementById('bp-modal'));
     bpEditing = null; currentProject = null;
     popToast('Breeding project deleted');
-    await loadBreedingProjects();
+    await loadBreedingProjects(true);
     show('my-breeding');
   }
 
@@ -8028,7 +8051,7 @@ window.initPortal = function(){
     e.fields.forEach(function(f){
       if (f === 'date'){
         h += '<div class="field"><label for="be-date">Date</label>' +
-             '<input type="date" id="be-date" value="' + new Date().toISOString().slice(0, 10) + '"></div>';
+             '<input type="date" id="be-date" value="' + localISODate() + '"></div>';
       } else if (f === 'subtype'){
         h += bpSelectHtml('be-subtype', 'Event', e.subtypes, e.subtypes[0]);
       } else if (f === 'stage'){
@@ -8074,7 +8097,7 @@ window.initPortal = function(){
     var e = BP_EVENTS[beKind], p = bpFind(beProject);
     if (!e || !p || !bpCanWrite()) return;
 
-    var loggedAt = beVal('be-date') || new Date().toISOString().slice(0, 10);
+    var loggedAt = beVal('be-date') || localISODate();
     var notes = beVal('be-notes');
     var files = Array.prototype.slice.call((document.getElementById('be-photo') || {}).files || []);
     var countRaw = beVal('be-count');
@@ -8271,7 +8294,7 @@ window.initPortal = function(){
     document.addEventListener('keydown', function(e){
       if (e.key !== 'Enter' && e.key !== ' ') return;
       var el = e.target.closest && e.target.closest('[data-bp-open]');
-      if (!el) return;
+      if (!el || e.target !== el) return;   // let nested buttons (hearts) handle their own keys
       e.preventDefault();
       openBreedingProject(el.getAttribute('data-bp-open'));
     });
@@ -8322,7 +8345,7 @@ window.initPortal = function(){
     if (res.error){ popToast('Could not remove that update'); return; }
     popToast('Update removed');
     var keep = currentProject;
-    await loadBreedingProjects();
+    await loadBreedingProjects(true);
     if (bpFind(keep)) openBreedingProject(keep);
   }
 
