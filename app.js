@@ -82,7 +82,7 @@ window.initPortal = function(){
     if (id === 'admin' && typeof loadAdminAwardQueue === 'function') loadAdminAwardQueue();
     if (id === 'admin' && typeof loadEvents === 'function') loadEvents();
     if (id === 'admin' && typeof loadAdminAuctionList === 'function') loadAdminAuctionList();
-    if ((id === 'tanks' || id === 'dashboard') && typeof loadTanksFromDB === 'function') loadTanksFromDB();
+    if ((id === 'tanks' || id === 'dashboard') && typeof loadTanksFromDB === 'function') loadTanksFromDB(60000);
     if (id === 'notifications' && typeof window.loadNotifications === 'function') window.loadNotifications();
     if ((id === 'my-breeding' || id === 'breeding-hub') && typeof window.renderBreedingAll === 'function') window.renderBreedingAll();
     sidebar.classList.remove('open'); scrim.classList.remove('show');
@@ -337,7 +337,7 @@ window.initPortal = function(){
     // fees due end Feb — next 28 Feb from today
     var now = new Date();
     var y = now.getFullYear() + (now.getMonth() >= 2 ? 1 : 0); // after Feb -> next year
-    return new Date(y, 1, 28);
+    return new Date(y, 2, 0);   // day 0 of March = last day of Feb, leap years included
   }
   function fmtShortDate(d){
     return ('0' + d.getDate()).slice(-2) + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getFullYear();
@@ -743,8 +743,7 @@ window.initPortal = function(){
   ];
 
   function meetingToEvent(m){
-    var end = new Date(m.date.getTime() + m.hours * 3600000);
-    return { uid:m.uid, title:m.title, start:m.date, end:end, location:m.location, desc:m.desc };
+    return { uid:m.uid, title:m.title, start:m.date, end:meetingEnd(m), location:m.location, desc:m.desc };
   }
 
   function eventRowHtml(m, originalIndex, isPast, isNext){
@@ -960,7 +959,7 @@ window.initPortal = function(){
   }
   renderGuides('');
   var resSearch = document.getElementById('res-search');
-  if (resSearch) resSearch.addEventListener('input', function(){ renderGuides(this.value); });
+  if (resSearch) resSearch.addEventListener('input', debounce(function(){ renderGuides(resSearch.value); }, 150));
 
   // ===== Award entry submission =====
   var ENTRIES = IS_LIVE ? [] : [
@@ -1084,14 +1083,14 @@ window.initPortal = function(){
       submitBtn.disabled = false; submitBtn.textContent = 'Submit for judging';
       var metaParts = [];
       if (tankObj) metaParts.push(tankObj.name);
-      metaParts.push('submitted ' + todayShort() + ' 2026');
+      metaParts.push('submitted ' + todayShort() + ' ' + new Date().getFullYear());
       metaParts.push('awaiting judge review');
       var entry = { title: program + ' — ' + species, meta: metaParts.join(' · '), status:'pend',
         icon: program === 'HAP' ? 'plant' : (program === 'AAP' ? 'scape' : 'fish') };
       ENTRIES.unshift(entry);
       renderEntries();
       if (tankObj){
-        tankObj.awards.unshift([program + ' — ' + species, 'Submitted ' + todayShort() + ' 2026', 'pend']);
+        tankObj.awards.unshift([program + ' — ' + species, 'Submitted ' + todayShort() + ' ' + new Date().getFullYear(), 'pend']);
         if (currentTank === parseInt(tankIdx,10)) renderDetail();
       }
       closeAwardModal();
@@ -1387,7 +1386,7 @@ window.initPortal = function(){
     dirGrid.style.display = out.length ? 'grid' : 'none';
     document.getElementById('dir-count').textContent = out.length + ' active member' + (out.length===1?'':'s');
   }
-  dirSearch.addEventListener('input', renderDir);
+  dirSearch.addEventListener('input', debounce(function(){ renderDir(); }, 150));
   // Delegated so it survives every re-render of the grid.
   dirGrid.addEventListener('click', function(e){
     var card = e.target.closest('.dir-card');
@@ -1668,7 +1667,6 @@ window.initPortal = function(){
   };
   function regStatus(s){ return REG_STATUS[s] || REG_STATUS.Future; }
 
-  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   function renderReg(){
     var q = (regSearch.value || '').toLowerCase();
@@ -1692,11 +1690,11 @@ window.initPortal = function(){
       var shipHtml = d.shipping === 'Yes'
         ? '<span class="badge info">Ships</span>'
         : '<span class="badge mute">Collection</span>';
-      return '<tr><td class="reg-member" data-label="Breeder">' + esc(d.member) + '</td>' +
-        '<td class="reg-species" data-label="Species / item">' + esc(d.species) + '</td>' +
-        '<td class="reg-cat" data-label="Category">' + esc(d.category) + '</td>' +
+      return '<tr><td class="reg-member" data-label="Breeder">' + escT(d.member) + '</td>' +
+        '<td class="reg-species" data-label="Species / item">' + escT(d.species) + '</td>' +
+        '<td class="reg-cat" data-label="Category">' + escT(d.category) + '</td>' +
         '<td class="reg-status" data-label="Status">' + statusHtml + '</td>' +
-        '<td class="reg-pref" data-label="Sale">' + esc(d.pref) + '</td>' +
+        '<td class="reg-pref" data-label="Sale">' + escT(d.pref) + '</td>' +
         '<td class="reg-ship" data-label="Ship">' + shipHtml + '</td></tr>';
     }).join('');
     // Distinguish "still loading", "register is empty" and "filters match nothing".
@@ -1733,7 +1731,7 @@ window.initPortal = function(){
       if (arr) arr.textContent = on ? (regSortAsc ? '\u25B2' : '\u25BC') : '\u25B2';
     });
   }
-  regSearch.addEventListener('input', renderReg);
+  regSearch.addEventListener('input', debounce(function(){ renderReg(); }, 150));
   document.querySelectorAll('[data-regcat]').forEach(function(b){
     b.addEventListener('click', function(){
       document.querySelectorAll('[data-regcat]').forEach(function(x){ x.classList.remove('active'); });
@@ -1861,9 +1859,9 @@ window.initPortal = function(){
     list.innerHTML = mine.map(function(d){
       var mst = regStatus(d.status);
       var badge = '<span class="badge ' + mst.badge + '">' + mst.label + '</span>';
-      return '<div class="row"><div class="row-body"><b>' + esc(d.species) + '</b>' +
-        '<span>' + esc(d.category) + ' \u00B7 ' + (d.shipping === 'Yes' ? 'can ship' : 'collection only') +
-        ' \u00B7 ' + esc(d.pref) + '</span></div>' + badge +
+      return '<div class="row"><div class="row-body"><b>' + escT(d.species) + '</b>' +
+        '<span>' + escT(d.category) + ' \u00B7 ' + (d.shipping === 'Yes' ? 'can ship' : 'collection only') +
+        ' \u00B7 ' + escT(d.pref) + '</span></div>' + badge +
         '<button class="rm-btn" data-bl-edit="' + escA(d.id) + '" aria-label="Edit ' + escA(d.species) + '" title="Edit">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>' +
         '<button class="rm-btn" data-bl-id="' + escA(d.id) + '" aria-label="Remove ' + escA(d.species) + '">' +
@@ -2098,11 +2096,17 @@ window.initPortal = function(){
   }
   async function dbUpdateRow(table, id, patch){
     if (!sb) return { error: null };
-    return await sb.from(table).update(patch).eq('id', id);
+    return zeroRowsIsError(await sb.from(table).update(patch).eq('id', id).select('id'));
   }
   async function dbDeleteRow(table, id){
     if (!sb) return { error: null };
-    return await sb.from(table).delete().eq('id', id);
+    return zeroRowsIsError(await sb.from(table).delete().eq('id', id).select('id'));
+  }
+  // Row-level security doesn't error when it blocks a write; it just matches no
+  // rows. Selecting the id back lets callers tell "saved" from "silently refused".
+  function zeroRowsIsError(res){
+    if (res && !res.error && (!res.data || !res.data.length)) return { data: res.data, error: { message: 'No rows changed' } };
+    return res;
   }
 
   function fmtLogDate(iso){
@@ -2110,8 +2114,14 @@ window.initPortal = function(){
     return d.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
   }
 
-  async function loadTanksFromDB(){
+  var tanksFetchedAt = 0;
+  // maxAgeMs: skip the (heavy, six-join) fetch if one started that recently.
+  // Every save already updates tanks[] in place, so navigation only needs a
+  // refetch to catch edits made on another device.
+  async function loadTanksFromDB(maxAgeMs){
     if (!sb || !window.currentMember) { tanksLoading = false; return; }
+    if (maxAgeMs && Date.now() - tanksFetchedAt < maxAgeMs) return;
+    tanksFetchedAt = Date.now();
     var res = await sb.from('tanks')
       .select('*, tank_tags(*), tank_params(*), tank_livestock(*), tank_plants(*), tank_log(*), tank_photos!tank_id(*)')
       .eq('owner_id', window.currentMember.id)
@@ -2179,6 +2189,11 @@ window.initPortal = function(){
   // A URL made safe to sit inside a CSS url('...') in a style attribute.
   // escA alone isn't enough: the browser decodes &#39; back to ' before the CSS parses.
   function cssUrl(u){ return escA(String(u || '').replace(/['"()\\\s]/g, function(c){ return encodeURIComponent(c); })); }
+  // Search boxes re-render whole lists; wait for a pause in typing first.
+  function debounce(fn, ms){
+    var t;
+    return function(){ var a = arguments, self = this; clearTimeout(t); t = setTimeout(function(){ fn.apply(self, a); }, ms); };
+  }
   function numberWord(n){
     var w = ['No','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve'];
     return n < w.length ? w[n] : String(n);
@@ -2476,7 +2491,7 @@ window.initPortal = function(){
         '<div class="tank-stats"><div><b>' + (live || '—') + '</b><span>' + liveLabel + '</span></div>' +
         '<div><b>' + t.plants.length + '</b><span>Plants</span></div>' +
         '<div><b>' + t.log.length + '</b><span>Logs</span></div>' +
-        (heartHtml({ id: t.id, mine: true }, false) ? '<div class="tank-heart">' + heartHtml({ id: t.id, mine: true }, false) + '</div>' : '') +
+        (function(h){ return h ? '<div class="tank-heart">' + h + '</div>' : ''; })(heartHtml({ id: t.id, mine: true }, false)) +
         '</div></div></div>';
     }).join('');
     grid.querySelectorAll('.tank-card').forEach(function(card){
@@ -2530,7 +2545,6 @@ window.initPortal = function(){
         }).join('');
         dashGrid.querySelectorAll('[data-dash-tank]').forEach(function(card){
           card.addEventListener('click', function(){
-            show('tanks');
             openTank(parseInt(card.getAttribute('data-dash-tank'), 10));
           });
         });
@@ -2732,14 +2746,17 @@ window.initPortal = function(){
         doSave();
       }
       function removeParam(){
-        var p = tanks[currentTank].params[i];
+        var t = tanks[currentTank], p = t.params[i];
         var label = p[1];
         var doRemove = async function(){
+          if (p._removing) return;
+          p._removing = true;
           if (sb && p._id){
             var res = await dbDeleteRow('tank_params', p._id);
-            if (res.error){ popToast('Could not remove — try again'); return; }
+            if (res.error){ p._removing = false; popToast('Could not remove — try again'); return; }
           }
-          tanks[currentTank].params.splice(i, 1);
+          var pos = t.params.indexOf(p);
+          if (pos >= 0) t.params.splice(pos, 1);
           popToast(label + ' removed from this tank');
           renderDetail(); renderTanks();
         };
@@ -2911,6 +2928,12 @@ window.initPortal = function(){
   // screens, but a fraction of the bytes.
   var PHOTO_MAX_DIM = 1600;
   var PHOTO_QUALITY = 0.82;
+  // The canvas always re-encodes to JPEG, so keep the stored filename honest
+  // rather than leaving a ".png" that is really a JPEG.
+  function photoSafeName(file, body){
+    var n = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    return (body !== file && body.type === 'image/jpeg') ? n.replace(/\.[^.]+$/, '') + '.jpg' : n;
+  }
   function downscaleImage(file, maxDim, quality){
     return new Promise(function(resolve){
       // GIFs lose their animation through a canvas and SVGs have no fixed
@@ -2986,15 +3009,10 @@ window.initPortal = function(){
         continue;
       }
       statusEl.textContent = 'Uploading ' + (i + 1) + ' of ' + files.length + '…';
-      var safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
       // Shrink before it ever leaves the device — saves the member's upload
       // data too, not just everyone else's download.
       var body = await downscaleImage(file, PHOTO_MAX_DIM, PHOTO_QUALITY);
-      // The canvas always re-encodes to JPEG, so keep the stored filename
-      // honest rather than leaving a ".png" that is really a JPEG.
-      if (body !== file && body.type === 'image/jpeg'){
-        safeName = safeName.replace(/\.[^.]+$/, '') + '.jpg';
-      }
+      var safeName = photoSafeName(file, body);
       var path = window.currentMember.id + '/' + t.id + '/' + Date.now() + '-' + safeName;
       try {
         var upRes = await sb.storage.from('tank-photos').upload(path, body, {
@@ -3020,7 +3038,11 @@ window.initPortal = function(){
     if (window.checkBadgeChanges) window.checkBadgeChanges();
   });
 
-  function openTank(i){ currentTank = i; renderDetail(); show('tank-detail'); }
+  function openTank(i){
+    currentTank = i;
+    if (typeof deleteArmed !== 'undefined' && deleteArmed){ clearTimeout(deleteTimer); deleteArmed = false; resetDelBtn(); }
+    renderDetail(); show('tank-detail');
+  }
 
   // add livestock / plants / log
   function wireAdd(btnId, nameId, qtyId, listKey, label){
@@ -3474,7 +3496,7 @@ window.initPortal = function(){
         if (res.error){ saveBtn.disabled = false; saveBtn.textContent = 'Save aquarium'; popToast('Could not save — try again'); tfSaving = false; return; }
         // simplest correct tag sync: wipe and reinsert
         await sb.from('tank_tags').delete().eq('tank_id', t.id);
-        for (var ti = 0; ti < newTags.length; ti++){ await sb.from('tank_tags').insert({ tank_id: t.id, label: newTags[ti] }); }
+        if (newTags.length) await sb.from('tank_tags').insert(newTags.map(function(l){ return { tank_id: t.id, label: l }; }));
       }
       Object.assign(t, data);
       t.tags = newTags;
@@ -3493,7 +3515,7 @@ window.initPortal = function(){
         if (res2.error){ popToast('Could not save — try again'); tfSaving = false; return; }
         nt.id = res2.data.id;
         // default tags
-        for (var tj = 0; tj < newTags.length; tj++){ await sb.from('tank_tags').insert({ tank_id: nt.id, label: newTags[tj] }); }
+        if (newTags.length) await sb.from('tank_tags').insert(newTags.map(function(l){ return { tank_id: nt.id, label: l }; }));
         // default params
         var defaultParams = starterParams(data.type);
         nt.params = [];
@@ -3741,7 +3763,7 @@ window.initPortal = function(){
       var res = await dbInsertRow('tanks', Object.assign({ owner_id: window.currentMember.id }, dbFields));
       if (res.error){ dupBtn.disabled = false; setDupBtn(); popToast('Could not duplicate — try again'); return; }
       nt.id = res.data.id;
-      for (var i = 0; i < nt.tags.length; i++){ await sb.from('tank_tags').insert({ tank_id: nt.id, label: nt.tags[i] }); }
+      if (nt.tags.length) await sb.from('tank_tags').insert(nt.tags.map(function(l){ return { tank_id: nt.id, label: l }; }));
       var freshParams = [];
       for (var p = 0; p < nt.params.length; p++){
         var pr = await dbInsertRow('tank_params', { tank_id: nt.id, label: nt.params[p][1], value: nt.params[p][0], sort_order: p });
@@ -3868,7 +3890,7 @@ window.initPortal = function(){
 
   function lastSeenChangelog(){
     try { return localStorage.getItem(seenChangelogKey) || ''; }
-    catch (e) { return ''; }   // storage unavailable — treat everything as seen
+    catch (e) { return newestChangelogDate(); }   // storage unavailable — treat everything as seen
   }
   function newestChangelogDate(){
     return CHANGELOG.reduce(function(max, e){
@@ -4109,7 +4131,7 @@ window.initPortal = function(){
   }
 
   function getBadgeCategories(){
-    var auctionValue = AUCTIONS.reduce(function(sum, a){ return sum + a.amount; }, 0);
+    var auctionValue = AUCTIONS.reduce(function(sum, a){ return sum + (Number(a.amount) || 0); }, 0);
     var stats = window.currentMember
       ? {
           meetings: window.myTotalMeetingsAttended || 0,
@@ -4494,7 +4516,6 @@ window.initPortal = function(){
       return;
     }
 
-    var now = new Date();
     var joinYear = cm.join_date ? new Date(String(cm.join_date).slice(0,10) + 'T00:00:00').getFullYear() : null;
     var items = [];
 
@@ -4507,7 +4528,7 @@ window.initPortal = function(){
     // Tenure milestones actually reached.
     if (joinYear){
       [25, 20, 15, 10, 5].forEach(function(n){
-        if (now.getFullYear() - joinYear >= n){
+        if (tenureYearsFrom(cm.join_date) >= n){
           items.push({ sort: joinYear + n, year: joinYear + n, icon:'star', tone:'gold',
             title: n + ' years a member', note:'Membership milestone reached' });
         }
@@ -4603,7 +4624,8 @@ window.initPortal = function(){
   function loadSeenBadges(){
     try {
       var raw = localStorage.getItem(seenBadgesKey);
-      seenBadges = raw ? JSON.parse(raw) : {};
+      var o = raw ? JSON.parse(raw) : {};
+      seenBadges = (o && typeof o === 'object') ? o : {};
     } catch (e) { seenBadges = {}; }
   }
   function saveSeenBadges(){
@@ -4724,6 +4746,7 @@ window.initPortal = function(){
         id: row.id,
         name: row.name, type: row.type, subtitle: row.subtitle || '',
         volume: row.volume || 0, dims: row.dims || '—', started: row.started || '',
+        rack_tanks: row.rack_tanks, rack_rows: row.rack_rows, rack_sump: row.rack_sump,
         // Never mapped before, so the preview had nothing to show. The tank
         // detail page reads notes from `tanks` for own tanks; this is the same
         // field for everyone else's.
@@ -4969,7 +4992,7 @@ window.initPortal = function(){
           '<h4>' + escT(t.name) + '</h4>' +
           '<div class="meta">' + tankMetaLine(t, true) + '</div>' +
           '<div class="tank-stats"><div><b>' + (liveCount || '—') + '</b><span>Livestock</span></div><div><b>' + t.plants.length + '</b><span>Plants</span></div>' +
-            (heartHtml(t, true) ? '<div class="tank-heart">' + heartHtml(t, true) + '</div>' : '') + '</div>' +
+            (function(h){ return h ? '<div class="tank-heart">' + h + '</div>' : ''; })(heartHtml(t, true)) + '</div>' +
         '</div></div>';
     }).join('');
     grid.querySelectorAll('.tank-card').forEach(function(card){
@@ -4979,7 +5002,7 @@ window.initPortal = function(){
     grid.style.display = filtered.length ? 'grid' : 'none';
   }
 
-  document.getElementById('ma-search').addEventListener('input', renderMemberAquariums);
+  document.getElementById('ma-search').addEventListener('input', debounce(function(){ renderMemberAquariums(); }, 150));
   var maSortSel = document.getElementById('ma-sort');
   if (maSortSel) maSortSel.addEventListener('change', function(){
     maSort = maSortSel.value;
@@ -5445,8 +5468,8 @@ window.initPortal = function(){
           // Row first, then the file: a listing pointing at a missing file is a
           // broken download members will report, while an orphaned file in the
           // bucket is invisible and harmless.
-          var del = await sb.from('documents').delete().eq('id', b.getAttribute('data-doc-id'));
-          if (del.error){ popToast('Could not delete \u2014 are you signed in as an admin?'); return; }
+          var del = await sb.from('documents').delete().eq('id', b.getAttribute('data-doc-id')).select('id');
+          if (del.error || !del.data || !del.data.length){ popToast('Could not delete \u2014 are you signed in as an admin?'); return; }
           await sb.storage.from(DOC_BUCKET).remove([b.getAttribute('data-doc-path')]);
           popToast('Document deleted');
           loadDocuments();
@@ -5552,6 +5575,7 @@ window.initPortal = function(){
   async function loadEvents(){
     if (!sb || !window.currentMember) return;
     var res = await sb.from('events').select('*').order('start_at', { ascending: true });
+    if (res.error){ popToast('Could not load events \u2014 try again shortly'); return; }
     var rows = res.data || [];
     MEETINGS.length = 0;
     rows.forEach(function(r){ MEETINGS.push(eventRowToMeeting(r)); });
@@ -5675,7 +5699,10 @@ window.initPortal = function(){
           cb.setAttribute('data-att-id', r.data ? r.data.id : '');
         } else {
           var attId = cb.getAttribute('data-att-id');
-          if (attId) await dbDeleteRow('event_attendance', attId);
+          if (attId){
+            var dr = await dbDeleteRow('event_attendance', attId);
+            if (dr.error){ popToast('Could not remove attendance \u2014 try again'); cb.checked = true; cb.disabled = false; return; }
+          }
         }
         cb.disabled = false;
         var countEl = box.querySelector('div');
@@ -6145,6 +6172,7 @@ window.initPortal = function(){
   async function loadNotifPrefs(){
     if (!sb || !window.currentMember) return;
     var res = await sb.from('notification_prefs').select('*').eq('member_id', window.currentMember.id).maybeSingle();
+    if (res && res.error) return;   // keep what's on screen rather than overwrite real prefs with defaults
     myNotifPrefs = (res && res.data) ? res.data : Object.assign({}, NOTIF_PREF_DEFAULTS);
     NOTIF_PREF_FIELDS.forEach(function(f){
       var el = document.getElementById(NOTIF_PREF_INPUTS[f]);
@@ -6188,7 +6216,7 @@ window.initPortal = function(){
     var rows = res.data || [];
     AUCTIONS.length = 0;
     rows.forEach(function(r){
-      AUCTIONS.push({ date: fmtAuctionDate(r.auction_date), item: r.item, role: r.role, amount: parseFloat(r.amount) });
+      AUCTIONS.push({ date: fmtAuctionDate(r.auction_date), item: r.item, role: r.role, amount: parseFloat(r.amount) || 0 });
     });
     if (typeof renderAuctions === 'function') renderAuctions();
     if (window.checkBadgeChanges) window.checkBadgeChanges();
@@ -6201,7 +6229,11 @@ window.initPortal = function(){
       return '<option value="' + m.id + '">' + escT(nm) + '</option>';
     }).join('');
     var sel = document.getElementById('al-member');
-    if (sel) sel.innerHTML = opts;
+    if (sel){
+      var keepAl = sel.value;
+      sel.innerHTML = opts;
+      if (keepAl) sel.value = keepAl;
+    }
     var mtSel = document.getElementById('mt-member');
     if (mtSel){
       var keep = mtSel.value;
@@ -6307,8 +6339,10 @@ window.initPortal = function(){
     }).join('');
     list.querySelectorAll('[data-lot-id]').forEach(function(b){
       b.addEventListener('click', async function(){
-        await dbDeleteRow('auction_lots', b.getAttribute('data-lot-id'));
+        var res = await dbDeleteRow('auction_lots', b.getAttribute('data-lot-id'));
+        if (res.error){ popToast('Could not delete that lot'); return; }
         popToast('Lot deleted');
+        if (typeof loadMyAuctionLots === 'function') loadMyAuctionLots();
         loadAdminAuctionList();
       });
     });
@@ -6364,10 +6398,11 @@ window.initPortal = function(){
       if (!file.type || file.type.indexOf('image/') !== 0){ popToast(file.name + ' skipped — not an image'); continue; }
       if (file.size > MAX_PHOTO_MB * 1024 * 1024){ popToast(file.name + ' skipped — over ' + MAX_PHOTO_MB + 'MB'); continue; }
       if (onProgress) onProgress(i + 1, files.length);
-      var safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      var body = await downscaleImage(file, PHOTO_MAX_DIM, PHOTO_QUALITY);
+      var safeName = photoSafeName(file, body);
       var path = window.currentMember.id + '/' + entryId + '/' + Date.now() + '-' + safeName;
       try {
-        var upRes = await sb.storage.from(AWARD_BUCKET).upload(path, file);
+        var upRes = await sb.storage.from(AWARD_BUCKET).upload(path, body, { contentType: body.type || file.type, cacheControl: '31536000' });
         if (upRes.error){ continue; }
         var pub = sb.storage.from(AWARD_BUCKET).getPublicUrl(path);
         var dbRes = await dbInsertRow('award_entry_photos', {
@@ -6682,15 +6717,16 @@ window.initPortal = function(){
     // pending must be complete (it's a work queue), but history only needs the
     // most recent slice, and pulling every entry ever — with photos joined —
     // would grow without limit as the club accumulates entries.
-    var pendRes = await sb.from('award_entries')
+    var both = await Promise.all([sb.from('award_entries')
       .select('*, members!member_id(first_name,last_name), tanks(name), award_entry_photos(id,url,path)')
       .eq('status', 'pending')
-      .order('submitted_at', { ascending: true });
-    var histRes = await sb.from('award_entries')
+      .order('submitted_at', { ascending: true }),
+    sb.from('award_entries')
       .select('*, members!member_id(first_name,last_name), tanks(name), award_entry_photos(id,url,path)')
       .in('status', ['approved', 'rejected'])
       .order('reviewed_at', { ascending: false, nullsFirst: false })
-      .limit(AW_HISTORY_LIMIT);
+      .limit(AW_HISTORY_LIMIT)]);
+    var pendRes = both[0], histRes = both[1];
     if (pendRes.error){
       if (countEl) countEl.textContent = '';
       list.innerHTML = '<div class="reg-empty" style="padding:20px">Couldn\u2019t load the review queue — reload the page to try again.</div>';
@@ -6773,8 +6809,8 @@ window.initPortal = function(){
       var res2 = await sb.from('award_entries').update({
         status: 'approved', points: pts, judge_comment: cmtInput.value.trim() || null,
         reviewed_at: new Date().toISOString(), reviewed_by: window.currentMember.id
-      }).eq('id', entryId);
-      if (res2.error){ popToast('Could not approve — try again'); this.disabled = false; return; }
+      }).eq('id', entryId).select('id');
+      if (res2.error || !res2.data || !res2.data.length){ popToast('Could not approve — try again'); this.disabled = false; return; }
       popToast('Entry approved — +' + pts + ' points awarded');
       pushNotification('award', (entry.program || 'Award') + ' entry approved \uD83C\uDF89',
         (entry.species || 'Your entry') + ' — +' + pts + ' point' + (pts === 1 ? '' : 's') + ' awarded.', entry.member_id);
@@ -6786,8 +6822,8 @@ window.initPortal = function(){
       var res3 = await sb.from('award_entries').update({
         status: 'rejected', judge_comment: cmtInput.value.trim() || null,
         reviewed_at: new Date().toISOString(), reviewed_by: window.currentMember.id
-      }).eq('id', entryId);
-      if (res3.error){ popToast('Could not update — try again'); this.disabled = false; return; }
+      }).eq('id', entryId).select('id');
+      if (res3.error || !res3.data || !res3.data.length){ popToast('Could not update — try again'); this.disabled = false; return; }
       popToast('Entry marked not approved');
       pushNotification('award', (entry.program || 'Award') + ' entry not approved',
         (entry.species || 'Your entry') + ' wasn\u2019t approved this round — chat to the committee for feedback.', entry.member_id);
@@ -7332,7 +7368,10 @@ window.initPortal = function(){
       .eq('archived', false)
       .order('updated_at', { ascending: false });
     bpLoading = false;
-    if (res.error || !res.data){ renderBreedingAll(); return; }
+    if (res.error || !res.data){
+      if (pendingDetail && pendingDetail.view === 'breeding-project'){ pendingDetail = null; replaceRoute('breeding-hub'); }
+      renderBreedingAll(); return;
+    }
     // Same guard as loadTanksFromDB: never let a suspicious empty response wipe
     // a list that is already correct on screen.
     if (!force && res.data.length === 0 && BPROJ.length > 0){ renderBreedingAll(); return; }
@@ -7345,6 +7384,8 @@ window.initPortal = function(){
       var allPhotos = (row.breeding_photos || []).map(function(ph){
         return { id: ph.id, url: ph.url, path: ph.path, updateId: ph.update_id || null };
       });
+      var photosByUpdate = {};
+      allPhotos.forEach(function(ph){ if (ph.updateId) (photosByUpdate[ph.updateId] = photosByUpdate[ph.updateId] || []).push(ph); });
       var updates = (row.breeding_updates || []).slice().sort(function(a, b){
         var d = new Date(b.logged_at) - new Date(a.logged_at);
         return d !== 0 ? d : (new Date(b.created_at) - new Date(a.created_at));
@@ -7355,7 +7396,7 @@ window.initPortal = function(){
           countValue: (u.count_value === null || u.count_value === undefined) ? null : u.count_value,
           countReason: u.count_reason || '', fromStage: u.from_stage || '',
           toStage: u.to_stage || '', outcome: u.outcome || '',
-          photos: allPhotos.filter(function(ph){ return ph.updateId === u.id; })
+          photos: photosByUpdate[u.id] || []
         };
       });
       BPROJ.push({
@@ -7379,7 +7420,7 @@ window.initPortal = function(){
     if (pendingDetail && pendingDetail.view === 'breeding-project'){
       var want = pendingDetail.key; pendingDetail = null;
       if (bpFind(want)) { openBreedingProject(want); return; }
-      replaceRoute('breeders');
+      replaceRoute('breeding-hub');
     }
     renderBreedingAll();
   }
@@ -7390,7 +7431,11 @@ window.initPortal = function(){
   // reasoning as loadTankLikes.
   async function loadBreedingSocial(){
     if (!sb || !window.currentMember) return;
-    var likes = await sb.from('breeding_likes').select('project_id, member_id');
+    var both = await Promise.all([
+      sb.from('breeding_likes').select('project_id, member_id'),
+      sb.from('breeding_follows').select('project_id, member_id')
+    ]);
+    var likes = both[0], follows = both[1];
     if (!likes.error){
       bpLikeCounts = {}; bpMyLikes = {};
       (likes.data || []).forEach(function(r){
@@ -7398,7 +7443,6 @@ window.initPortal = function(){
         if (r.member_id === window.currentMember.id) bpMyLikes[r.project_id] = true;
       });
     }
-    var follows = await sb.from('breeding_follows').select('project_id, member_id');
     if (!follows.error){
       bpFollowCounts = {}; bpMyFollows = {};
       (follows.data || []).forEach(function(r){
@@ -7703,7 +7747,7 @@ window.initPortal = function(){
   function bpTimelineItem(u, p){
     var e = BP_EVENTS[u.eventType];
     var photos = (u.photos || []).map(function(ph){
-      return '<img src="' + escA(ph.url) + '" alt="" class="bp-tl-photo" data-bp-photo="' + escA(ph.url) + '">';
+      return '<img src="' + escA(ph.url) + '" alt="" class="bp-tl-photo" loading="lazy" decoding="async" data-bp-photo="' + escA(ph.url) + '">';
     }).join('');
     var n = (u.photos || []).length;
 
@@ -7882,6 +7926,7 @@ window.initPortal = function(){
     bpEditing = id || null;
     var p = id ? bpFind(id) : null;
     var delBtn = document.getElementById('bpf-delete');
+    clearTimeout(bpDeleteTimer);
     if (delBtn){ delBtn.removeAttribute('data-armed'); delBtn.textContent = 'Delete project'; }
 
     document.getElementById('bp-modal-title').textContent = p ? 'Edit breeding project' : 'New breeding project';
@@ -7965,13 +8010,15 @@ window.initPortal = function(){
     if (newId && bpFind(newId)) openBreedingProject(newId);
   }
 
+  var bpDeleteTimer;
   async function deleteProject(){
     if (!bpEditing || !bpCanWrite()) return;
     var btn = document.getElementById('bpf-delete');
     if (btn.getAttribute('data-armed') !== '1'){
       btn.setAttribute('data-armed', '1');
       btn.textContent = 'Tap again to delete';
-      setTimeout(function(){ btn.removeAttribute('data-armed'); btn.textContent = 'Delete project'; }, 4000);
+      clearTimeout(bpDeleteTimer);
+      bpDeleteTimer = setTimeout(function(){ btn.removeAttribute('data-armed'); btn.textContent = 'Delete project'; }, 4000);
       return;
     }
     var id = bpEditing;
@@ -7984,8 +8031,6 @@ window.initPortal = function(){
     await loadBreedingProjects(true);
     show('my-breeding');
   }
-
-  // ----------------------------------------------------------- update modal --
 
   // ----------------------------------------------------------- event modal --
   //
@@ -8141,16 +8186,17 @@ window.initPortal = function(){
     }
 
     // Only two event types move the project itself.
+    var projRes = null;
     if (beKind === 'stage' && row.to_stage !== p.status){
-      await dbUpdateRow('breeding_projects', beProject, {
-        status: row.to_stage,
-        completed_on: BP_CLOSED[row.to_stage] ? loggedAt : null
-      });
+      var projPatch = { status: row.to_stage, completed_on: BP_CLOSED[row.to_stage] ? loggedAt : null };
+      if (!BP_CLOSED[row.to_stage]) projPatch.outcome = null;   // reopened: drop the old result
+      projRes = await dbUpdateRow('breeding_projects', beProject, projPatch);
     } else if (beKind === 'complete'){
-      await dbUpdateRow('breeding_projects', beProject, {
+      projRes = await dbUpdateRow('breeding_projects', beProject, {
         status: 'Completed', outcome: row.outcome, completed_on: loggedAt
       });
     }
+    if (projRes && projRes.error) popToast('Event saved, but the project status didn\u2019t update \u2014 try again');
 
     btn.disabled = false; btn.textContent = 'Save event';
     statusEl.textContent = '';
@@ -8182,10 +8228,11 @@ window.initPortal = function(){
       if (!file.type || file.type.indexOf('image/') !== 0){ popToast(file.name + ' skipped \u2014 not an image'); continue; }
       if (file.size > MAX_PHOTO_MB * 1024 * 1024){ popToast(file.name + ' skipped \u2014 over ' + MAX_PHOTO_MB + 'MB'); continue; }
       if (statusEl) statusEl.textContent = 'Uploading photo ' + (i + 1) + ' of ' + files.length + '\u2026';
-      var safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      var body = await downscaleImage(file, PHOTO_MAX_DIM, PHOTO_QUALITY);
+      var safeName = photoSafeName(file, body);
       var path = window.currentMember.id + '/' + p.id + '/' + Date.now() + '-' + safeName;
       try {
-        var up = await sb.storage.from(BP_BUCKET).upload(path, file);
+        var up = await sb.storage.from(BP_BUCKET).upload(path, body, { contentType: body.type || file.type, cacheControl: '31536000' });
         if (up.error){ popToast('Could not upload ' + file.name); continue; }
         var pub = sb.storage.from(BP_BUCKET).getPublicUrl(path);
         var dbRes = await dbInsertRow('breeding_photos', {
@@ -8208,10 +8255,9 @@ window.initPortal = function(){
       if (res.error || !res.data) return;
       var title = p.owner + ' updated ' + bpTitle(p);
       var body = (update.stage ? update.stage + ' \u2014 ' : '') + (update.notes || 'New progress posted');
-      res.data.forEach(function(r){
-        if (r.member_id === window.currentMember.id) return;
-        pushNotification('breeding', title, body, r.member_id);
-      });
+      var rows = res.data.filter(function(r){ return r.member_id !== window.currentMember.id; })
+        .map(function(r){ return { member_id: r.member_id, kind: 'breeding', title: title, body: body || null }; });
+      if (rows.length) await sb.from('notifications').insert(rows);
     } catch (e){ /* non-fatal */ }
   }
 
@@ -8238,7 +8284,7 @@ window.initPortal = function(){
     if (newBtn) newBtn.addEventListener('click', function(){ openProjectModal(null); });
 
     var search = document.getElementById('bp-search');
-    if (search) search.addEventListener('input', function(){ bpQuery = this.value; renderBreedingGrid(); });
+    if (search) search.addEventListener('input', debounce(function(){ bpQuery = search.value; renderBreedingGrid(); }, 150));
 
     document.querySelectorAll('[data-bpf]').forEach(function(b){
       b.addEventListener('click', function(){
@@ -8396,12 +8442,14 @@ window.initPortal = function(){
     // The timestamp lives in localStorage rather than a plain variable so two
     // open tabs agree — activity in one keeps the other alive, instead of an
     // idle background tab signing the member out of the tab they're using.
+    var lastLocal = Date.now();   // fallback when storage is blocked, so idle time still accrues
     function markActive(){
-      try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+      lastLocal = Date.now();
+      try { localStorage.setItem(KEY, String(lastLocal)); } catch (e) {}
     }
     function lastActive(){
-      try { var v = parseInt(localStorage.getItem(KEY), 10); if (v) return v; } catch (e) {}
-      return Date.now();
+      try { var v = parseInt(localStorage.getItem(KEY), 10); if (v) return Math.max(v, lastLocal); } catch (e) {}
+      return lastLocal;
     }
     markActive();
 

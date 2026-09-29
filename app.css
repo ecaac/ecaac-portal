@@ -45,7 +45,7 @@ button{font-family:inherit}
 /* ===== main ===== */
 .main{display:flex;flex-direction:column;min-width:0}
 .topbar{
-  position:sticky;top:0;z-index:50;background:rgba(246,241,230,0.92);backdrop-filter:blur(10px);
+  position:sticky;top:0;z-index:50;background:rgba(246,241,230,0.92);
   border-bottom:1px solid var(--sand-line);padding:14px 32px;display:flex;align-items:center;gap:16px;
 }
 .burger{display:none;width:40px;height:40px;border-radius:10px;border:1px solid var(--sand-line);background:var(--paper);cursor:pointer;align-items:center;justify-content:center;color:var(--deep)}
@@ -429,7 +429,6 @@ button{font-family:inherit}
 .photo-tile::before{content:'';position:absolute;top:0;left:0;right:0;height:40px;background:linear-gradient(rgba(13,16,38,0.35),rgba(13,16,38,0));pointer-events:none}
 .photo-tile .photo-rm{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:8px;border:none;background:rgba(13,16,38,0.65);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .photo-tile .photo-rm svg{width:13px;height:13px}
-.photo-tile .photo-uploading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(246,241,230,0.7);font-size:11px;font-weight:700;color:var(--ink-soft)}
 .photo-tile .photo-cover-btn{position:absolute;top:8px;left:8px;height:28px;padding:0 10px;border-radius:8px;border:none;background:rgba(13,16,38,0.65);color:#fff;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;transition:background .15s}
 .photo-tile .photo-cover-btn svg{width:13px;height:13px}
 .photo-tile .photo-cover-btn:hover{background:var(--leaf-dark)}
@@ -480,8 +479,6 @@ button{font-family:inherit}
 .tier-silver{background:linear-gradient(135deg,#C7CEDC,#8892A6)}
 .tier-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dark))}
 .tier-platinum{background:linear-gradient(135deg,#8FE3E8,#2E7D8C)}
-.tier-amethyst{background:linear-gradient(135deg,#B79CED,#6E4FC9)}
-.tier-onyx{background:linear-gradient(135deg,#4A5578,#161A33)}
 /* Categories with more than 4 tiers (currently just Award Program Points, which
    maps to the club's real 6-level BAP ladder) wrap to 3 columns instead of
    squeezing 6 pips into one row. */
@@ -725,8 +722,8 @@ body.modal-open{overflow:hidden}
 .dir-card[role=button]:focus-visible{outline:2px solid var(--leaf);outline-offset:2px}
 .md-scrim{position:fixed;inset:0;background:rgba(6,7,15,0.5);z-index:160;opacity:0;pointer-events:none;transition:opacity .25s}
 .md-scrim.show{opacity:1;pointer-events:auto}
-.mem-drawer{position:fixed;top:0;right:0;bottom:0;width:420px;max-width:92vw;z-index:170;background:var(--paper);box-shadow:-18px 0 50px -20px rgba(6,7,15,0.45);transform:translateX(103%);transition:transform .28s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;overflow:hidden}
-.mem-drawer.open{transform:none}
+.mem-drawer{position:fixed;top:0;right:0;bottom:0;width:420px;max-width:92vw;z-index:170;background:var(--paper);box-shadow:-18px 0 50px -20px rgba(6,7,15,0.45);transform:translateX(103%);visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility 0s .28s;display:flex;flex-direction:column;overflow:hidden}
+.mem-drawer.open{transform:none;visibility:visible;transition-delay:0s}
 .md-head{display:flex;align-items:center;gap:14px;padding:22px 22px 18px;border-bottom:1px solid var(--sand-line);flex:none}
 .md-avatar{width:54px;height:54px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px;letter-spacing:.02em}
 .md-head-txt{flex:1;min-width:0}
@@ -1201,16 +1198,6 @@ select:disabled{opacity:.55;cursor:not-allowed;background-color:var(--sand)}
 .gsearch-results::-webkit-scrollbar-thumb:hover,
 .ma-gal-strip::-webkit-scrollbar-thumb:hover{background:rgba(11,59,76,0.34);background-clip:padding-box}
 
-/* The dark sidebar needs the opposite treatment. */
-.side-nav{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.20) transparent}
-.side-nav::-webkit-scrollbar{width:8px}
-.side-nav::-webkit-scrollbar-track{background:transparent}
-.side-nav::-webkit-scrollbar-thumb{
-  background:rgba(255,255,255,0.18);border-radius:999px;
-  border:2px solid transparent;background-clip:padding-box}
-.side-nav::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.32);background-clip:padding-box}
-/* Removes the stepper arrows Windows puts at each end of the track. */
-::-webkit-scrollbar-button{display:none;width:0;height:0}
 /* The dark sidebar needs the opposite treatment. */
 .side-nav{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.20) transparent}
 .side-nav::-webkit-scrollbar{width:8px}
