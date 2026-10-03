@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ECAAC">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://ydouydznrtsvmilgworn.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,7 +71,7 @@
     <p style="font-size:12px;color:#8890A8;margin-top:6px;">Not a member yet, or forgotten your password? Contact the committee.</p>
     <button type="button" id="install-app-btn" class="gate-install" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 7v7"/><path d="M9 11l3 3 3-3"/><path d="M10.5 18.5h3"/></svg>
-      Install the app on your phone
+      Install on your phone
     </button>
     <div id="install-app-help" class="gate-install-help" role="status" aria-live="polite" hidden></div>
     <a class="gate-back" href="https://ecaac.co.za">
@@ -447,7 +447,7 @@
         <div class="field"><label for="f-name">First name</label><input id="f-name" value="Judy"></div>
         <div class="field"><label for="f-surname">Surname</label><input id="f-surname" value="Nel"></div>
         <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" value="president@ecaac.co.za"></div>
-        <div class="field"><label for="f-phone">Phone</label><input id="f-phone" type="tel" value="+27 60 349 5761"></div>
+        <div class="field"><label for="f-phone">Phone</label><input id="f-phone" type="tel" placeholder="+27 …"></div>
         <div class="field"><label for="f-province">Province</label>
           <select id="f-province"><option selected>Eastern Cape</option><option>Western Cape</option><option>Gauteng</option><option>KwaZulu-Natal</option><option>Free State</option><option>Other</option></select>
         </div>
@@ -455,7 +455,7 @@
         <div class="field"><label for="f-bday-day">Birthday</label>
           <div style="display:flex;gap:10px">
             <select id="f-bday-day" style="flex:1"><option value="">Day</option></select>
-            <select id="f-bday-month" style="flex:1.6">
+            <select id="f-bday-month" aria-label="Birthday month" style="flex:1.6">
               <option value="">Month</option>
               <option value="1">January</option>
               <option value="2">February</option>
@@ -1937,7 +1937,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
 
 <script>
-  // "Install the app" button on the sign-in card. Chrome/Edge/Samsung Internet
+  // "Install on your phone" button on the sign-in card. Chrome/Edge/Samsung Internet
   // fire beforeinstallprompt when the site is installable; we hold onto it and
   // replay it on click. iOS has no install API at all, so there (and anywhere
   // the event never fires) the button explains the manual steps instead.
@@ -1945,11 +1945,11 @@
     var btn = document.getElementById('install-app-btn');
     var help = document.getElementById('install-app-help');
     if (!btn || !help) return;
-    var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
-    if (standalone) return; // already running as the installed app
+    // Already running as the installed app (navigator.standalone is iOS's flag).
+    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) return;
     var deferred = null;
-    var ua = navigator.userAgent || '';
-    var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    // iPadOS reports itself as a Mac, so a touch-capable "Mac" is an iPad.
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     btn.hidden = false;
     window.addEventListener('beforeinstallprompt', function(e){
@@ -1966,6 +1966,7 @@
     btn.addEventListener('click', async function(){
       if (deferred) {
         var ev = deferred; deferred = null; // a prompt can only be shown once
+        help.hidden = true;
         ev.prompt();
         try {
           var choice = await ev.userChoice;

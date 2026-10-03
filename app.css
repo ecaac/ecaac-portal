@@ -125,6 +125,9 @@ button{font-family:inherit}
 
 /* ===== cards ===== */
 .grid{display:grid;gap:16px}
+/* Grid items default to min-width:auto, so one long unbroken string (a pasted
+   link in a log entry) would widen its column past the screen on a phone. */
+.grid>*{min-width:0}
 .g4{grid-template-columns:repeat(4,1fr)}
 .g3{grid-template-columns:repeat(3,1fr)}
 .g2{grid-template-columns:repeat(2,1fr)}
@@ -204,7 +207,7 @@ button{font-family:inherit}
 .row-icon.warn{background:#FCEBDD;color:var(--coral-dark)}
 .row-icon.deep{background:#E3EBED;color:var(--deep)}
 .row-icon.gold{background:#FBF0DA;color:var(--gold-dark)}
-.row-body{flex:1;min-width:0}
+.row-body{flex:1;min-width:0;overflow-wrap:anywhere}
 .row-body b{display:block;font-size:13.5px;color:var(--deep)}
 .row-body span{font-size:12px;color:var(--ink-soft)}
 .row-end{flex:none;text-align:right;font-size:12px;color:var(--ink-soft)}
@@ -229,8 +232,7 @@ button{font-family:inherit}
    to meaning an actual warning. */
 .badge.new{background:#EDE9FB;color:#5B45B8}
 /* Optional leading dot, tinted from the pill's own text colour, for a status
-   column that wants a little more scanning weight. Replaces the old separate
-   .reg-dot span. */
+   column that wants a little more scanning weight. */
 .badge.dot::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px;opacity:.85}
 /* For a value that's the plain alternative rather than a status worth flagging —
    "Collection" beside "Ships". Sand on sand keeps it quieter than .info while
@@ -407,12 +409,6 @@ button{font-family:inherit}
 .reg-table tbody tr:hover{background:#FBF8F0}
 .reg-member{font-weight:700;color:var(--deep);white-space:nowrap}
 .reg-species{font-style:italic;color:var(--ink)}
-/* Superseded by .badge.dot, which draws the dot inside the pill. Kept so any
-   markup still emitting .reg-dot keeps rendering. */
-.reg-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px}
-.reg-dot.avail{background:var(--leaf)}
-.reg-dot.cur{background:var(--sky)}
-.reg-dot.fut{background:var(--gold)}
 .reg-empty{padding:40px;text-align:center;font-size:13.5px;color:var(--ink-soft)}
 .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
 .photo-tile{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--sand);box-shadow:0 8px 18px -12px rgba(11,59,76,0.25)}
@@ -991,11 +987,11 @@ body.modal-open{overflow:hidden}
 
 /* "Install the app" on the sign-in card. [hidden] must win over display:flex. */
 .gate-install{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:11px;
-  border-radius:10px;border:1.5px solid #E1D8C4;background:#fff;color:#0D1026;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
-  transition:border-color .15s,background .15s}
+  border-radius:10px;border:none;background:linear-gradient(135deg,#35AD51,#248238);color:#fff;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
+  transition:filter .15s}
 .gate-install[hidden],.gate-install-help[hidden]{display:none}
-.gate-install svg{width:17px;height:17px;flex:none;color:#248238}
-.gate-install:hover{border-color:#35AD51;background:#F5FBF6}
+.gate-install svg{width:17px;height:17px;flex:none;color:#fff}
+.gate-install:hover{filter:brightness(1.08)}
 .gate-install:focus-visible{outline:3px solid #8FD9A1;outline-offset:3px}
 .gate-install-help{margin-top:10px;padding:12px 14px;border-radius:10px;background:#F6F3EC;color:#3A3F5C;font-size:12.5px;line-height:1.5;text-align:left}
 .gate-install-help b{color:#0D1026}
