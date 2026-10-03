@@ -447,7 +447,7 @@
         <div class="field"><label for="f-name">First name</label><input id="f-name" value="Judy"></div>
         <div class="field"><label for="f-surname">Surname</label><input id="f-surname" value="Nel"></div>
         <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" value="president@ecaac.co.za"></div>
-        <div class="field"><label for="f-phone">Phone</label><input id="f-phone" type="tel" value="+27 60 349 5761"></div>
+        <div class="field"><label for="f-phone">Phone</label><input id="f-phone" type="tel" placeholder="+27 …"></div>
         <div class="field"><label for="f-province">Province</label>
           <select id="f-province"><option selected>Eastern Cape</option><option>Western Cape</option><option>Gauteng</option><option>KwaZulu-Natal</option><option>Free State</option><option>Other</option></select>
         </div>
@@ -455,7 +455,7 @@
         <div class="field"><label for="f-bday-day">Birthday</label>
           <div style="display:flex;gap:10px">
             <select id="f-bday-day" style="flex:1"><option value="">Day</option></select>
-            <select id="f-bday-month" style="flex:1.6">
+            <select id="f-bday-month" aria-label="Birthday month" style="flex:1.6">
               <option value="">Month</option>
               <option value="1">January</option>
               <option value="2">February</option>
