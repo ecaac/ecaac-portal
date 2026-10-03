@@ -989,12 +989,12 @@ body.modal-open{overflow:hidden}
 .gate-install{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:11px;
   border-radius:10px;border:none;background:linear-gradient(135deg,#35AD51,#248238);color:#fff;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
   transition:filter .15s}
-.gate-install[hidden],.gate-install-help[hidden]{display:none}
+.gate-install[hidden],.install-help[hidden],.side-link[hidden],.btn[hidden]{display:none}
 .gate-install svg{width:17px;height:17px;flex:none;color:#fff}
 .gate-install:hover{filter:brightness(1.08)}
 .gate-install:focus-visible{outline:3px solid #8FD9A1;outline-offset:3px}
-.gate-install-help{margin-top:10px;padding:12px 14px;border-radius:10px;background:#F6F3EC;color:#3A3F5C;font-size:12.5px;line-height:1.5;text-align:left}
-.gate-install-help b{color:#0D1026}
+.install-help{margin-top:10px;padding:12px 14px;border-radius:10px;background:#F6F3EC;color:#3A3F5C;font-size:12.5px;line-height:1.5;text-align:left}
+.install-help b{color:#0D1026}
 
 /* ===== Tank hearts =====
    Deliberately quiet: no fill until it's yours, no colour until there's
