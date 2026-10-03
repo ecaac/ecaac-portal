@@ -69,11 +69,11 @@
     </form>
     <p id="auth-status" style="font-size:12.5px;color:#565A72;margin-top:14px;min-height:18px;"></p>
     <p style="font-size:12px;color:#8890A8;margin-top:6px;">Not a member yet, or forgotten your password? Contact the committee.</p>
-    <button type="button" id="install-app-btn" class="gate-install" hidden>
+    <button type="button" id="install-app-btn" class="gate-install" data-install-btn data-install-help="install-app-help" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 7v7"/><path d="M9 11l3 3 3-3"/><path d="M10.5 18.5h3"/></svg>
       Install on your phone
     </button>
-    <div id="install-app-help" class="gate-install-help" role="status" aria-live="polite" hidden></div>
+    <div id="install-app-help" class="install-help" role="status" aria-live="polite" hidden></div>
     <a class="gate-back" href="https://ecaac.co.za">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
       Go back to the ECAAC website
@@ -189,6 +189,10 @@
     </button>
 
     <div class="side-label">Account</div>
+    <button class="side-link" data-view-jump="settings" data-install-btn data-install-help="settings-install-help" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 7v7"/><path d="M9 11l3 3 3-3"/><path d="M10.5 18.5h3"/></svg>
+      Install on your phone
+    </button>
     <button class="side-link" data-view="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.9 2.9l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.9-2.9l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.9-2.9l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.9 2.9l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
       Settings
@@ -1616,6 +1620,15 @@
       </div>
       <p style="font-size:12px;color:var(--ink-soft);margin-top:16px">To close your account, contact the committee — deletions require committee approval per the club constitution.</p>
     </div>
+    <div class="panel" data-install-panel hidden>
+      <h3>Install on your phone</h3>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 14px">Add the portal to your home screen so it opens like an app — full screen, no browser bar, one tap away.</p>
+      <button type="button" class="btn btn-primary btn-sm" data-install-btn data-install-help="settings-install-help" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 7v7"/><path d="M9 11l3 3 3-3"/><path d="M10.5 18.5h3"/></svg>
+        Install on your phone
+      </button>
+      <div id="settings-install-help" class="install-help" role="status" aria-live="polite" hidden></div>
+    </div>
   </div>
 
 </section>
@@ -1937,53 +1950,63 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
 
 <script>
-  // "Install on your phone" button on the sign-in card. Chrome/Edge/Samsung Internet
-  // fire beforeinstallprompt when the site is installable; we hold onto it and
-  // replay it on click. iOS has no install API at all, so there (and anywhere
-  // the event never fires) the button explains the manual steps instead.
+  // "Install on your phone" buttons: the sign-in card, the sidebar and Settings.
+  // Each is marked data-install-btn, with data-install-help naming the element
+  // its manual steps go in. Chrome/Edge/Samsung Internet fire
+  // beforeinstallprompt when the site is installable; we hold onto it and replay
+  // it on click. iOS has no install API at all, so there (and anywhere the event
+  // never fires) the button explains the manual steps instead.
+  //
+  // Runs after all the portal markup so every button already exists, but before
+  // the SDK loads, so the early beforeinstallprompt isn't missed.
   (function(){
-    var btn = document.getElementById('install-app-btn');
-    var help = document.getElementById('install-app-help');
-    if (!btn || !help) return;
     // Already running as the installed app (navigator.standalone is iOS's flag).
     if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) return;
+    var btns = document.querySelectorAll('[data-install-btn]');
+    var panels = document.querySelectorAll('[data-install-panel]');
     var deferred = null;
     // iPadOS reports itself as a Mac, so a touch-capable "Mac" is an iPad.
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var STEPS = isIOS
+      ? '<b>On iPhone or iPad:</b> tap the <b>Share</b> button ' +
+        '(the square with an arrow pointing up) in the browser toolbar, scroll down and choose ' +
+        '<b>Add to Home Screen</b>, then tap <b>Add</b>.'
+      : '<b>On Android:</b> open the browser menu (<b>&#8942;</b> at the top right) and choose ' +
+        '<b>Install app</b> or <b>Add to Home screen</b>.<br><b>On a computer:</b> look for the install icon ' +
+        'at the right of the address bar.';
 
-    btn.hidden = false;
+    function helpFor(btn){ return document.getElementById(btn.getAttribute('data-install-help')); }
+    function eachHelp(fn){ btns.forEach(function(b){ var h = helpFor(b); if (h) fn(h); }); }
+    function hideButtons(){ btns.forEach(function(b){ b.hidden = true; }); }
+
+    btns.forEach(function(b){ b.hidden = false; });
+    panels.forEach(function(p){ p.hidden = false; });
+
     window.addEventListener('beforeinstallprompt', function(e){
       e.preventDefault();
       deferred = e;
     });
     window.addEventListener('appinstalled', function(){
       deferred = null;
-      btn.hidden = true;
-      help.hidden = false;
-      help.textContent = 'Installed — look for the ECAAC icon on your home screen.';
+      hideButtons();
+      eachHelp(function(h){ h.hidden = false; h.textContent = 'Installed — look for the ECAAC icon on your home screen.'; });
     });
 
-    btn.addEventListener('click', async function(){
-      if (deferred) {
-        var ev = deferred; deferred = null; // a prompt can only be shown once
-        help.hidden = true;
-        ev.prompt();
-        try {
-          var choice = await ev.userChoice;
-          if (choice && choice.outcome === 'accepted') btn.hidden = true;
-        } catch (_) {}
-        return;
-      }
-      help.hidden = false;
-      if (isIOS) {
-        help.innerHTML = '<b>On iPhone or iPad:</b> tap the <b>Share</b> button ' +
-          '(the square with an arrow pointing up) in the browser toolbar, scroll down and choose ' +
-          '<b>Add to Home Screen</b>, then tap <b>Add</b>.';
-      } else {
-        help.innerHTML = '<b>On Android:</b> open the browser menu (<b>&#8942;</b> at the top right) and choose ' +
-          '<b>Install app</b> or <b>Add to Home screen</b>.<br><b>On a computer:</b> look for the install icon ' +
-          'at the right of the address bar.';
-      }
+    btns.forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        if (deferred) {
+          var ev = deferred; deferred = null; // a prompt can only be shown once
+          eachHelp(function(h){ h.hidden = true; });
+          ev.prompt();
+          try {
+            var choice = await ev.userChoice;
+            if (choice && choice.outcome === 'accepted') hideButtons();
+          } catch (_) {}
+          return;
+        }
+        var help = helpFor(btn);
+        if (help) { help.hidden = false; help.innerHTML = STEPS; }
+      });
     });
   })();
 </script>

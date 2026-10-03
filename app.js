@@ -3854,6 +3854,15 @@ window.initPortal = function(){
   //   items - bullet points, plain strings
   var CHANGELOG = [
     {
+      date: '2026-10-03',
+      title: 'Install the portal on your phone',
+      tag: 'new',
+      items: [
+        'You can now add the portal to your phone\u2019s home screen so it opens like an app \u2014 full screen, with the ECAAC icon. Tap \u201cInstall on your phone\u201d on the sign-in screen, in the menu under Account, or in Settings.',
+        'On Android the button brings up the install prompt straight away. On iPhone and iPad it shows the two taps needed in Safari: Share, then Add to Home Screen.'
+      ]
+    },
+    {
       date: '2026-08-02',
       title: 'Award levels, breeding racks and biotopes',
       tag: 'new',
