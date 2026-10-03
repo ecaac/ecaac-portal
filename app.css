@@ -989,6 +989,17 @@ body.modal-open{overflow:hidden}
 .gate-back:hover{color:#1B6B2C;gap:10px}
 .gate-back:focus-visible{outline:3px solid #8FD9A1;outline-offset:3px;border-radius:6px}
 
+/* "Install the app" on the sign-in card. [hidden] must win over display:flex. */
+.gate-install{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:11px;
+  border-radius:10px;border:1.5px solid #E1D8C4;background:#fff;color:#0D1026;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
+  transition:border-color .15s,background .15s}
+.gate-install[hidden],.gate-install-help[hidden]{display:none}
+.gate-install svg{width:17px;height:17px;flex:none;color:#248238}
+.gate-install:hover{border-color:#35AD51;background:#F5FBF6}
+.gate-install:focus-visible{outline:3px solid #8FD9A1;outline-offset:3px}
+.gate-install-help{margin-top:10px;padding:12px 14px;border-radius:10px;background:#F6F3EC;color:#3A3F5C;font-size:12.5px;line-height:1.5;text-align:left}
+.gate-install-help b{color:#0D1026}
+
 /* ===== Tank hearts =====
    Deliberately quiet: no fill until it's yours, no colour until there's
    something to show. A heart that shouts would turn a nod into a scoreboard. */
