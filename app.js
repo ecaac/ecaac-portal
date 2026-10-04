@@ -3854,6 +3854,15 @@ window.initPortal = function(){
   //   items - bullet points, plain strings
   var CHANGELOG = [
     {
+      date: '2026-10-04',
+      title: 'Reset your own password',
+      tag: 'new',
+      items: [
+        'Forgotten your password? Tap \u201cForgot your password?\u201d on the sign-in screen and enter your email. We\u2019ll send you a link to choose a new one \u2014 no need to ask the committee.',
+        'The link works once and expires after an hour. After saving your new password you\u2019re signed straight in.'
+      ]
+    },
+    {
       date: '2026-10-03',
       title: 'Install the portal on your phone',
       tag: 'new',

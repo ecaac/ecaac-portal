@@ -60,15 +60,33 @@
 <div id="auth-gate" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;background:radial-gradient(120% 130% at 20% 0%, #1B2E6B 0%, #0D1026 55%, #06070F 100%);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <img src="https://www.ecaac.co.za/images/logo.png" alt="ECAAC logo" style="width:96px;height:96px;object-fit:contain;margin-bottom:22px;filter:drop-shadow(0 10px 24px rgba(0,0,0,0.45));" onerror="this.style.display='none'">
   <div style="background:#fff;border-radius:20px;padding:40px;max-width:380px;width:100%;box-shadow:0 30px 60px -20px rgba(0,0,0,0.55);text-align:center;">
-    <h2 style="font-family:'Fraunces',Georgia,serif;color:#0D1026;margin-bottom:8px;">ECAAC Members Portal</h2>
-    <p style="font-size:13.5px;color:#565A72;margin-bottom:20px;">Sign in with the email and password given to you by the committee.</p>
+    <h2 id="auth-title" style="font-family:'Fraunces',Georgia,serif;color:#0D1026;margin-bottom:8px;">ECAAC Members Portal</h2>
+    <p id="auth-sub" style="font-size:13.5px;color:#565A72;margin-bottom:20px;">Sign in with the email and password given to you by the committee.</p>
+    <!-- Three modes share this card (see setGateMode): sign in, request a reset
+         email, and choose a new password after following that email's link. -->
     <form id="auth-form">
-      <input id="auth-email" type="email" aria-label="Email" placeholder="you@example.com" autocomplete="username" required style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid #E1D8C4;font:inherit;font-size:13.5px;margin-bottom:10px;box-sizing:border-box;">
-      <input id="auth-password" type="password" aria-label="Password" placeholder="Password" autocomplete="current-password" required style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid #E1D8C4;font:inherit;font-size:13.5px;margin-bottom:12px;box-sizing:border-box;">
-      <button type="submit" id="auth-signin-btn" style="width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#35AD51,#248238);color:#fff;font-weight:700;font-size:14px;cursor:pointer;">Sign in</button>
+      <input id="auth-email" class="gate-input" type="email" aria-label="Email" placeholder="you@example.com" autocomplete="username" required>
+      <input id="auth-password" class="gate-input" type="password" aria-label="Password" placeholder="Password" autocomplete="current-password" required style="margin-bottom:12px">
+      <button type="submit" id="auth-signin-btn" class="gate-btn">Sign in</button>
+      <button type="button" id="auth-forgot-link" class="gate-link">Forgot your password?</button>
     </form>
-    <p id="auth-status" style="font-size:12.5px;color:#565A72;margin-top:14px;min-height:18px;"></p>
-    <p style="font-size:12px;color:#8890A8;margin-top:6px;">Not a member yet, or forgotten your password? Contact the committee.</p>
+    <form id="forgot-form" hidden>
+      <input id="forgot-email" class="gate-input" type="email" aria-label="Email" placeholder="you@example.com" autocomplete="username" required style="margin-bottom:12px">
+      <button type="submit" id="forgot-btn" class="gate-btn">Email me a reset link</button>
+      <button type="button" class="gate-link" data-gate-mode="signin">Back to sign in</button>
+    </form>
+    <form id="reset-form" hidden>
+      <!-- Hidden username field so password managers file the new password
+           against the right account. -->
+      <input id="reset-username" type="email" autocomplete="username" hidden>
+      <input id="reset-pass1" class="gate-input" type="password" aria-label="New password" placeholder="New password (at least 10 characters)" autocomplete="new-password" required>
+      <input id="reset-pass2" class="gate-input" type="password" aria-label="Confirm new password" placeholder="Re-type the new password" autocomplete="new-password" required>
+      <label class="gate-check"><input type="checkbox" id="reset-show"> Show passwords</label>
+      <button type="submit" id="reset-btn" class="gate-btn">Save new password</button>
+      <button type="button" id="reset-cancel" class="gate-link">Cancel</button>
+    </form>
+    <p id="auth-status" role="status" aria-live="polite" style="font-size:12.5px;color:#565A72;margin-top:14px;min-height:18px;"></p>
+    <p style="font-size:12px;color:#8890A8;margin-top:6px;">Not a member yet? Contact the committee.</p>
     <button type="button" id="install-app-btn" class="gate-install" data-install-btn data-install-help="install-app-help" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 7v7"/><path d="M9 11l3 3 3-3"/><path d="M10.5 18.5h3"/></svg>
       Install on your phone
@@ -2012,6 +2030,48 @@
 </script>
 
 <script>
+  // ===== Password reset: arriving from the email link =====
+  // "Forgot your password?" asks Supabase to email a link back to this page with
+  // ?reset=1 (see RESET_REDIRECT). Supabase signs the member into a temporary
+  // recovery session from the tokens in the URL, and fires PASSWORD_RECOVERY.
+  //
+  // That session is a full session, so without this checkSession() would open
+  // the portal and the member would never be asked for a new password. The URL
+  // is read here, synchronously and before the client is created, rather than
+  // relying on catching PASSWORD_RECOVERY: the event can fire before the
+  // listener at the foot of the page is registered.
+  //
+  // type=recovery in the hash covers a link that fell back to the Site URL
+  // because the ?reset=1 address isn't on Supabase's Redirect URLs list.
+  // The flag lives in sessionStorage so a reload mid-reset stays in reset mode
+  // after the URL has been cleaned; it is per-tab and gone when the tab closes.
+  var RESET_REDIRECT = window.location.origin + window.location.pathname + '?reset=1';
+  var RECOVERY_KEY = 'ecaac-recovery';
+  var recoveryLinkError = null;
+  var recoveryMode = (function(){
+    var q = new URLSearchParams(window.location.search);
+    var h = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+    var fromLink = q.get('reset') === '1' || h.get('type') === 'recovery';
+    // Expired or already-used links come back as #error_code=otp_expired (or in
+    // the query string under the PKCE flow).
+    var err = h.get('error_code') || h.get('error') || q.get('error_code');
+    if (fromLink && err) {
+      recoveryLinkError = err;
+      try { sessionStorage.removeItem(RECOVERY_KEY); } catch (e) {}
+      try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+      return false;
+    }
+    if (fromLink) {
+      try { sessionStorage.setItem(RECOVERY_KEY, '1'); } catch (e) {}
+      return true;
+    }
+    try { return sessionStorage.getItem(RECOVERY_KEY) === '1'; } catch (e) { return false; }
+  })();
+  function endRecovery(){
+    recoveryMode = false;
+    try { sessionStorage.removeItem(RECOVERY_KEY); } catch (e) {}
+  }
+
   // The Supabase SDK is a single CDN dependency. If it fails to load,
   // createClient throws, every remaining line in this block is skipped, and
   // members are left on a sign-in form whose button does nothing with no
@@ -2050,6 +2110,44 @@
   }
   window.__authLoader = { show: showLoader, hide: hideLoader };
 
+  // tone: 'error' | 'ok' | '' (neutral)
+  function gateStatus(msg, tone){
+    statusEl.textContent = msg || '';
+    statusEl.style.color = tone === 'error' ? '#C25A3F' : tone === 'ok' ? '#248238' : '#565A72';
+  }
+
+  var GATE_MODES = {
+    signin: { form: 'auth-form', title: 'ECAAC Members Portal',
+      sub: 'Sign in with the email and password given to you by the committee.', focus: 'auth-email' },
+    forgot: { form: 'forgot-form', title: 'Reset your password',
+      sub: 'Enter the email you sign in with and we\u2019ll send you a link to choose a new password.', focus: 'forgot-email' },
+    reset:  { form: 'reset-form', title: 'Choose a new password',
+      sub: 'At least 10 characters. You\u2019ll be signed straight in afterwards.', focus: 'reset-pass1' }
+  };
+  var gateMode = 'signin';
+  function setGateMode(mode, msg, tone){
+    var m = GATE_MODES[mode];
+    var changed = mode !== gateMode;
+    gateMode = mode;
+    Object.keys(GATE_MODES).forEach(function(k){
+      document.getElementById(GATE_MODES[k].form).hidden = (k !== mode);
+    });
+    document.getElementById('auth-title').textContent = m.title;
+    document.getElementById('auth-sub').textContent = m.sub;
+    gateStatus(msg, tone);
+    // Only move focus on a change the member asked for; checkSession can re-enter
+    // reset mode and must not yank focus out of a half-typed password.
+    if (changed && msg === undefined) { var f = document.getElementById(m.focus); if (f) f.focus(); }
+  }
+  document.querySelectorAll('[data-gate-mode]').forEach(function(b){
+    b.addEventListener('click', function(){ setGateMode(b.getAttribute('data-gate-mode')); });
+  });
+  document.getElementById('auth-forgot-link').addEventListener('click', function(){
+    // Carry over whatever was typed into the sign-in email box.
+    document.getElementById('forgot-email').value = document.getElementById('auth-email').value.trim();
+    setGateMode('forgot');
+  });
+
   // Every reload in this app is a *session boundary* — logout, a different member
   // signing in, a session disappearing. Now that the current view lives in the URL
   // hash (see the router in app.js), a plain location.reload() would carry the
@@ -2074,6 +2172,17 @@
         window.__reloadClean();
         return;
       }
+      if (recoveryMode) {
+        // Supabase has read the tokens by now (getSession waits for that), so the
+        // URL can be cleaned: they shouldn't sit in the address bar or history.
+        try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+        hideLoader();
+        document.getElementById('reset-username').value = session.user.email || '';
+        gate.style.display = 'flex';
+        root.style.display = 'none';
+        if (gateMode !== 'reset') setGateMode('reset', '');
+        return;
+      }
       window.currentUser = session.user;
       window.__portalMemberId = session.user.id;
       // fetch this member's profile row (auto-created by the signup trigger)
@@ -2096,11 +2205,20 @@
       }
     } else {
       hideLoader();
+      if (recoveryMode) {
+        // Came from a reset link but no session came of it: the link was bad.
+        endRecovery();
+        recoveryLinkError = recoveryLinkError || 'no_session';
+      }
       // Signed out elsewhere while the portal was live — same reasoning as above.
       // Safe from reload loops: a fresh page has __portalInited false.
       if (window.__portalInited) { window.__reloadClean(); return; }
       gate.style.display = 'flex';
       root.style.display = 'none';
+      if (recoveryLinkError) {
+        recoveryLinkError = null;
+        setGateMode('forgot', 'That reset link has expired or has already been used. Enter your email for a new one.', 'error');
+      }
     }
     // An automatic sign-out is indistinguishable from a crash unless you say so.
     // The flag is set by the idle timer in app.js immediately before it reloads.
@@ -2120,10 +2238,10 @@
     e.preventDefault();
     var email = document.getElementById('auth-email').value.trim();
     var password = document.getElementById('auth-password').value;
-    if (!email || !password) { statusEl.textContent = 'Enter both your email and password.'; return; }
+    if (!email || !password) { gateStatus('Enter both your email and password.', 'error'); return; }
     var btn = document.getElementById('auth-signin-btn');
     btn.disabled = true; btn.textContent = 'Signing in…';
-    statusEl.textContent = '';
+    gateStatus('');
     showLoader('Signing you in…');
     var res;
     try {
@@ -2136,9 +2254,87 @@
       // Only tear the loader down on failure — on success it stays up and
       // checkSession() removes it once the portal has actually rendered.
       hideLoader();
-      statusEl.textContent = 'Incorrect email or password — check with the committee if you\'re unsure.';
+      gateStatus('Incorrect email or password. Use \u201cForgot your password?\u201d to set a new one.', 'error');
     }
     // on success, onAuthStateChange fires and checkSession() shows the portal
+  });
+
+  // ===== Password reset: request the email =====
+  var forgotCooldown = 0;
+  document.getElementById('forgot-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var email = document.getElementById('forgot-email').value.trim();
+    if (!email) { gateStatus('Enter the email you sign in with.', 'error'); return; }
+    if (!supabase) { gateStatus('Can\u2019t reach the sign-in service right now \u2014 check your connection and reload the page.', 'error'); return; }
+    if (Date.now() < forgotCooldown) { gateStatus('Give it a minute before asking for another email.', 'error'); return; }
+    var btn = document.getElementById('forgot-btn');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    gateStatus('');
+    var res;
+    try { res = await supabase.auth.resetPasswordForEmail(email, { redirectTo: RESET_REDIRECT }); }
+    catch (err) { res = { error: err }; }
+    btn.disabled = false; btn.textContent = 'Email me a reset link';
+    if (res.error) {
+      var m = String(res.error.message || '') + ' ' + String(res.error.status || '');
+      gateStatus(/rate|seconds|too many|429/i.test(m)
+        ? 'Too many reset emails have been requested. Wait a few minutes and try again.'
+        : 'Couldn\u2019t send the email just now \u2014 try again shortly.', 'error');
+      return;
+    }
+    forgotCooldown = Date.now() + 60000;
+    // Same wording whether or not the address is on file, so the form can't be
+    // used to find out who is a member.
+    gateStatus('If ' + email + ' belongs to a member, a reset link is on its way. Check your inbox and spam folder \u2014 the link works once and expires after an hour.', 'ok');
+  });
+
+  // ===== Password reset: choose the new password =====
+  var RESET_MIN = 10; // keep in step with PW_MIN in app.js (Settings → Security)
+  document.getElementById('reset-show').addEventListener('change', function(){
+    var t = this.checked ? 'text' : 'password';
+    document.getElementById('reset-pass1').type = t;
+    document.getElementById('reset-pass2').type = t;
+  });
+  document.getElementById('reset-cancel').addEventListener('click', async function(){
+    endRecovery();
+    try { await supabase.auth.signOut(); } catch (e) {}
+    // Clean reload: drops the recovery session's leftovers and lands on sign-in.
+    try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+    window.location.reload();
+  });
+  var resetSaving = false;
+  document.getElementById('reset-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (resetSaving) return;
+    var p1 = document.getElementById('reset-pass1').value;
+    var p2 = document.getElementById('reset-pass2').value;
+    if (p1.length < RESET_MIN) { gateStatus('Your new password needs to be at least ' + RESET_MIN + ' characters.', 'error'); return; }
+    if (p1 !== p2) { gateStatus('The passwords don\u2019t match.', 'error'); return; }
+    var btn = document.getElementById('reset-btn');
+    resetSaving = true; btn.disabled = true; btn.textContent = 'Saving…';
+    gateStatus('');
+    var res;
+    try { res = await supabase.auth.updateUser({ password: p1 }); }
+    catch (err) { res = { error: err }; }
+    if (res.error) {
+      resetSaving = false; btn.disabled = false; btn.textContent = 'Save new password';
+      var m = String(res.error.message || '').toLowerCase();
+      if (m.indexOf('should be different') !== -1) {
+        gateStatus('That\u2019s your current password \u2014 choose a different one.', 'error');
+      } else if (/session|jwt|expired|not authenticated/.test(m)) {
+        endRecovery();
+        setGateMode('forgot', 'Your reset link has expired. Enter your email for a new one.', 'error');
+      } else {
+        gateStatus('Couldn\u2019t save your new password \u2014 ' + (res.error.message || 'try again.'), 'error');
+      }
+      return;
+    }
+    // Success: the recovery session is now an ordinary signed-in session. Leave
+    // reset mode and reload clean straight into the portal.
+    endRecovery();
+    gateStatus('Password saved. Signing you in\u2026', 'ok');
+    showLoader('Signing you in\u2026');
+    try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+    window.location.reload();
   });
 
   // The session check and auth listener are NOT started here. They now run from
