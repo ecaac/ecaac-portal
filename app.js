@@ -3855,14 +3855,6 @@ window.initPortal = function(){
   var CHANGELOG = [
     {
       date: '2026-10-04',
-      title: 'Stay signed in',
-      tag: 'improved',
-      items: [
-        'The portal no longer signs you out after an hour without use. You stay signed in on your phone or computer until you tap Log out \u2014 so if you use a shared computer, remember to log out when you\u2019re done.'
-      ]
-    },
-    {
-      date: '2026-10-04',
       title: 'Reset your own password',
       tag: 'new',
       items: [
