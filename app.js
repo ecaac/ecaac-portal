@@ -3855,6 +3855,14 @@ window.initPortal = function(){
   var CHANGELOG = [
     {
       date: '2026-10-04',
+      title: 'Stay signed in',
+      tag: 'improved',
+      items: [
+        'The portal no longer signs you out after an hour without use. You stay signed in on your phone or computer until you tap Log out \u2014 so if you use a shared computer, remember to log out when you\u2019re done.'
+      ]
+    },
+    {
+      date: '2026-10-04',
       title: 'Reset your own password',
       tag: 'new',
       items: [
@@ -8430,102 +8438,6 @@ window.initPortal = function(){
   // Dashboard's copy of it isn't stuck on placeholder badges until a member
   // happens to open Awards or Badges.
 
-  // ===== idle sign-out =====
-  //
-  // A Supabase session lasts indefinitely by default — nobody has ever been
-  // signed out of this portal. This signs a member out after an hour of doing
-  // nothing, with a minute's warning first.
-  //
-  // Worth being clear about what this is and isn't. It is NOT a security
-  // boundary: it runs in the browser, and anyone with developer tools can stop
-  // it. RLS is what actually protects members' data. This covers the realistic
-  // everyday risk instead — a phone left unlocked on a table, or the shared
-  // committee laptop at a club night.
-  //
-  // Demo mode is skipped entirely: there is no session to end.
-  if (IS_LIVE) (function idleLogout(){
-    var IDLE_MS = 60 * 60 * 1000;   // an hour of no interaction
-    var WARN_MS = 60 * 1000;        // ...with the last minute spent warning
-    var KEY = 'ecaac-last-activity-' + window.currentMember.id;
-
-    var idleModal = document.getElementById('idle-modal');
-    var countEl   = document.getElementById('idle-countdown');
-    var stayBtn   = document.getElementById('idle-stay');
-    var nowBtn    = document.getElementById('idle-now');
-    if (!idleModal) return;
-
-    var warning = false;
-    var signingOut = false;
-
-    // The timestamp lives in localStorage rather than a plain variable so two
-    // open tabs agree — activity in one keeps the other alive, instead of an
-    // idle background tab signing the member out of the tab they're using.
-    var lastLocal = Date.now();   // fallback when storage is blocked, so idle time still accrues
-    function markActive(){
-      lastLocal = Date.now();
-      try { localStorage.setItem(KEY, String(lastLocal)); } catch (e) {}
-    }
-    function lastActive(){
-      try { var v = parseInt(localStorage.getItem(KEY), 10); if (v) return Math.max(v, lastLocal); } catch (e) {}
-      return lastLocal;
-    }
-    markActive();
-
-    // Throttled: without this, scrolling would write to localStorage hundreds
-    // of times a minute for no benefit.
-    var lastWrite = 0;
-    function onActivity(){
-      if (warning) return;   // once the warning is up, only the button counts
-      var now = Date.now();
-      if (now - lastWrite < 10000) return;
-      lastWrite = now;
-      markActive();
-    }
-    ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function(ev){
-      document.addEventListener(ev, onActivity, { passive: true });
-    });
-
-    async function doSignOut(){
-      if (signingOut) return;
-      signingOut = true;
-      // Read back on the sign-in page, so an automatic sign-out doesn't look
-      // like the app crashed.
-      try { sessionStorage.setItem('ecaac-idle-logout', '1'); } catch (e) {}
-      try { await supabase.auth.signOut(); } catch (e) { /* local session clears anyway */ }
-      window.__reloadClean();
-    }
-
-    function staySignedIn(){
-      warning = false;
-      lastWrite = 0;
-      markActive();
-      closeLocked(idleModal);
-    }
-    if (stayBtn) stayBtn.addEventListener('click', staySignedIn);
-    if (nowBtn)  nowBtn.addEventListener('click', doSignOut);
-
-    // Everything is computed by comparing timestamps rather than by counting a
-    // timer down. Phones suspend JavaScript timers when the screen locks, so a
-    // decrementing counter would simply stop and the member would never be
-    // signed out at all. Comparing Date.now() against the stored value survives
-    // the page being frozen for an hour and gets it right on the first tick
-    // after it wakes — which is also why this is re-run on visibilitychange.
-    function tick(){
-      if (signingOut) return;
-      var idle = Date.now() - lastActive();
-      if (idle >= IDLE_MS) { doSignOut(); return; }
-      if (idle >= IDLE_MS - WARN_MS) {
-        if (!warning) { warning = true; openLocked(idleModal); }
-        if (countEl) countEl.textContent = String(Math.max(0, Math.ceil((IDLE_MS - idle) / 1000)));
-      } else if (warning) {
-        // Another tab was used, so this session isn't idle after all.
-        staySignedIn();
-      }
-    }
-    setInterval(tick, 1000);
-    document.addEventListener('visibilitychange', function(){ if (!document.hidden) tick(); });
-    window.addEventListener('focus', tick);
-  })();
   if (window.checkBadgeChanges) window.checkBadgeChanges();
 
   // Deep link, applied last so every loader above has already been kicked off.
