@@ -1879,20 +1879,6 @@
 </div>
 
 <!-- Log a water change modal -->
-<div class="card-modal" id="idle-modal" role="dialog" aria-modal="true" aria-label="Still there?">
-  <div class="card-modal-inner" style="max-width:380px">
-    <div class="panel">
-      <h3 style="margin:0 0 10px">Still there?</h3>
-      <p style="margin:0 0 6px;color:var(--ink-soft)">You've been idle for a while, so we're about to sign you out to keep your account safe.</p>
-      <p style="margin:0 0 18px;font-weight:600">Signing out in <span id="idle-countdown">60</span>s</p>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-primary" id="idle-stay">Stay signed in</button>
-        <button class="btn btn-outline" id="idle-now">Sign out now</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="card-modal" id="wc-modal" role="dialog" aria-modal="true" aria-label="Log a water change">
   <div class="card-modal-inner" style="max-width:420px">
     <div class="panel">
@@ -2220,18 +2206,6 @@
         setGateMode('forgot', 'That reset link has expired or has already been used. Enter your email for a new one.', 'error');
       }
     }
-    // An automatic sign-out is indistinguishable from a crash unless you say so.
-    // The flag is set by the idle timer in app.js immediately before it reloads.
-    try {
-      if (sessionStorage.getItem('ecaac-idle-logout')) {
-        sessionStorage.removeItem('ecaac-idle-logout');
-        var idleEl = document.getElementById('auth-status');
-        if (idleEl) {
-          idleEl.textContent = 'You were signed out after an hour of inactivity. Sign in to carry on.';
-          idleEl.style.color = '#565A72';
-        }
-      }
-    } catch (e) { /* private browsing can block sessionStorage — never fatal */ }
   }
 
   document.getElementById('auth-form').addEventListener('submit', async function(e){
